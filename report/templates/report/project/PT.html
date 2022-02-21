@@ -1,0 +1,168 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+        width: 16.67%;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+</style>
+
+    <body>
+        <div class="container">   
+            {% if dicPT.PTrange1 %} 
+                <form action="{% url 'PTsave' %}" method="POST" >           
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <input hidden = "hidden" value="{{dicPT.PT_dict}}" name="dicPT">
+                    <input hidden = "hidden" value="{{dicPT.PT_num}}" name="PT_num">
+                    <h2>PT验证结果</h2>
+                        {%for key,value in dicPT.PT_dict.items %}        
+                            <table border="1" cellpadding="8">
+                                <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th>样本编号</th>
+                                    <th>检测值({{dicPT.PTunit}})</th>
+                                    <th>靶值({{dicPT.PTunit}})</th>
+                                    <th>可接受标准</th>
+                                    <th>偏倚(%)或<br/>绝对差值({{dicPT.PTunit}})</th>
+                                    <th>是否通过</th>
+                                </tr>
+                                {%for r in value %}
+                                <tr>
+                                    <td>{{r.0}}</td> 
+                                    <td><span class="conc">{{r.1}}</span></td>
+                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}"></td>
+                                    <td><span class="rule">{{r.2}}</span></td>
+                                    <td><input class="bias" type="text" style="border-style:none;text-align:center;" name="bias{{forloop.counter}}" readonly></td>
+                                    <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            <br>
+                        {% endfor %}            
+                    <br>
+                    <div><input id="submit" type="submit" value="保存" hidden /></div>     
+                </form>
+                <div><button class="btn btn-primary" id="run" align="center" onclick="myFunction()" >运行</button></div>  
+            {% else %}
+                <h2 class="alert alert-danger">尚未在后台管理系统中设置PT的可接受标准，请设置后重新提交数据！</h2>
+                <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                </form>
+                <br>
+                <form action="{% url 'returnback' %}" method="POST">
+                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                </form> 
+            {% endif %} 
+        </div>
+
+    </body> 
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色。
+        window.onload = function(){
+            var tr=document.getElementsByTagName("tr");
+            for(var i= 0;i<tr.length;i++)
+            {
+            bgcChange(tr[i]);
+            }
+            
+            }
+            function bgcChange(obj)
+            {
+            obj.onmouseover=function(){
+            obj.style.backgroundColor="#D8D8D8";
+            }
+            obj.onmouseout=function(){
+            obj.style.backgroundColor="#fff";
+            }
+        }
+
+        function myFunction() {
+            conc = document.getElementsByClassName("conc")
+            target = document.getElementsByClassName("target")
+            rule = document.getElementsByClassName("rule")
+            bias = document.getElementsByClassName("bias")
+            pass = document.getElementsByClassName("pass")
+            for(let i=0; i<target.length; i++)
+            {   
+                if (rule[i].innerText.includes("%"))
+                {
+                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(1))+"%"
+                    if ((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(1) <= parseFloat(rule[i].innerText.split(" ")[1]))
+                    {
+                        pass[i].value = "通过"
+                    }
+                    else
+                    {
+                        pass[i].value = "不通过"
+                        pass[i].style.color="red"
+                        bias[i].style.color="red"
+                    }
+                }
+                else
+                {
+                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)).toFixed(1))+"{{dicPT.PTunit}}"
+                    if (Math.abs(parseFloat(conc[i].innerHTML)-target[i].value).toFixed(1) <= parseFloat(rule[i].innerText.split(" ")[1]))
+                    {
+                        pass[i].value = "通过"
+                    }
+                    else
+                    {
+                        pass[i].value = "不通过!" 
+                        pass[i].style.color="red" 
+                        bias[i].style.color="red"                    
+                    }
+                }
+            }
+
+            // submit = document.getElementById("submit");
+            // submit.removeAttribute("hidden");
+            // submit.addClass("btn btn-danger");
+            $("#submit").removeAttr("hidden").addClass("btn btn-danger");
+            $("#run").attr("hidden","hidden").removeClass("btn btn-primary");
+
+            // run = document.getElementById("run"); 
+            // run.removeClass("btn btn-danger");      
+            // run.setAttribute("hidden", "hidden");           
+                       
+        }
+    </script>
+    {% endblock %}

@@ -1,0 +1,233 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    tr{text-align:center;}
+    td{text-align:center;}
+    th{text-align:center;}
+    textarea{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    textarea:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+</style>
+
+    <body>
+        <div class="container">  
+            <h2>方法检出限验证结果</h2>
+            {% if dicLOD.objs_verify %}  
+            <form action="{% url 'LODsave' %}" method="POST" >
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{group}}" name="group">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{dicLOD.id}}" name="id">   
+                    {% for obj in dicLOD.objs_verify %}
+                        <p align="center"><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></p>
+                        <div align="center" style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;"> 请输入图名: 
+                            <textarea rows="1" cols="120" name = "picturename">
+                            </textarea>
+                        </div>
+                        <br> 
+                        <br><br>
+                    {% endfor %}  
+                    <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;"> 请输入结论: 
+                        <textarea rows="5" cols="120" name = "conclusion">
+                        </textarea>
+                    </div>
+                    <br>
+                    <div><input class="btn btn-danger" type="submit" value="保存"></div> 
+            </form>
+            {% elif dicLOD.LOD_dict %}
+            <br>
+            <form action="{% url 'verifyagain' %}" method="POST" > 
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{group}}" name="group">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <table border="1" cellpadding="10" align="center">
+                    <tr>
+                        <th >样本编号</th>
+                        {%for key in dicLOD.LOD_dict.keys %}
+                            <th>{{key}}({{dicLOD.Unit}})</th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.0}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.1}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.2}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.3}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.4}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.5}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.6}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.7}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>9</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.8}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.9}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>11</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.10}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.11}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>11</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.10}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.11}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>13</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.12}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>14</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.13}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>15</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.14}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>16</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.15}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>17</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.16}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>18</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.17}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>19</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.18}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>20</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.19}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>X</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.20}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>SD</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.21}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>LOD(3 SD)</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.22}}</td>
+                        {% endfor %}              
+                    </tr>
+                    <tr>
+                        <td>LOD(10 SD)</td>
+                        {%for value in dicLOD.LOD_dict.values %}
+                            <td>{{value.23}}</td>
+                        {% endfor %}              
+                    </tr>
+                </table>
+                <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+            </form >
+            <form action="{% url 'returnback' %}" method="POST">
+                <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+            </form> 
+            {% endif %}
+        </div>
+
+    </body>
+    {% endblock %}
+

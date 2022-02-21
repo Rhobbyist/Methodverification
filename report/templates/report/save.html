@@ -1,0 +1,1057 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+    <style>
+        /*基本格式*/
+        p{
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+        p.smalltwo{font-size:24px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*小二号字体*/
+        p.smallthree{font-size:20px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*小三号字体*/
+        p.four{font-size:18.6px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*四号字体*/
+        p.smallfour{font-size:16px;font-weight: bold;font-family:Times New Roman,宋体;line-height:2;} /*小四号字体*/
+        p.five{font-size:14px;font-family:Times New Roman,宋体;text-indent:2em;line-height:2;text-align:justify;} /*五号字体*/
+
+        /*页眉页脚格式*/
+        div.thead{font-size:14px;font-family:Times New Roman,宋体;text-align:center;} 
+        div.tfoot{font-size:14px;font-style:oblique;font-family:Times New Roman,宋体;color:rgba(255,255,255,0);} /*color:rgba(255,255,255,0)为设置字体透明色的语法*/
+        pageFooter {display: table-footer-group;}
+        pageFooter:after {counter-increment: page;content: counter(page);}
+
+        /*表格格式*/
+        /* table.report-container {page-break-after:left;} */ 
+
+        table.always{
+            page-break-after: always;
+        }
+        .always:last-child{
+            page-break-after: auto;
+        }   /* 解决打印时多出一页的问题 */
+
+        thead.report-header {display:table-header-group;
+        }
+        tfoot.report-footer {display:table-footer-group;
+                bottom: 0;
+                left: 0;
+                /* position: fixed; */
+                right: 0;}
+
+        table{table-layout:fixed;word-break:break-all;} /*table表格宽度固定，同时td内容过长也不会被撑开*/
+        caption{font-size:16px;font-weight: bold;font-family:Times New Roman,宋体;} 
+        th.title{font-weight:bold;font-family:Times New Roman,宋体;text-align:center;} /*表格中的表格字体*/
+        td.five{font-family:Times New Roman,宋体;text-align:center;} /*表格中的字体设置为五号字体*/
+        td.end{border: 1px solid transparent;}  /*报告编辑处的表格*/
+        td.bottom{border-bottom:none;} /*报告的表格不显示底部边框*/
+        td.top{border-top:none;} /*报告的表格不显示顶部边框*/
+        div.offset{
+            position: relative;
+            left:0px;
+            top:20px;}
+
+        /*图片格式*/
+        p.picture{font-size:14px;font-family:Times New Roman,宋体;font-weight: bold;text-align:center;line-height:1.5;} 
+
+        /*输入框格式*/
+        input{
+            border-bottom: 1px solid #000;
+            border-top: 0px;
+            border-left: 0px;
+            border-right: 0px;
+        }      
+    </style>
+
+    <body>
+        <div id="content">
+            <table class="always" cellpadding="25"> <!--cellpadding="25"设置打印时的内外边距-->
+                <thead class="report-header">
+                    <tr>
+                        <th class="report-header">
+                            <div class="text-left"><img src="/static/report/img/4.png" height="35px" width="90px"/></div>
+                            <div class="thead" >广州金域医学检验中心有限公司</div>  
+                            <div class="thead" >Guangzhou Kingmed Center for Clinical Laboratory</div> 
+                            <div style="width:100%; height:2px; border-top:1.2px solid 	#000000; clear:both;"></div>  <!--页眉文字下方添加横线的代码-->           
+                        </th>
+                    </tr>
+                </thead>
+
+                <tfoot class="report-footer">
+                    <tr>
+                        <td class="report-footer-cell">
+                            <div class="tfoot">&#12288</div>
+                            <div class="tfoot">&#12288</div>
+                        </td>
+                    </tr>
+                </tfoot>
+
+    <!------------------------------------------------------封面------------------------------------------------------> 
+                <tbody class="report-content">              
+                    <tr>
+                        <td class="report-content-cell">
+                            <br><br><br>
+                            <p class="smalltwo">VALIDATION PROTOCOL AND REPORT</p>
+                            <br><br><br><br>
+                            <p class="smalltwo">方法验证报告</p>
+                            <br><br><br><br>
+                            <p class="four">{{english_title}}</p>
+                            <br><br><br><br>
+                            <p class="four">{{chinese_title}}</p>
+                            <br><br>
+                            <p class="four">仪器编号：{{Instrument_number}}</p>
+                            <br><br><br>
+                            <p class="four">仪器型号：{{Instrument_model}}</p>
+                            <br>
+                            {% if ColumnTrue %}
+                                <p class="four">色谱柱：{{Column}}</p>
+                                <br><br><br><br>
+                            {% else %}
+                                <p class="four" style="visibility:hidden;">色谱柱：{{Column}}</p>
+                                <br><br><br><br>
+                            {% endif %}                          
+                            <p class="smallthree">Protocol ID：{{Protocol_ID}}</p>
+                            <br>
+                            <p class="smallthree">代码：{{Protocol_ID}}</p>
+                            <br><br>
+    
+     <!------------------------------------------------------正文------------------------------------------------------> 
+
+                        <p class="smallthree">{{chinese_title}}</p>
+                        <br>
+                        <p class="four" style="text-align:left;">1. 验证原因（Validation Reason）</p>
+                        <p class="five">{{text_Validation_Reason.0}}</p>
+
+    <!------------------------------------------------------仪器条件------------------------------------------------------> 
+                        <p class="four" style="text-align:left;">2. 仪器条件（Instrument Conditions）</p>
+                        <p class="five">检测仪器：{{Instrument_model}}（仪器编号：{{Instrument_number}}）</p>
+                        {% if ColumnTrue %}
+                            <p class="five">色谱柱：{{Column}}</p>
+                        {% endif %}                    
+                        <p class="smallfour">2.1 质谱方法（HPLC Method）</p>
+                        {% for r in resulttest_method.zp_method_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+                            <table border="1" cellpadding="4" width="700" align="center">
+                                <caption>表1.质谱参数</caption>
+                                <tr>
+                                    <th class="title">分析物名称</th>
+                                    <th class="title">母离子(m/z)</th>
+                                    <th class="title">子离子(m/z)</th>
+                                    <th class="title">Times(msec)</th>
+                                    <th class="title">Declustering Potential(DP)(V)</th>
+                                    <th class="title">Collision Energy(CE)(V)</th>
+                                </tr>                           
+                                {% for r in resulttest_method.zp_method_list %}
+                                    <tr>
+                                        {% for c in r %}
+                                            <td class="five">{{c}}</td>
+                                        {% endfor %}
+                                    </tr>                            
+                                {% endfor %}
+                            </table>  
+                        <br>
+                        <p class="smallfour">2.2 液相方法（MS Method）</p>
+                        {% for r in resulttest_method.yx_method_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+                            <table border="1" cellpadding="4" width="700" align="center">
+                                <caption>表2.液相梯度条件</caption>
+                                <tr>
+                                    <th class="title" width="20%">步骤</th>
+                                    <th class="title" width="20%">分析时间(min)</th>
+                                    <th class="title" width="20%">流速(mL/min)</th>
+                                    <th class="title" width="20%">流动相B%</th>
+                                    <th class="title" width="20%">流动相A%</th>
+                                </tr>                           
+                                {% for r in resulttest_method.yx_method_list %}
+                                    <tr>
+                                        {% for c in r %}
+                                            <td class="five">{{c}}</td>
+                                        {% endfor %}
+                                    </tr>                            
+                                {% endfor %}
+                            </table>
+                        <br>
+    <!------------------------------------------------------设备------------------------------------------------------> 
+                        <p class="four" style="text-align:left;">3. 设备（Instrument）</p>
+                        <p class="smallfour">3.1 检测设备（Detection equipment）</p>
+                        {% for r in resultequipment.Detection_equipment_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+                        <p class="smallfour">3.2 辅助设备（Auxiliary equipment）</p>
+                        {% for r in resultequipment.Auxiliary_equipment_texts_list %}
+                            <p class="five">{{r|linebreaksbr}}</p>
+                        {% endfor %}
+        <!------------------------------------------------------试剂耗材------------------------------------------------------> 
+                        <p class="four" style="text-align:left;">4. 试剂和耗材（Reagents and Consumables）</p>
+                        <p class="smallfour">4.1 主要试剂（Reagents）</p>
+                        {% for r in resultReagents_Consumables.reagents_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+                        <p class="smallfour">4.2 主要耗材（Consumables）</p>
+                        {% for r in resultReagents_Consumables.consumables_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+        <!------------------------------------------------------样品处理------------------------------------------------------> 
+                        <p class="four" style="text-align:left;">5. 样品处理（Sample Preparation）</p>
+                        {% for r in resultSample_Preparation.Sample_Preparation_texts_list %}
+                            <p class="five">{{r}}</p>
+                        {% endfor %}
+
+    <!------------------------------------------------------分界线------------------------------------------------------>      
+
+    <!------------------------------------------------------精密度------------------------------------------------------> 
+                        {% if resultPN.JMD_endreport_dict %}
+                            <p class="four" style="text-align:left;">{{JMDindex}}. 精密度（Precision）</p>
+                            <p class="smallfour">{{JMDindex}}.{{PNjmdindex}}  重复性精密度（Intra-assay Precision）</p>
+                                {% for r in resultPN.textlist %}
+                                <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                            <p class="five">{{resultPN.serial}})  表{{tablePNindex}} 即为重复性精密度数据，{{resultPN.JMD_CONCLUSION}}</p>            
+                                <!-- <table align="center">
+                                    <tr style="border-top-style: solid; border-bottom-style: solid">
+                                        <th rowspan="2" width="10%" class="title" style="font-size:16px;font-weight: 900;font-family:Times New Roman,宋体;">序号</th>
+                                        <th colspan="3" class="title" style="font-size:16px;font-weight: 900;font-family:Times New Roman,宋体;">25OHD3</td>
+                                        <th colspan="3" class="title" style="font-size:16px;font-weight: 900;font-family:Times New Roman,宋体;">25OHD2</td>
+                                    </tr>
+                                    <tr style="border-top-style: solid; border-bottom-style: solid">
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">低浓度（{{unit}}）</td>
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">中浓度（{{unit}}）</td>
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">高浓度（{{unit}}）</td>
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">低浓度（{{unit}}）</td>
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">中浓度（{{unit}}）</td>
+                                        <td class="title" style="font-size:15px;font-weight: 900;font-family:Times New Roman,宋体;">高浓度（{{unit}}）</td>
+                                    </tr>     
+                                    {% for r in resultPN.PND3 %}
+                                        <tr>
+                                            {% for c in r %}
+                                                <td class="title">{{c}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}      
+                                    <tr style="border-bottom-style: solid">
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </table>           -->
+                            {%for key,value in resultPN.JMD_endreport_dict.items %}              
+                                <table border="1" cellpadding="4" width="700"  align="center">
+                                    <caption>表{{tablePNindex}}. {{key}}重复性精密度实验数据</caption>
+                                    {% if resultPN.lownum %}                         
+                                        <tr>
+                                            <th class="title">实验号</th>
+                                            <th class="title">中浓度({{unit}})</th>
+                                            <th class="title">高浓度({{unit}})</th>
+                                        </tr> 
+                                    {% elif resultPN.mediannum %}
+                                        <tr>
+                                            <th class="title">实验号</th>
+                                            <th class="title">低浓度({{unit}})</th>
+                                            <th class="title">高浓度({{unit}})</th>             
+                                        </tr> 
+                                    {% elif resultPN.highnum %}
+                                        <tr>
+                                            <th class="title">实验号</th>
+                                            <th class="title">低浓度({{unit}})</th>
+                                            <th class="title">中浓度({{unit}})</th>             
+                                        </tr> 
+                                    {% else %}    
+                                        <tr>
+                                            <th class="title">实验号</th>
+                                            <th class="title">低浓度({{unit}})</th>
+                                            <th class="title">中浓度({{unit}})</th>
+                                            <th class="title">高浓度({{unit}})</th>
+                                        </tr>
+                                    {% endif %}                       
+                                    {% for r in value %}
+                                        <tr>
+                                            {% for c in r %}
+                                                <td class="five">{{c}}</td>
+                                            {% endfor %}
+                                        </tr>                            
+                                    {% endfor %}
+                                </table>
+                                <br>
+                            {% endfor %}
+                        {% endif %}
+    
+                        {% if resultPJ.JMD_endreport_dict %}
+                            <p class="smallfour">{{JMDindex}}.{{PJjmdindex}}  中间精密度（Inter-assay Precision）</p>
+                                {% for r in resultPJ.textlist %}
+                                <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                            <p class="five">{{resultPJ.serial}})  表{{tablePJindex}} 即为中间精密度数据，{{resultPJ.JMD_CONCLUSION}}</p>
+                                {%for key,value in resultPJ.JMD_endreport_dict.items %}             
+                                    <table border="1" cellpadding="4" width="700" align="center">
+                                        <caption>表{{tablePJindex}}. {{key}}中间精密度实验数据</caption>
+                                        <tr>
+                                            <th class="title">实验号</th>
+                                            <th class="title">低浓度({{unit}})</th>
+                                            <th class="title">中浓度({{unit}})</th>
+                                            <th class="title">高浓度({{unit}})</th>
+                                        </tr>                           
+                                        {% for r in value %}
+                                            <tr>
+                                                {% for c in r %}
+                                                    <td class="five">{{c}}</td>
+                                                {% endfor %}
+                                            </tr>                            
+                                        {% endfor %}
+                                    </table>
+                                    <br>
+                                {% endfor %}
+                        {% endif %}
+                        
+                        {% if resultPN.JMD_endreport_dict and resultPJ.JMD_endreport_dict %}
+                            <p class="smallfour">{{JMDindex}}.{{JMDendconclusionindex}}  精密度验证结果汇总（Summary of the precision study）</p>
+                            <p class="five">精密度实验验证结果如表{{tablejmdendconclusionindex}}所示，{{resultjmdendconclusion.JMD_CONCLUSION}}</p>
+                                <table border="1" cellpadding="4" width="700" align="center">
+                                    <caption>表{{tablejmdendconclusionindex}}. 精密度实验结果汇总</caption>
+                                    <tr>
+                                        <th class="title">化合物</th>
+                                        <th class="title">类别</th>
+                                        <th class="title">项目</th>
+                                        <th class="title" width="13%">低浓度</th>
+                                        <th class="title" width="13%">中浓度</th>
+                                        <th class="title" width="13%">高浓度</th>
+                                    </tr>
+                                    {%for key,value in resultjmdendconclusion.JMD_CONCLUSION_table.items %}
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five">测定次数（次）</td>
+                                            <td class="five">{{value.0}}</td>
+                                            <td class="five">{{value.0}}</td>
+                                            <td class="five">{{value.0}}</td>                          
+                                        </tr>     
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">重复性精密度</td>
+                                            <td class="five">平均值（{{unit}}）</td>
+                                            <td class="five">{{value.1}}</td>
+                                            <td class="five">{{value.2}}</td>
+                                            <td class="five">{{value.3}}</td>                          
+                                        </tr>   
+                                        <tr>
+                                            <td class="five bottom top"><div class="offset">{{key}}</div></td>
+                                            <td class="five top"></td>
+                                            <td class="five">CV（%）</td>
+                                            <td class="five">{{value.4}}</td>
+                                            <td class="five">{{value.5}}</td>
+                                            <td class="five">{{value.6}}</td>                          
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five">测定次数（次）</td>
+                                            <td class="five">{{value.7}}</td>
+                                            <td class="five">{{value.7}}</td>
+                                            <td class="five">{{value.7}}</td>                          
+                                        </tr>     
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">中间精密度</td>
+                                            <td class="five">平均值（{{unit}}）</td>
+                                            <td class="five">{{value.8}}</td>
+                                            <td class="five">{{value.9}}</td>
+                                            <td class="five">{{value.10}}</td>                          
+                                        </tr>   
+                                        <tr>
+                                            <td class="five top"></td>
+                                            <td class="five top"></td>
+                                            <td class="five">CV（%）</td>
+                                            <td class="five">{{value.11}}</td>
+                                            <td class="five">{{value.12}}</td>
+                                            <td class="five">{{value.13}}</td>                          
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                        <br>
+                        {% endif %}
+                        
+    
+    <!------------------------------------------------------准确度------------------------------------------------------>
+                        {% if resultPT %}
+                            <p class="four" style="text-align:left;">{{ZQDindex}}. 准确度（Accuracy）</p>
+                            <p class="smallfour">{{ZQDindex}}.{{PTindex}}  室间质量评价（Proficiency Testing, PT）</p>
+                                {% for r in resultPT.textlist %}
+                                    <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+      
+                                {%for key,value in resultPT.PT_endreport_dict.items %}
+                                    <table cellpadding="4" width="700" align="center" border="1">
+                                        <caption>表{{tablePTindex}}. {{key}}验证结果</caption>
+                                        <tr>
+                                            <th class="title" width="20%">样本编号</th>
+                                            <th class="title" width="20%">检测值({{unit}})</th>
+                                            <th class="title" width="20%">靶值({{unit}})</th>
+                                            <th class="title" width="20%">可接受标准</th>
+                                            <th class="title" width="20%">偏倚(%)或绝对差值({{unit}})</th>
+                                        </tr>
+                                        {%for r in value %}
+                                        <tr>
+                                            {%for c in r %}
+                                                <td class="five">{{c}}</td> 
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                    <br>
+                                {% endfor %}              
+                        {% endif %}
+                        
+                        {% if resultrecycle.Recycle_endreport_dict %}            
+                            <p class="smallfour">{{ZQDindex}}.{{RECYCLEindex}} 加标回收实验(Recovery)</p>
+                                {% for r in resultrecycle.textlist %}
+                                    <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px"/></p>
+                            <p class="five">{{resultrecycle.serial}}) 加标回收率实验结果表{{tableRECYCLEindex}}所示，由结果可知，
+                                方法的回收率：{{resultrecycle.Recycle_endconclusion}}满足检测要求。
+                            </p>
+                            {%for key,value in resultrecycle.Recycle_endreport_dict.items %}    
+                                <table border="1" cellpadding="4" width="700" align="center">
+                                <caption>表{{tableRECYCLEindex}}.{{key}}验证结果验证结果</caption>
+                                    <tr> 
+                                        <th class="title" colspan="3" width="45%">病人基质样本</th>
+                                        <th class="title" rowspan="2" width="15%">加标理论值({{unit}})</th>
+                                        <th class="title" colspan="2" width="30%">加标后样本</th>
+                                        <th class="title" rowspan="2" width="10%">回收率（%）</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="title" width="15%">样本编号</th>
+                                        <th class="title" width="15%">平行检测浓度（{{unit}}）</th>
+                                        <th class="title" width="15%">均值({{unit}})</th>                           
+                                        <th class="title" width="15%">样本编号</th>
+                                        <th class="title" width="15%">平行检测浓度（{{unit}}）</th>
+                                    </tr>
+                                    {%for c,r in value.items %}
+                                        <tbody border="1">
+                                        <tr>
+                                            <td class="five bottom top"></td> 
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five">{{r.3}}</td>
+                                            <td class="five">{{r.6}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">{{r.0}}</td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">{{r.1}}</td>
+                                            <td class="five bottom top">{{r.2}}</td>
+                                            <td class="five">{{r.4}}</td>
+                                            <td class="five">{{r.7}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five">{{r.5}}</td>
+                                            <td class="five">{{r.8}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom"></td>
+                                            <td class="five bottom top"></td> 
+                                            <td class="five bottom"></td>
+                                            <td class="five bottom"></td>
+                                            <td class="five">{{r.12}}</td>
+                                            <td class="five">{{r.15}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top">{{c}}</td>
+                                            <td class="five bottom top">{{r.9}}</td>
+                                            <td class="five bottom top">{{r.27}}</td>
+                                            <td class="five bottom top">{{r.10}}</td>
+                                            <td class="five bottom top">{{r.11}}</td>
+                                            <td class="five">{{r.13}}</td>
+                                            <td class="five">{{r.16}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five">{{r.14}}</td>
+                                            <td class="five">{{r.17}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom"></td>
+                                            <td class="five bottom top"></td> 
+                                            <td class="five bottom"></td>
+                                            <td class="five bottom"></td>
+                                            <td class="five">{{r.21}}</td>
+                                            <td class="five">{{r.24}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">{{r.18}}</td>
+                                            <td class="five bottom top"></td>
+                                            <td class="five bottom top">{{r.19}}</td>
+                                            <td class="five bottom top">{{r.20}}</td>
+                                            <td class="five">{{r.22}}</td>
+                                            <td class="five">{{r.25}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="five top"></td>
+                                            <td class="five top"></td>
+                                            <td class="five top"></td>
+                                            <td class="five top"></td>
+                                            <td class="five top"></td>
+                                            <td class="five">{{r.23}}</td>
+                                            <td class="five">{{r.26}}</td>
+                                        </tr>
+                                        </tbody>
+                                    {% endfor %}
+                                </table>
+                                <br>
+                                {% endfor %}              
+                            <br>
+                        {% endif %} 
+    
+    <!------------------------------------------------------AMR------------------------------------------------------>                    
+                        {% if resultAMR.AMR_dict_report %}
+                            <p class="four" style="text-align:left;">{{AMRindex}}. 分析灵敏度与分析测量范围（Analytical Sensitivity and Analytical Measurement Range）</p> 
+                            <p class="smallfour">{{AMRindex}}.{{amrindex}} 方法定量限与线性范围（Limit of Quantitation and Linearity）</p>
+                                {% for r in resultAMR.textlist %}
+                                    <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="five"> {{resultAMR.serial}}) 结果数据如表{{tableAMRindex}}和图{{pictureAMRindex_start}}-{{pictureAMRindex_end}}所示, {{resultAMR.AMR_textlist_end}}</p>
+                            {%for key,value in resultAMR.AMR_dict_report.items %}
+                                <table border="1" cellpadding="4" width="700" align="center">
+                                    <caption>表{{tableAMRindex}}.{{key}}线性范围验证结果</caption>
+                                    <tr>
+                                        <th class="title" width="16.67%">浓度序号</th>
+                                        <th class="title" width="16.67%">理论浓度（{{unit}}）</th>
+                                        <th class="title" width="16.67%">检测值（{{unit}}）</th>
+                                        <th class="title" width="16.67%">回收率（%）</th>
+                                        <th class="title" width="16.67%">平均回收率（%）</th>
+                                        <th class="title" width="16.67%">检测值CV（%）</th>
+                                    </tr>
+                                    {%for r in value %}
+                                    <tr>
+                                        <td class="five bottom top"></td> 
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.2}}</td>
+                                        <td class="five">{{r.3}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.4}}</td>
+                                        <td class="five">{{r.5}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"><div class="offset">{{r.0}}</div></td>
+                                        <td class="five bottom top"><div class="offset">{{r.1}}</div></td>
+                                        <td class="five">{{r.6}}</td>
+                                        <td class="five">{{r.7}}</td>
+                                        <td class="five bottom top"><div class="offset">{{r.14}}</div></td>
+                                        <td class="five bottom top"><div class="offset">{{r.15}}</div></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.8}}</td>
+                                        <td class="five">{{r.9}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.10}}</td>
+                                        <td class="five">{{r.11}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five top"></td>
+                                        <td class="five top"></td>
+                                        <td class="five">{{r.12}}</td>
+                                        <td class="five">{{r.13}}</td>
+                                        <td class="five top"></td>
+                                        <td class="five top"></td>
+                                    </tr>
+                                    {% endfor %}
+                                </table> 
+                                <br> 
+                                {% endfor %}
+                                
+                                {% for obj in resultAMR.objs %}
+                                    <p class="text-center"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></p>                          
+                                    <p class="picture"> 图{{forloop.counter|add:pictureAMRindex_start|add:-1}}. {{obj.name}}</p>
+                                    <br> 
+                                {% endfor %}                                                                       
+                        {% endif %}
+                        
+    
+                        {% if resultLOD.objs %}
+                            <p class="smallfour">{{AMRindex}}.{{LODindex}} 方法检出限（Limit of Detection）</p>
+                            <p class="five"> 1)逐级稀释标准品直至S/N接近并大于3时所对应的标准品浓度值，即为方法的检出限（LOD）；</p>
+                            <p class="five"> 2)结果数据如图{{pictureLODindex}}，{{resultLOD.LOD_conclusion}}</p>
+                            <p>
+                            {% for obj in resultLOD.objs %}
+                                <p class="title"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></p>
+                                <p class="picture"> 图{{pictureLODindex}}. {{obj.name}}</p>
+                                <!-- <caption>图{{forloop.counter}}. {{obj.name}}</caption> -->
+                                <br><br>  
+                            {% endfor %} 
+                            </p>
+                        {% endif %}
+    
+                        {% if resultAMRconclusion %}
+                        <p class="smallfour">{{AMRindex}}.{{AMRconclusionindex}} 结论（Summary of the AMR, LOQ and LOD study）</p>
+                            <table border="1" cellpadding="4" width="700" align="center">
+                                <caption>表{{tableAMRconclusionindex}}.分析灵敏度与线性范围结果汇总</caption>
+                                <tr>
+                                    <th class="title">化合物</th>
+                                    <th class="title">方法检出限LOD</th>
+                                    <th class="title">方法定量限LOQ</th>
+                                    <th class="title">分析测量范围AMR</th>
+                                </tr>
+                                {%for key,value in resultAMRconclusion.AMRconclusiontabledict.items %}
+                                <tr>
+                                    <td align="five">{{key}}</td>
+                                    <td align="five">{{value.0}}</td>
+                                    <td align="five">{{value.1}}</td>
+                                    <td align="five">{{value.2}}</td>
+                                </tr> 
+                                {% endfor %}           
+                            </table>
+                        {% endif %}
+                            
+ <!------------------------------------------------------稀释倍数------------------------------------------------------>        
+                        {% if resultCRR%}
+                            <p class="four" style="text-align:left;">{{CRRindex}}. 临床可报告范围（Clinical Reportable Range）</p>   
+                            <p class="smallfour">{{CRRindex}}.{{crrindex}} 稀释倍数验证（Dilution）</p> 
+                                {% for r in resultCRR.textlist %}
+                                    <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="five"> {{resultCRR.serial}}) 实验结果如表{{tableCRRindex}}所示，对高浓度样本按照{{resultCRR.CRR_conclusion1}}倍稀释后得到的检测结果满足要求。
+                                    因此，当遇到超出标准曲线最高浓度点的样本时，可对其稀释{{resultCRR.CRR_conclusion1}}倍后进行检测。</p>
+                            {%for key,value in resultCRR.CRR_endreport_dict.items %}
+                                <table border="1" cellpadding="4" width="700" align="center">
+                                    <caption>表{{tableCRRindex}}.{{key}}稀释倍数验证结果</caption>
+                                    <tr>
+                                        <th class="title" width="20%">稀释倍数</th>
+                                        <th class="title" width="20%">检测浓度({{unit}})</th>
+                                        <th class="title" width="20%">检测浓度平均值({{unit}})</th>
+                                        <th class="title" width="20%">检测浓度CV(%)</th>
+                                        <th class="title" width="20%">回收率(%)</th>
+                                    </tr>
+                                    {%for r in value%}
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.1}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.6}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.2}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.7}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top">{{r.0}}</td>
+                                        <td class="five">{{r.3}}</td>
+                                        <td class="five bottom top">{{r.11}}</td>
+                                        <td class="five bottom top">{{r.12}}</td>
+                                        <td class="five">{{r.8}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.4}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five">{{r.9}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five top type1"></td>
+                                        <td class="five type1">{{r.5}}</td>
+                                        <td class="five top type1"></td>
+                                        <td class="five top type1"></td>
+                                        <td class="five type1">{{r.10}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>        
+                                <br>  
+                            {% endfor %}
+                            <p class="smallfour">{{CRRindex}}.{{crrindex|add:1}} 临床可报告范围（Clinical Reportable Range）</p>
+                            <p class="five"> 按照线性范围（AMR）和稀释倍数验证结果，临床可报告范围（CRR）的下限即为AMR的下限，CRR的上限即为最大稀释倍数乘以AMR的上限。
+                                {{resultCRR.CRR_conclusion2}}</p>
+                        {% endif %}    
+                        
+    
+<!------------------------------------------------------基质特异性------------------------------------------------------>        
+                        {% if resultMS%}
+                            <p class="four" style="text-align:left;">{{MSindex}}. 基质特异性（Matrix Specificity）</p>    
+                                {% for r in resultMS.MS_textlist_general %}
+                                <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="five"> {{resultMS.serial}}) 如图{{pictureMSindex}}所示， {{resultMS.conclusion}}</p>
+                            <p>
+                                {% for obj in resultMS.dataMS %}
+                                    <p class="title"><img src="/media/{{ obj.img }}" alt="" width="700px" height="400px"></p>
+                                    <p class="picture"> 图{{forloop.counter}}. {{obj.name}}</p>
+                                    <br> 
+                                {% endfor %}        
+                            </p> 
+                        {% endif %}   
+
+<!------------------------------------------------------基质效应------------------------------------------------------>                           
+                        {% if resultMatrix_effect%}
+                            <p class="four" style="text-align:left;">{{Matrix_effectindex}}. 基质效应（Matrix effect）</p>   
+                                {% for r in resultMatrix_effect.textlist %}
+                                <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="five"> {{resultMatrix_effect.serial}}) 结果如表{{tableMatrix_effectindex}}所示，混合样本中的响应值与高低浓度样本和病人样本中的响应值的均值差异均小于20%，说明无相对基质效应。</p>
+                            {%for key,value in resultMatrix_effect.Matrixeffect_endreport_dict.items %}
+                                <table border="1" cellpadding="4" width="700" align="center">
+                                    <caption>表{{tableMatrix_effectindex}}.{{key}}验证结果</caption>
+                                    <tr>
+                                        <th class="title" width="14.29%">样本编号</th>
+                                        <th class="title" width="14.29%">Area</th>
+                                        <th class="title" width="14.29%">IS Area</th>
+                                        <th class="title" width="14.29%">Area/IS Area</th>
+                                        <th class="title" width="14.29%">Area/IS Area的平均值</th>
+                                        <th class="title" width="14.29%">混合样本Area/IS Area的理论值</th>
+                                        <th class="title" width="14.29%">偏差(%)</th>
+                                    </tr>        
+                                    {%for i,j in value.items %}
+                                    <tr>      
+                                        <td class="five bottom top"></td>
+                                        <td class="five top">{{j.0}}</td>
+                                        <td class="five top">{{j.1}}</td>
+                                        <td class="five top">{{j.2}}</td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five bottom top"></td>
+                                        <td class="five top">{{j.11}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five bottom top">{{i}}</td>
+                                        <td class="five top">{{j.3}}</td>
+                                        <td class="five top">{{j.4}}</td>
+                                        <td class="five top">{{j.5}}</td>
+                                        <td class="five bottom top">{{j.9}}</td>                               
+                                        <td class="five bottom top">{{j.10}}</td>
+                                        <td class="five top">{{j.12}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="five top"></td>
+                                        <td class="five top">{{j.6}}</td>
+                                        <td class="five top">{{j.7}}</td>
+                                        <td class="five top">{{j.8}}</td>
+                                        <td class="five top"></td>                                        
+                                        <td class="five top"></td>
+                                        <td class="five top">{{j.13}}</td>
+                                    </tr>
+                                    {% endfor %} 
+                                </table>
+                                <br>
+                            {% endfor %} 
+                        {% endif %} 
+                        
+   
+ <!------------------------------------------------------携带效应------------------------------------------------------>        
+                        {% if resultCarryover%}
+                            <p class="four" style="text-align:left;">{{Carryoverindex}}. 携带效应（Carryover）</p>  
+                                {% for r in resultCarryover.textlist %}
+                                <p class="five"> {{forloop.counter}}) {{r}}</p>
+                                {% endfor %}
+                                <p class="five"> {{resultCarryover.serial}}) 实验结果如表{{tableCarryoverindex}}所示,（C3mean-C1mean）/C1mean均小于20%，
+                                    说明系统无携带效应，满足检测要求。</p>
+                            <p>
+                                {%for key,value in resultCarryover.d_reshape.items %}   
+                                    <table border="1" cellpadding="4" width="700"  align="center">
+                                    <caption>表{{tableCarryoverindex}}. 携带效应验证结果</caption>
+                                        <tr>
+                                            <th class="title" rowspan="2" width="30%">样本编号</th>
+                                            <th class="title">检测结果（{{unit}}）或偏差（%）</th>
+                                        </tr>
+                                        <tr>
+                                            {%for c in value.keys %}
+                                                <th class="title">{{c}}</td>
+                                            {% endfor %}
+                                        </tr> 
+                                        <tr>
+                                            <td class="five">C1</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.0}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C2</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.1}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C3</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.2}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C1</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.3}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C2</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.4}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C3</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.5}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C1</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.6}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C2</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.7}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C3</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.8}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C1mean</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.9}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">C3mean</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.10}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="five">(C3mean-C1mean)/C1mean</td>
+                                            {%for r in value.values %}
+                                                <td class="five">{{r.11}}</td>
+                                            {% endfor %}
+                                        </tr>         
+                                    </table>
+                                    <br> 
+                                {% endfor %}
+                            </p> 
+                        {% endif %}  
+
+
+ <!------------------------------------------------------稳定性------------------------------------------------------>        
+                        <p class="four" style="text-align:left;">12.稳定性（Stability）</p> 
+                        <p class="smallfour">12.1 样本处理后稳定性（Prepared Sample Stability）</p> 
+                        <p class="five"> 1) 挑选低、中、高三个不同水平的临床样本（M3、M4、M6），按照方法进行处理；</p> 
+                        <p class="five"> 2) 处理后的样本，冷藏（2~8 ℃）保存，分别于0、22、43 h各重复测定3次（实际时间以仪器进样时间为准）；</p>
+                        <p class="five"> 3) 以0 h的检测结果为靶值，计算不同进样时间结果的回收率，回收率应在85.0~115 %范围内；</p>  
+                        <p class="five"> 4) 结果：如表12所示，表明处理后的样本在冷藏（2~8 ℃）条件下可放置43 h。</p> 
+                        <p>
+                            <table border="1" cellpadding="4" width="700" align="center">
+                                <caption>表12. 样本处理后存放稳定性实验数据（2~8 ℃）</caption>
+                                <tr>
+                                    <th class="title" rowspan="2">浓度水平</th>
+                                    <th class="title" colspan="4">计算值({{unit}}</th>
+                                    <th class="title" colspan="2">回收率(%)</th>
+                                </tr>
+                                <tr>
+                                    <th class="title">0h</th>
+                                    <th class="title">0h均值</th>
+                                    <th class="title">22h</th>
+                                    <th class="title">43h</th>
+                                    <th class="title">22h</th>
+                                    <th class="title">43h</th>
+                                </tr>
+                                <tr>
+                                    <td class="five" rowspan="3">低</td>
+                                    <td class="five">4.45</td>
+                                    <td class="five" rowspan="3">4.43</td>
+                                    <td class="five">4.37</td>
+                                    <td class="five">4.21</td>
+                                    <td class="five">98.6</td>
+                                    <td class="five">95.0</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">4.33</td>
+                                    <td class="five">3.94</td>
+                                    <td class="five">4.31</td>
+                                    <td class="five">88.9</td>
+                                    <td class="five">97.3</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">4.51</td>
+                                    <td class="five">4.70</td>
+                                    <td class="five">4.15</td>
+                                    <td class="five">106</td>
+                                    <td class="five">93.7</td>
+                                </tr>
+                                <tr>
+                                    <td class="five" rowspan="3">中</td>
+                                    <td class="five">25.4</td>
+                                    <td class="five" rowspan="3">25.5</td>
+                                    <td class="five">24.5</td>
+                                    <td class="five">25.5</td>
+                                    <td class="five">96.2</td>
+                                    <td class="five">100</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">25.3</td>
+                                    <td class="five">25.2</td>
+                                    <td class="five">24.7</td>
+                                    <td class="five">98.9</td>
+                                    <td class="five">97.0</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">25.7</td>
+                                    <td class="five">26.1</td>
+                                    <td class="five">26.0</td>
+                                    <td class="five">103</td>
+                                    <td class="five">102</td>
+                                </tr>
+                                <tr>
+                                    <td class="five" rowspan="3">高</td>
+                                    <td class="five">16.7</td>
+                                    <td class="five" rowspan="3">16.6</td>
+                                    <td class="five">16.0</td>
+                                    <td class="five">17.0</td>
+                                    <td class="five">96.3</td>
+                                    <td class="five">103</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">16.8</td>
+                                    <td class="five">16.3</td>
+                                    <td class="five">16.6</td>
+                                    <td class="five">98.5</td>
+                                    <td class="five">100</td>
+                                </tr>
+                                <tr>
+                                    <td class="five">16.2</td>
+                                    <td class="five">16.5</td>
+                                    <td class="five">17.1</td>
+                                    <td class="five">99.6</td>
+                                    <td class="five">103</td>
+                                </tr>
+                            </table>
+                        </p> 
+                        
+                        
+                        
+
+ <!------------------------------------------------------最终结论------------------------------------------------------>                  
+                        {% if resultEnd_conclusion %}
+                            <p class="four" style="text-align:left;">{{titleindex|add:1}}. 结论（Conclusion）</p>   
+                            <p class="five" > {{resultEnd_conclusion.0}}</p>
+                        {% endif %} 
+                        <br><br> 
+                        
+                        <table cellpadding="8">
+                            <tr>
+                                <td class="end">&#12288</td>
+                                <td class="end">报告编辑人：<input type="text" id="Report_Investigator" name="Report.Investigator"></td>
+                                <td class="end">&#12288&#12288&#12288&#12288</td>
+                                <td class="end">日期(Date)：<input type="date" id="Report_InvestigationDate" name="Report.InvestigationDate"></td>
+                            </tr>
+                            <tr>
+                                <td class="end">&#12288</td>
+                                <td class="end">报告审核人：<input type="text" id="Report_Approver" name="Report.Approver"></td>
+                                <td class="end">&#12288&#12288&#12288&#12288</td>
+                                <td class="end">日期(Date)：<input type="date" id="Report_ApprovalDate" name="Report.ApprovalDate"></td>
+                            </tr>
+                            <tr>
+                                <td class="end">&#12288</td>
+                                <td class="end">报告批准人：<input type="text" id="Report_Approver" name="Report.Approver"></td>
+                                <td class="end">&#12288&#12288&#12288&#12288</td>
+                                <td class="end">日期(Date)：<input type="date" id="Report_ApprovalDate" name="Report.ApprovalDate"></td>
+                            </tr>
+                        </table>
+               
+                    <br><br>
+                    <p class="row">
+                        <p class="col-md-11 d-print-none">
+                            <input type="button" id="edit" value="编辑"" class="btn btn-danger" onclick=" edit()">
+                        </p>
+                        <p class="col-md-1 d-print-none">
+                            <input type="button" id="print" value="打印" class="btn btn-danger" onclick="printPage()">
+                        </p>
+                    </p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    </body>
+
+    
+    <!--需增加js设置不打印末尾两页空白页的代码-->
+    <script language="javascript">
+        function printPage() {
+            // document.getElementsByID("edit").removeAttribute("hidden");
+            document.body.style = "padding-top: 0mm;";  //打印时把首页上方边距调为0，必须点击打印按钮才可以
+            window.print();
+            document.body.style = "";
+        }
+
+        function edit(){
+            javascript:document.body.contentEditable='true';document.designMode='on'; void 0;
+            alert("进入编辑状态,编辑完毕后无需刷新页面,直接打印即可")
+        }
+
+        let english_title = "{{ english_title }}"; //英文标题
+        let chinese_title = "{{ chinese_title }}"; //中文标题
+        let h = 889;  //每页纸的高度，单页A4纸总高度（不同的浏览器打印高度不一致，根据自己需求调整）
+        let bodyEle = $('body');
+        let bodyHeight = bodyEle.height(); //获取页面总长度 
+        let count = Math.ceil(bodyHeight/h); //获取页数
+        console.log(count);
+        console.log(bodyHeight);
+
+        //动态添加页码 通过绝对定位
+        for(let i = 0; i < count; i++){
+            var topValue1 = Number(h * (i + 1)) + Number(22* i) + Number(211* (i+1)) - Number(25);
+            var topValue2 = Number(h * (i + 1)) + Number(22* i) + Number(211* (i+1)) - Number(10);
+                
+            let foot_englishtitle = '<div class="tfoot d-none d-print-block" id="englishtitle" style="position:absolute;top:' + topValue1 + 'px;left:40px;">' + english_title + '</div>';
+            let foot_chinesetitle = '<div class="tfoot d-none d-print-block" style="position:absolute;top:' + topValue2 + 'px;left:40px;">' + chinese_title + '</div>';  
+            let foot_PAGE = '<div class="tfoot d-none d-print-block" style="position:absolute;top:' + topValue2 + 'px;right:60px;">' + 'PAGE' +' '+ (i + 1) + '/' + count+ '</div>';  
+            
+
+            bodyEle.append(foot_PAGE)
+            bodyEle.append(foot_englishtitle);
+            bodyEle.append(foot_chinesetitle);           
+        }
+    </script>
+    {% endblock %}

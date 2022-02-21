@@ -1,0 +1,132 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+    <style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+    th{
+        text-align: center;
+    }
+    td{
+        text-align: center;
+    }
+    p{
+        text-align: center;
+    }
+    </style>
+
+    <body>
+        <div class="container">
+            <form action="{% url 'AMR_conclusionsave' %}" method="POST" >
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{group}}" name="group">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{AMRid}}" name="id">
+                <h2>AMR最终结论表格</h2>
+                <br>
+                    <table border="1" cellpadding="16"  id="table" >
+                        <tr>
+                            <th>化合物</th>
+                            <th>方法检出限LOD({{Unit}})</th>
+                            <th>方法定量限LOQ({{Unit}})</th>
+                            <th>分析测量范围AMR({{Unit}})</th>
+                            <th>操作</th>
+                        </tr>
+
+                        <tr>
+                            <td>X</td>
+                            <td>1.23</td>
+                            <td>2.34</td>
+                            <td>2.34~2340</td>
+                            <td>参考示例</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><input class="compound" type="text" style="width:70px;" name="compound"></td>
+                            <td><input class="lod" type="text" style="width:70px;" name="lod"></td>
+                            <td><input class="loq" type="text" style="width:70px;" name="loq"></td>
+                            <td><input class="amr" type="text" style="width:100px;" name="amr"></td>
+                            <td><a href="javascript:;" onclick="del(this);">删除</a></td> <!--在删除按钮上添加点击事件 -->
+                        </tr>
+                    
+                    </table>
+                    <input class="btn btn-primary" type="button" value="点击添加另一个化合物" onclick="add()" /> <!--在添加按钮上添加点击事件 -->
+                    <br><br><br>
+                    <input class="btn btn-danger" type="submit" value="保存"/>
+            </form>
+        </div>
+    </body>
+    
+    <center>
+    <script type="text/javascript">
+
+        window.onload = function(){
+            var tr=document.getElementsByTagName("tr");
+            for(var i= 0;i<tr.length;i++)
+            {
+            bgcChange(tr[i]);
+            }
+            // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色。
+            }
+            function bgcChange(obj)
+            {
+            obj.onmouseover=function(){
+            obj.style.backgroundColor="#D8D8D8";
+            }
+            obj.onmouseout=function(){
+            obj.style.backgroundColor="#fff";
+            }
+        }
+        
+        // 编写一个函数，供添加按钮调用，动态在表格的最后一行添加子节点；
+        var num=1;
+        function add(){
+        num++;
+        var tr=document.createElement("tr");
+        var name=document.createElement("td");
+        var lod=document.createElement("td");
+        var loq=document.createElement("td");
+        var amr=document.createElement("td");
+        name.setAttribute('align', 'center');
+        lod.setAttribute('align', 'center');
+        loq.setAttribute('align', 'center');
+        amr.setAttribute('align', 'center');
+        name.innerHTML='<input class="compound" type="text" style="width:70px;" name="compound">';
+        lod.innerHTML='<input class="lod" type="text" style="width:70px;" name="lod">';
+        loq.innerHTML='<input class="loq" type="text" style="width:70px;" name="loq">';
+        amr.innerHTML='<input class="amr" type="text" style="width:100px;" name="amr">';
+        var del=document.createElement("td");
+        del.setAttribute('align', 'center');
+        del.innerHTML="<a href='javascript:;' onclick='del(this)' >删除</a>";
+        var tab=document.getElementById("table");
+        tab.appendChild(tr);
+        tr.appendChild(name);
+        tr.appendChild(lod);
+        tr.appendChild(loq);
+        tr.appendChild(amr);
+        tr.appendChild(del);
+        var tr = document.getElementsByTagName("tr");
+        for(var i= 0;i<tr.length;i++)
+        {
+        bgcChange(tr[i]);
+        }
+        }
+        
+        // 创建删除函数
+        function del(obj)
+        {
+        var tr=obj.parentNode.parentNode;
+        tr.parentNode.removeChild(tr);
+        }
+ 
+        </script>
+        </center>
+{% endblock %}
+
+

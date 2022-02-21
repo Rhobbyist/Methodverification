@@ -1,0 +1,79 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    {% comment %} /*table表格宽度固定，同时td内容过长也不会被撑开*/ {% endcomment %}
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        width:250px;
+    } 
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+    .timeinput{
+        width:50px;
+        text-align:center;
+    }
+</style>
+
+    <body>
+        <div class="container">    
+            <h2>参考区间验证结果</h2>
+            <br>
+            <div class="row">
+                {%for key,value in Result.Referenceinterval_dict.items %}
+                    <div class="col-md-4">
+                        <table border="1" cellpadding="8" id="table">
+                        <caption><h3>{{key}}</h3></caption>                      
+                            <tr>
+                                <th width="40%">实验号</th>
+                                <th width="60%">结果<br/>({{Result.Unit}})</th>
+                            </tr>           
+                            {% for r in value %}
+                                {% comment %} 判断是否为最后一次循环，是的话实验号为“参考区间” {% endcomment %}
+                                {% if forloop.last %}
+                                    <tr> 
+                                        <td>参考区间</td>                                            
+                                        <td>{{r}}</td>
+                                    </tr> 
+                                {% else %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>                                            
+                                        <td>{{r}}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </table>
+                        <br>
+                    </div> 
+                {% endfor %}                               
+            </div>
+        </div>
+
+    </body>
+    {% endblock %}
+
+    {% block scripts %}
+
+    {% endblock %}

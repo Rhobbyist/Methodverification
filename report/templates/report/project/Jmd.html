@@ -1,0 +1,140 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+        font-size: 14px;
+    }
+
+    td{
+        text-align: center;
+        font-size: 14px;
+    }
+</style>
+
+    <body>
+        {% if Result.nrows >= Result.lownumber %}
+            <div class="container">
+                <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+
+                    {% comment %} cv上限 {% endcomment %}
+                    <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV">
+
+                    <h2>{{Result.namejmd}}验证结果</h2>
+                    <br>
+                    <div class="row">
+                        {%for key,value in Result.jmd_dict.items %}
+                            <div class="col-md-4">
+                                <table border="1" cellpadding="8" id="table">
+                                <caption><h3>{{key}}</h3></caption>
+                                {% if Result.lownum %}                         
+                                    <tr>
+                                        <th width="20%">实验号</th>
+                                        <th width="40%">中浓度<br/>(({{Result.Unit}}))</th>
+                                        <th width="40%">高浓度<br/>({{Result.Unit}})</th>
+                                    </tr> 
+                                {% elif Result.mediannum %}
+                                    <tr>
+                                        <th width="20%">实验号</th>
+                                        <th width="40%">低浓度<br/>({{Result.Unit}})</th>
+                                        <th width="40%">高浓度<br/>({{Result.Unit}})</th>             
+                                    </tr> 
+                                {% elif Result.highnum %}
+                                    <tr>
+                                        <th width="20%">实验号</th>
+                                        <th width="40%">低浓度<br/>({{Result.Unit}})</th>
+                                        <th width="40%">中浓度<br/>({{Result.Unit}})</th>             
+                                    </tr> 
+                                {% else %}
+                                    <tr>
+                                        <th width="19%">实验号</th>
+                                        <th width="27%">低浓度<br/>({{Result.Unit}})</th>
+                                        <th width="27%">中浓度<br/>({{Result.Unit}})</th>
+                                        <th width="27%">高浓度<br/>({{Result.Unit}})</th>
+                                    </tr>
+                                {% endif %}            
+                                    {% for r in value %}
+                                        {% comment %} 判断此行是否为cv，是的话添加一个class，方便js中取值判断大小 {% endcomment %}
+                                        {% if r.0 == 'CV(%)' %}
+                                            <tr>
+                                                {% for c in r %}                                              
+                                                    <td class="CV">{{c}}</td>
+                                                {% endfor %}
+                                            </tr>         
+                                        {% else %}
+                                            <tr>
+                                                {% for c in r %}                                              
+                                                    <td>{{c}}</td>
+                                                {% endfor %}
+                                            </tr> 
+                                        {% endif %}
+                                    {% endfor %}
+                                </table>
+                                <br>
+                            </div> 
+                        {% endfor %}                               
+                    </div>
+                <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                </form >
+                <br>
+                <form action="{% url 'returnback' %}" method="POST">
+                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                </form> 
+                <br><br><br>       
+            </div>
+        {% else%}
+            <h1 class="alert alert-danger">数据量不足{{Result.lownumber}}个，请补充数据!</h1>
+        {% endif %}
+
+    </body>
+    <script>
+        // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
+        window.onload = function(){
+            var tr=document.getElementsByTagName("tr");
+            for(var i= 0;i<tr.length;i++){
+                bgcChange(tr[i]);
+            } 
+
+            function bgcChange(obj){
+                obj.onmouseover=function(){
+                    obj.style.backgroundColor="#D8D8D8";
+                }
+                obj.onmouseout=function(){
+                    obj.style.backgroundColor="#fff";
+                }
+            }
+        
+            // js判断cv中是否有大于20的值，有的话设置为特殊字体:粗体红色 
+            var CVlist = document.getElementsByClassName("CV");
+            var maxCV = document.getElementById("maxCV")   {% comment %} 回收率上限 {% endcomment %}
+
+            // {% comment %} js中，th通过.innerText获取元素的值，input框通过.value获取元素的值 {% endcomment %}
+            for(let i=0; i<CVlist.length; i++){
+                if (CVlist[i].innerText=="CV(%)"){
+                    // pass
+                } else{
+                    if(parseFloat(CVlist[i].innerText) > parseFloat(maxCV.value)){
+                        CVlist[i].style.color="red"
+                        CVlist[i].style.fontWeight=700
+                    } 
+                }          
+            }
+
+        }
+    </script>
+{% endblock %}
+

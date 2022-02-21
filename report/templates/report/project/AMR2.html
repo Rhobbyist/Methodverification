@@ -1,0 +1,300 @@
+{% extends "report/layout.html" %} 
+{% block content %}
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+    th{
+        text-align: center;
+    }
+    td{
+        text-align: center;
+    }
+    p{
+        text-align: center;
+    }
+
+    input{
+        border: 1px solid #ccc;
+        padding: 7px 0px;
+        border-radius: 3px;
+        padding-left:5px;
+        /* -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075); */
+        -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+        -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+        transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+</style>
+
+    <body>
+        <div class="container">
+            <form action="{% url 'AMR2save' %}" method="POST" >        
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{group}}" name="group">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{dicAMR.objfile}}" name="objfile">
+                <input hidden = "hidden" value="{{dicAMR.AMR_dict}}" name="dicAMR">
+                <input hidden = "hidden" value="{{dicAMR.picturenum}}" name="picturenum">
+                <input hidden = "hidden" value="{{dicAMR.id}}" name="id">  
+                <input hidden = "hidden" class="AMRjudgenum" name="AMRjudgenum">  
+                <input hidden = "hidden" value="{{dicAMR.lowvalue}}" name="lowvalue">
+                <input hidden = "hidden" value="{{dicAMR.upvalue}}" name="upvalue">
+                <input hidden = "hidden" value="{{dicAMR.cv}}" name="cv"> 
+                <h2>AMR验证结果</h2>
+                    {%for key,value in dicAMR.AMR_dict.items %}               
+                        <table border="1" cellpadding="12" align="center">
+                            <caption><h4>{{key}}验证结果</h4></caption>
+                            <tr>
+                                <th width="16.66%">浓度序号</th>
+                                <th width="16.66%">理论浓度({{dicAMR.Unit}})</th>
+                                <th width="16.66%">检测值({{dicAMR.Unit}})</th>
+                                <th width="16.66%">回收率（%）</th>
+                                <th width="16.66%">平均回收率（%）</th>
+                                <th width="16.66%">检测值CV（%）</th>
+                            </tr>
+                            {%for c,r in value.items %}
+                            <tr>
+                                <td rowspan="6">{{c}}</td> 
+                                <td rowspan="6"><input class="theoryconc" type="text" style="width:80px;" name="theoryconc{{forloop.counter}}"></td>
+                                <td><span class="calconc1">{{r.0}}</span></td>
+                                <td><input class="recycle1" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_one{{forloop.counter}}" readonly></td>
+                                <td rowspan="6"><input class="meanrecycle" type="text" style="width:80px;border-style:none;text-align:center;" name="meanrecycle{{forloop.counter}}" readonly></td>
+                                <td rowspan="6"><input class="CV" type="text" style="width:80px;border-style:none;text-align:center;" name="CV{{forloop.counter}}" readonly></td>
+                            </tr>
+                            <tr>
+                                <td><span class="calconc2">{{r.1}}</span></td>
+                                <td><input class="recycle2" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_two{{forloop.counter}}" readonly></td>
+                            </tr>
+                            <tr>
+                                <td><span class="calconc3">{{r.2}}</span></td>
+                                <td><input class="recycle3" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_three{{forloop.counter}}" readonly></td>
+                            </tr>
+                            <tr>
+                                <td><span class="calconc4">{{r.3}}</span></td>
+                                <td><input class="recycle4" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_four{{forloop.counter}}" readonly></td>
+                            </tr>
+                            <tr>
+                                <td><span class="calconc5">{{r.4}}</span></td>
+                                <td><input class="recycle5" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_five{{forloop.counter}}" readonly></td>
+                            </tr>
+                            <tr>
+                                <td><span class="calconc6">{{r.5}}</span></td>
+                                <td><input class="recycle6" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_six{{forloop.counter}}" readonly></td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                        <br>
+                    {% endfor %}  
+                          
+                    <div>
+                        {% for obj in dicAMR.objs_verify %}
+                            <p><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></p>
+                            <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
+                                <textarea rows="1" cols="120" name = "picturename">
+                                </textarea>
+                            </div>
+                            <br> 
+                        {% endfor %}        
+                    </div>
+
+                    <div><input id="submit" type="submit" value="保存" hidden /></div> 
+            </form>
+            <div><button class="btn btn-primary" id="run" align="center" onclick="myFunction()" >运行</button></div>  
+        </div>
+
+    </body>
+    {% endblock %}
+
+
+    {% block scripts %}
+    <script>
+        // window.onload = function(){
+        //     var td=document.getElementsByTagName("td");
+        //     for(var i= 0;i<td.length;i++)
+        //     {
+        //     bgcChange(td[i]);
+        //     }
+            
+        //     }
+        //     function bgcChange(obj)
+        //     {
+        //     obj.onmouseover=function(){
+        //     obj.style.backgroundColor="#D8D8D8";
+        //     }
+        //     obj.onmouseout=function(){
+        //     obj.style.backgroundColor="#fff";
+        //     }
+        // }
+
+        function myFunction() {
+
+            lowvalue = parseFloat(document.getElementsByName("lowvalue")[0].value);  //后端传递的回收率下限
+            upvalue = parseFloat(document.getElementsByName("upvalue")[0].value);    //后端传递的回收率上限
+            cv = parseFloat(document.getElementsByName("cv")[0].value);    //后端传递的回收率上限
+
+            AMRjudgenum = document.getElementsByClassName("AMRjudgenum")[0]
+
+            theoryconc = document.getElementsByClassName("theoryconc")
+            calconc1 = document.getElementsByClassName("calconc1")
+            calconc2 = document.getElementsByClassName("calconc2")
+            calconc3 = document.getElementsByClassName("calconc3")
+            calconc4 = document.getElementsByClassName("calconc4")
+            calconc5 = document.getElementsByClassName("calconc5")
+            calconc6 = document.getElementsByClassName("calconc6")
+
+            recycle1 = document.getElementsByClassName("recycle1")
+            recycle2 = document.getElementsByClassName("recycle2")
+            recycle3 = document.getElementsByClassName("recycle3")
+            recycle4 = document.getElementsByClassName("recycle4")
+            recycle5 = document.getElementsByClassName("recycle5")
+            recycle6 = document.getElementsByClassName("recycle6")
+
+            meanrecycle = document.getElementsByClassName("meanrecycle")
+            CV = document.getElementsByClassName("CV")
+
+            var judgenum = 0
+
+            for(let i=0; i<theoryconc.length; i++)
+            {   
+                var arrayrecycle=[]
+                var calconc=[]
+                var sum = function(x,y){ return x+y;};　　//求和函数
+                var square = function(x){ return x*x;};　　//数组中每个元素求它的平方
+                       
+                if (parseFloat((calconc1[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc1[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {
+                    recycle1[i].value = (calconc1[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle1[i].value = (calconc1[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle1[i].style.color="red"
+                }
+                
+                if (parseFloat((calconc2[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc2[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {
+                    recycle2[i].value = (calconc2[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle2[i].value = (calconc2[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle2[i].style.color="red"
+                }
+
+                if (parseFloat((calconc3[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc3[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {    
+                    recycle3[i].value = (calconc3[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle3[i].value = (calconc3[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle3[i].style.color="red"
+                }
+
+                if (parseFloat((calconc4[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc4[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {
+                    recycle4[i].value = (calconc4[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle4[i].value = (calconc4[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle4[i].style.color="red"
+                }
+
+                if (parseFloat((calconc5[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc5[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {   
+                    recycle5[i].value = (calconc5[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle5[i].value = (calconc5[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle5[i].style.color="red"
+                }
+
+                if (parseFloat((calconc6[i].innerHTML/theoryconc[i].value*100).toFixed(1))>=lowvalue && parseFloat((calconc6[i].innerHTML/theoryconc[i].value*100).toFixed(1))<=upvalue) 
+                {    
+                    recycle6[i].value = (calconc6[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    recycle6[i].value = (calconc6[i].innerHTML/theoryconc[i].value*100).toFixed(1)
+                    recycle6[i].style.color="red"
+                }
+
+                arrayrecycle.push(parseFloat(recycle1[i].value))
+                arrayrecycle.push(parseFloat(recycle2[i].value))
+                arrayrecycle.push(parseFloat(recycle3[i].value))
+                arrayrecycle.push(parseFloat(recycle4[i].value))
+                arrayrecycle.push(parseFloat(recycle5[i].value))
+                arrayrecycle.push(parseFloat(recycle6[i].value))
+                
+                if (parseFloat((arrayrecycle.reduce(sum)/arrayrecycle.length).toFixed(1))>=lowvalue && parseFloat((arrayrecycle.reduce(sum)/arrayrecycle.length).toFixed(1))<=upvalue) 
+                {
+                    meanrecycle[i].value = (arrayrecycle.reduce(sum)/arrayrecycle.length).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    meanrecycle[i].value = (arrayrecycle.reduce(sum)/arrayrecycle.length).toFixed(1)
+                    meanrecycle[i].style.color="red"
+                }
+
+            
+                calconc.push(parseFloat(calconc1[i].innerHTML))
+                calconc.push(parseFloat(calconc2[i].innerHTML))
+                calconc.push(parseFloat(calconc3[i].innerHTML))
+                calconc.push(parseFloat(calconc4[i].innerHTML))
+                calconc.push(parseFloat(calconc5[i].innerHTML))
+                calconc.push(parseFloat(calconc6[i].innerHTML))
+                
+                var mean = calconc.reduce(sum)/calconc.length
+                var deviations = calconc.map(function(x){return x-mean;})
+
+                if (parseFloat(Math.sqrt(deviations.map(square).reduce(sum)/(calconc.length-1)).toFixed(1))<cv) 
+                {
+                    CV[i].value = Math.sqrt(deviations.map(square).reduce(sum)/(calconc.length-1)).toFixed(1)
+                }
+                else
+                {   
+                    judgenum = judgenum+1
+                    CV[i].value = Math.sqrt(deviations.map(square).reduce(sum)/(calconc.length-1)).toFixed(1)+"(不通过！)"
+                }      
+            }
+            
+            AMRjudgenum.value = judgenum
+
+            // submit = document.getElementById("submit");
+            // submit.removeAttribute("hidden");
+            // submit.addClass("btn btn-danger");
+            $("#submit").removeAttr("hidden").addClass("btn btn-danger");
+            $("#run").attr("hidden","hidden").removeClass("btn btn-primary");
+
+            // run = document.getElementById("run"); 
+            // run.removeClass("btn btn-danger");      
+            // run.setAttribute("hidden", "hidden");           
+                       
+        }
+    </script>
+    {% endblock %}
+

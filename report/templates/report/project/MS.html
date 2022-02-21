@@ -1,0 +1,55 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    tr{text-align:center;}
+    td{text-align:center;}
+    textarea{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    textarea:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+</style>
+
+    <body>
+        <div class="container">    
+            <form action="{% url 'MSsave' %}" method="POST" >
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{group}}" name="group">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{MS.id}}" name="id">
+                <h2>基质特异性验证结果</h2>
+                    <div>
+                        <br>
+                        {% for obj in MS.objs_verify %}
+                            <p align="center"><img src="/media/{{ obj.img }}" alt="" width="700px" height="400px"></p>
+                            <div align="center" style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;"> 请输入图名: 
+                                <textarea rows="1" cols="120" name = "picturename">
+                                </textarea>
+                            </div>
+                            <br> 
+                            <br><br>
+                        {% endfor %}  
+                        <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;"> 请输入结论: 
+                            <textarea rows="5" cols="120" name = "conclusion">
+                            </textarea>
+                        </div>
+                    </div> 
+                    <br>
+                    <div><input class="btn btn-danger" type="submit" value="保存"></div> 
+            </form>
+        </div>
+
+    </body>
+    {% endblock %}
+

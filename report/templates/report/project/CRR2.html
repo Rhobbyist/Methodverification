@@ -1,0 +1,93 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+    <body>
+        <div class="container">
+            <form action="{% url 'CRRsave' %}" method="POST" >
+                <input hidden = "hidden" value="{{CRRid}}" name="id">
+                <h2>临床可报告范围</h2>
+                <br>
+                    <table border="1" cellpadding="16"  id="table" >
+                        <tr>
+                            <th class="text-center">化合物</th>
+                            <th class="text-center">临床可报告范围(CRR)</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+
+                        <tr>
+                            <td align="center">X</td>
+                            <td align="center">1~100mg/L</td>
+                            <td>参考示例</td>
+                        </tr>
+                        
+                        <tr>
+                            <td align="center"><input class="compound" type="text" style="width:70px;" name="compound"></td>
+                            <td align="center"><input class="crr" type="text" style="width:150px;" name="crr"></td>
+                            <td align="center"><a href="javascript:;" onclick="del(this);">删除</a></td> <!--在删除按钮上添加点击事件 -->
+                        </tr>
+                    
+                    </table>
+                    <input class="btn btn-primary" type="button" value="点击添加另一个化合物" onclick="add()" /> <!--在添加按钮上添加点击事件 -->
+                    <br><br><br>
+                    <input class="btn btn-danger" type="submit" value="保存"/>
+            </form>
+        </div>
+    </body>
+    
+    <center>
+    <script type="text/javascript">
+
+        window.onload = function(){
+        var tr=document.getElementsByTagName("tr");
+        for(var i= 0;i<tr.length;i++)
+        {
+        bgcChange(tr[i]);
+        }
+        // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色。
+        }
+        function bgcChange(obj)
+        {
+        obj.onmouseover=function(){
+        obj.style.backgroundColor="#D8D8D8";
+        }
+        obj.onmouseout=function(){
+        obj.style.backgroundColor="#fff";
+        }
+        }
+        
+        // 编写一个函数，供添加按钮调用，动态在表格的最后一行添加子节点；
+        var num=1;
+        function add(){
+        num++;
+        var tr=document.createElement("tr");
+        var name=document.createElement("td");
+        var crr=document.createElement("td");
+        name.setAttribute('align', 'center');
+        crr.setAttribute('align', 'center');
+        name.innerHTML='<input class="compound" type="text" style="width:70px;" name="compound">';
+        crr.innerHTML='<input class="crr" type="text" style="width:150px;" name="crr">';
+        var del=document.createElement("td");
+        del.setAttribute('align', 'center');
+        del.innerHTML="<a href='javascript:;' onclick='del(this)' >删除</a>";
+        var tab=document.getElementById("table");
+        tab.appendChild(tr);
+        tr.appendChild(name);
+        tr.appendChild(crr);
+        tr.appendChild(del);
+        var tr = document.getElementsByTagName("tr");
+        for(var i= 0;i<tr.length;i++)
+        {
+        bgcChange(tr[i]);
+        }
+        }
+         
+        // 创建删除函数
+        function del(obj)
+        {
+        var tr=obj.parentNode.parentNode;
+        tr.parentNode.removeChild(tr);
+        }
+        </script>
+        </center>
+{% endblock %}
+
+

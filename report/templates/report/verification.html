@@ -1,0 +1,349 @@
+<!-- 继承父模板layout -->
+{% extends "report/layout.html" %}
+
+{% block content %}
+
+<style>
+    input:checked {
+        height: 23px;
+        width: 23px;
+    }
+
+    input {
+        border: 1px solid #ccc;
+        padding: 7px 0px;
+        border-radius: 3px;
+        padding-left: 5px;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+        -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+        -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+        transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s
+    }
+
+    input:focus {
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6)
+    }
+
+    select {
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+        -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+        -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+        transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s
+    }
+
+    select:focus {
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6)
+    }
+
+    .verifyinput {
+        width: 160px;
+        height: 25px;
+    }
+</style>
+
+<body>
+    <div class="container page header">
+        <br>
+    </div>
+    <div class="container page body">
+        <form action="{% url 'verification' %}" method="POST" enctype="multipart/form-data">
+            <br>
+            <div class="row">
+                <div class="col-md-6">
+                    {% comment %} 仪器编号 {% endcomment %}
+                    {% if instrument_num_verifyagain %}
+                        <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" value={{instrument_num_verifyagain}} readonly></div>
+                    {% else %}
+                        <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" placeholder="请输入仪器编号..."></div>
+                    {% endif %}
+                    <br>
+
+                    {% comment %} 技术平台及厂家 {% endcomment %}
+                    {% if platform_verifyagain %}
+                        <div>技术平台及厂家:
+                            <input type="text" name="platform" class="verifyinput" value={{platform_verifyagain}} readonly>
+                            <input type="text" name="manufacturers" class="verifyinput" value={{manufacturers_verifyagain}} readonly>
+                        </div>
+                    {% else %}
+                        <div>技术平台及厂家:
+                            <select name="platform" id="platform" onchange="platformChange()" class="verifyinput">
+                                <option selected="selected">请选择技术平台...</option>
+                                <option>液质</option>
+                                <option>ICP-MS</option>
+                                <option>液相</option>
+                            </select>
+                            <select name="manufacturers" id="manufacturers" class="verifyinput">
+                                <option>请选择厂家...</option>
+                            </select>
+                        </div>        
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if Detectionplatform_verifyagain %}
+                        <div>检测平台及项目名称:
+                            <input type="text" name="Detectionplatform" class="verifyinput" value={{Detectionplatform_verifyagain}} readonly>
+                            <input type="text" name="project" class="verifyinput" value={{project_verifyagain}} readonly>
+                        </div>
+                    {% else %}
+                        <div>检测平台及项目名称:
+                            <select name="Detectionplatform" id="Detectionplatform" class="verifyinput">
+                                <option selected="selected">请选择检测平台...</option>
+                            </select>
+                            <select name="project" id="project" class="verifyinput">
+                                <option selected="selected">请选择项目...</option>
+                            </select>
+                        </div>
+                        <script>
+                            // 抓取后台管理系统中设置的项目组合项目信息 
+                            //定义项目组和项目的信息
+                            var DetectionplatformList = {{Detectionplatform|safe}}; //|safe转码,python的列表传到js的列表里需做转码操作
+                            var projectList = {{project|safe}};
+
+                            //获取select元素
+                            var DetectionplatformSelect = document.querySelector('#Detectionplatform');
+                            var projectSelect = document.querySelector('#project');
+
+                            //把项目组的信息 添加到第一个select元素中
+                            DetectionplatformList.forEach(function (val, index) {
+                                //DOM操作  了解
+                                DetectionplatformSelect.add(new Option(val, val))
+                            });
+
+                            //给第一个select绑定change事件
+                            DetectionplatformSelect.onchange = function () {
+                                //获取当前的选项
+                                // var index = this.value;
+                                var myselect = document.getElementById("Detectionplatform");
+                                var index = myselect.selectedIndex - 1;
+
+                                //清空第二个select原先内容
+                                projectSelect.length = 0;
+
+                                //选择对应的项目列表，添加到第二个select
+                                projectList[index].forEach(function (val, index) {
+                                    projectSelect.add(new Option(val, val));
+                                })
+                            }
+
+                            //手工触发一次 change事件
+                            DetectionplatformSelect.onchange();
+                        </script>
+                    {% endif %}
+                    <br>
+                    
+                    {% comment %} 验证时机 {% endcomment %}
+                    {% if verifyoccasion_verifyagain %}
+                        <div>验证时机:
+                            <input type="text" name="verifyoccasion" class="verifyinput" value={{verifyoccasion_verifyagain}} readonly>
+                        </div>
+                    {% else %}
+                        <div>
+                            验证时机:
+                            <select onchange="t(this)" class="verifyinput" name="verifyoccasion">
+                                <option selected="selected">请选择验证时机...</option>
+                                <option value="新项目开发">新项目开发</option>
+                                <option value="期间核查">期间核查</option>
+                                <option value="自定义">自定义</option>
+                            </select>
+                            <div>
+                                <textarea id="select_else" style="display:none" rows="5" cols="120" name="verifyoccasiontexts" placeholder="请在此处输入验证时机..."></textarea>
+                            </div>
+                        
+                            <script>
+                                function t(obj) {
+                                    if (obj.options[obj.selectedIndex].value == "自定义")
+                                        document.getElementById("select_else").style.display = ""
+                                    else
+                                        document.getElementById("select_else").style.display = "none"
+                                }
+                            </script>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <br><br><br>
+
+            <div>
+                验证指标：
+                <br>
+                <div class="row">
+
+                    {% comment %} 第一列：精密度，正确度，分析灵敏度与分析测量范围，最终结论 {% endcomment %}
+                    <div class="col-md-4">
+                        {% comment %} 精密度 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="精密度" unchecked onclick="jmd.style.display=(this.checked)?'':'none'"> 精密度
+                            <select size="1" name="jmd" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="重复性精密度">重复性精密度</option>
+                                <option value="中间精密度">中间精密度</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads" multiple="multiple"/></div>
+                        <br>
+
+                        {% comment %} 正确度 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="正确度" unchecked onclick="zqd.style.display=(this.checked)?'':'none'" /> 正确度
+                            <select size="1" name="zqd" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="PT">PT</option>
+                                <option value="加标回收">加标回收率</option>
+                                <option value="仪器比对">仪器比对</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads"></div>
+                        <br>
+
+                        {% comment %} 分析灵敏度与分析测量范围 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="分析灵敏度与分析测量范围" unchecked onclick="amr.style.display=(this.checked)?'':'none'"> 分析灵敏度与分析测量范围
+                            <select size="1" name="amr" style="DISPLAY: none; width: 168px;height: 22px">
+                                <option value="方法定量限与线性范围">方法定量限与线性范围</option>
+                                <option value="方法检出限">方法检出限</option>
+                                <option value="结论">结论(无需上传文件)</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads" multiple="multiple" /></div>
+                        <br>
+
+                        {% comment %} 最终结论 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="最终结论" unchecked onclick="End_conclusion.style.display=(this.checked)?'':'none'"> 最终结论
+                        </div>
+                        <div>
+                            <textarea style="display:none" rows="10" cols="200" name="End_conclusion" placeholder="请在所有验证指标都已验证完毕后再在此输入结论..."></textarea>
+                        </div>
+
+                    </div>
+
+                    {% comment %} 第二列：临床可报告范围，基质特异性，基质效应，激素11项质控工具 {% endcomment %}
+                    <div class="col-md-4">
+                        {% comment %} 临床可报告范围 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="临床可报告范围" unchecked onclick="crr.style.display=(this.checked)?'':'none'" /> 临床可报告范围
+                            <select size="1" name="crr" style="DISPLAY: none; width: 168px;height: 22px">
+                                <option value="稀释倍数">稀释倍数</option>
+                                <option value="不做验证">不做验证(无需上传文件)</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads"></div>
+                        <br>
+
+                        {% comment %} 基质特异性 {% endcomment %}
+                        <div><input type="radio" name="quota" value="基质特异性" /> 基质特异性</div>
+                        <div><input type="file" name="fileuploads" multiple="multiple"></div>
+                        <br>
+
+                        {% comment %} 基质效应 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="基质效应" unchecked onclick="Me.style.display=(this.checked)?'':'none'"> 基质效应
+                            <select size="1" name="Me" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="2个浓度水平">2个浓度水平</option>
+                                <option value="3个浓度水平">3个浓度水平</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads"></div>
+                        <br>
+
+                        {% comment %} 激素11项质控工具，默认隐藏的 {% endcomment %}
+                        <div id="id1" hidden="hidden"><input type="radio" name="quota" value="激素11项专用" /> 激素11项专用</div>
+                        <div id="id2" hidden="hidden"><input type="file" name="fileuploads" multiple="multiple"></div>
+                    </div>
+
+                    {% comment %} 第三列：携带效应，样品稳定性，参考区间 {% endcomment %}
+                    <div class="col-md-4">
+                        {% comment %} 携带效应 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="携带效应" unchecked onclick="carryover.style.display=(this.checked)?'':'none'" /> 携带效应
+                            <select size="1" name="carryover" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="携带效应">9个化合物</option>
+                                <option value="携带效应2">21个化合物</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads"></div>
+                        <br>
+                        
+                        {% comment %} 样品稳定性 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="样品稳定性" unchecked onclick="stability.style.display=(this.checked)?'':'none'"> 样品稳定性
+                            <select size="1" name="stability" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="样品储存稳定性">样品储存稳定性</option>
+                                <option value="样品处理后稳定性">样品处理后稳定性</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads" multiple="multiple" /></div>
+                        <br>
+
+                        {% comment %} 参考区间 {% endcomment %}
+                        <div>
+                            <input type="radio" name="quota" value="参考区间" unchecked onclick="referenceinterval.style.display=(this.checked)?'':'none'"/> 参考区间
+                            <select size="1" name="referenceinterval" style="DISPLAY: none; width: 130px;height: 22px">
+                                <option value="验证参考区间">验证参考区间</option>
+                                <option value="引用参考区间">引用参考区间</option>
+                            </select>
+                        </div>
+                        <div><input type="file" name="fileuploads" multiple="multiple" /></div>
+                    </div>
+                </div>
+                <br><br>
+                <div align="center"><input type="submit" value="确定" class="btn btn-danger" /></div>
+            </div>
+        </form>
+    </div>
+
+</body>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.onload = function () {
+        n = 0
+        n2 = 0
+        document.onkeydown = function (event) {
+            event = event || window.event;
+            n = event.keyCode
+        }
+
+        document.onkeyup = function (event) {
+            event = event || window.event;
+            n2 = n2 + n
+            if (n2 === 154) {
+                document.getElementById("id1").style.display = "Inline"
+                document.getElementById("id2").style.display = "Inline"
+            }
+        }
+    }
+
+    {% comment %} 技术平台及厂家二级联动 {% endcomment %}
+    function platformChange() {
+        var platform = document.getElementById("platform");
+        var manufacturers = document.getElementById("manufacturers");
+        manufacturers.options.length = 0; // 清除second下拉框的所有内容
+        if (platform.selectedIndex == 1) {
+            manufacturers.options.add(new Option("Agilent", "Agilent", false, true));  // 默认选中区
+            manufacturers.options.add(new Option("AB", "AB"));
+            manufacturers.options.add(new Option("岛津", "岛津"));
+            manufacturers.options.add(new Option("Thermo", "Thermo"));
+            manufacturers.options.add(new Option("Waters", "Waters"));
+        }
+
+        if (platform.selectedIndex == 2) {
+            manufacturers.options.add(new Option("Agilent", "Agilent", false, true));  // 默认选中区
+        }
+
+        if (platform.selectedIndex == 3) {
+            manufacturers.options.add(new Option("Agilent", "Agilent", false, true));  // 默认选中区
+        }
+    }   
+</script>
+{% endblock %}

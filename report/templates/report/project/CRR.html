@@ -1,0 +1,109 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        text-align: center;
+    } 
+    th{
+        text-align: center;
+        width: 20%;
+    }
+    td{
+        text-align: center;
+    }
+</style>
+
+    <body>
+        <div class="container">  
+            <form action="{% url 'verifyagain' %}" method="POST" > 
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">  
+                <h2>稀释倍数验证结果</h2>
+                <br>
+                {% for key,value in dicCRR.CRR_dict.items %}
+                    <table border="1" cellpadding="10" width="100%" >
+                        <caption><h3>{{key}}验证结果</h3></caption>
+                            <tr>
+                                <th>稀释倍数</th>
+                                <th>检测浓度({{dicCRR.Unit}})</th>
+                                <th>检测浓度平均值({{dicCRR.Unit}})</th>
+                                <th>检测浓度CV(%)</th>
+                                <th>回收率(%)</th>
+                            </tr>
+                            {%for r in value %}
+                            <tr>
+                                <td rowspan="5">{{r.0}}</td>
+                                <td>{{r.1}}</td>
+                                <td rowspan="5">{{r.6}}</td>
+                                <td rowspan="5">{{r.7}}</td>
+                                <td>{{r.8}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.2}}</td>
+                                <td>{{r.9}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.3}}</td>
+                                <td>{{r.10}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.4}}</td>
+                                <td>{{r.11}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.5}}</td>
+                                <td>{{r.12}}</td>
+                            </tr>
+                            {% endfor %}
+                    </table>
+                {% endfor %}
+            <br>     
+            <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+            </form>
+            <br>
+            <form action="{% url 'returnback' %}" method="POST">
+                <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+            </form>   
+        </div>
+    </body>
+
+    <script type="text/javascript">
+        // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
+        window.onload = function(){
+            // var tr=document.getElementsByTagName("tr");
+            // for(var i= 0;i<tr.length;i++)
+            // {
+            // bgcChange(tr[i]);
+            // }
+            
+            // }
+            // function bgcChange(obj)
+            // {
+            // obj.onmouseover=function(){
+            // obj.style.backgroundColor="#D8D8D8";
+            // }
+            // obj.onmouseout=function(){
+            // obj.style.backgroundColor="#fff";
+            // }
+        
+        // 将不通过的结果标红，并去除“不通过三个字”
+            var td=document.getElementsByTagName("td");
+            for(var i= 0;i<td.length;i++)
+            {
+                if(td[i].innerHTML.search("(不通过!)") != -1){
+                    td[i].innerHTML=td[i].innerHTML.split("(不通过!)")[0]
+                    td[i].style.color="red"
+                }
+            }
+        }
+    </script>
+    {% endblock %}
+

@@ -1,0 +1,343 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+</style>
+
+    <body>
+        <div class="container">    
+            <form action="{% url 'recyclesave' %}" method="POST" >  
+                <input hidden = "hidden" value="{{dicrecycle.Recycle_enddict}}" name="Recycle_enddict">
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{dicrecycle.lowvalue}}" name="lowvalue">
+                <input hidden = "hidden" value="{{dicrecycle.upvalue}}" name="upvalue">
+                <h2>加标回收率验证结果</h2>
+                {%for key,value in dicrecycle.Recycle_enddict.items %} 
+                    <table border="1" cellpadding="11">
+                        <caption><h3>{{key}}验证结果</h3></caption>
+                        <tr> 
+                            <th colspan="3">病人基质样本</th>
+                            <th colspan="2">加标标准溶液</th>
+                            <th rowspan="2">混合样本体积<br/>(μL)</th>
+                            <th rowspan="2">加标理论值<br/>({{dicrecycle.Unit}})</th>
+                            <th colspan="2">加标后样本</th>
+                            <th rowspan="2" width="10%">回收率（%）</th>
+                        </tr>
+                        <tr>
+                            <th width="10%">样本编号</th>
+                            <th width="10%">平行检测浓度<br/>({{dicrecycle.Unit}})</th>
+                            <th width="10%">均值<br/>({{dicrecycle.Unit}})</th>
+                            <th>浓度<br/>({{dicrecycle.Unit}})</th>
+                            <th>体积<br/>(μL)</th>                           
+                            <th width="10%">浓度水平</th>
+                            <th width="10%">平行检测浓度<br/>({{dicrecycle.Unit}})</th>
+                        </tr>
+                        {%for r,c in value.items %}
+                        <tr>
+                            <td rowspan="9">{{r}}</td> 
+                            <td class="sam_conc1" rowspan="3">{{c.0}}</td>
+                            <td rowspan="9" class="mean" ></td>
+                            <td rowspan="3"><input class="standard_conc1" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="standard_volume1" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="end_volume1" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="theory_conc1" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc1" readonly></td>
+                            <td rowspan="3">low</td>
+                            <td class="end_lowconc1">{{c.3}}</td>
+                            <td><input class="end_lowrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle1" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_lowconc2">{{c.4}}</td>
+                            <td><input class="end_lowrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle2" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_lowconc3">{{c.5}}</td>
+                            <td ><input class="end_lowrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle3" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="sam_conc2" rowspan="3">{{c.1}}</td> 
+                            <td rowspan="3"><input class="standard_conc2" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="standard_volume2" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="end_volume2" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="theory_conc2" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc2" readonly></td>
+                            <td rowspan="3">median</td>
+                            <td class="end_medianconc1">{{c.6}}</td>
+                            <td><input class="end_medianrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle1" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_medianconc2">{{c.7}}</td>
+                            <td><input class="end_medianrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle2" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_medianconc3">{{c.8}}</td>
+                            <td><input class="end_medianrecycle3" id="end_medianrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle3" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="sam_conc3" rowspan="3">{{c.2}}</td> 
+                            <td rowspan="3"><input class="standard_conc3" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="standard_volume3" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="end_volume3" type="text" style="width:60px;" onkeyup="myFunction()"></td>
+                            <td rowspan="3"><input class="theory_conc3" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc3" readonly></td>
+                            <td rowspan="3">high</td>
+                            <td class="end_highconc1">{{c.9}}</td>
+                            <td><input class="end_highrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle1" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_highconc2">{{c.10}}</td>
+                            <td><input class="end_highrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle2" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="end_highconc3">{{c.11}}</td>
+                            <td><input class="end_highrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle3" readonly></td>
+                        </tr>
+                        {% endfor %}
+                    </table>  
+                {% endfor %}      
+                <br>
+                <div><input class="btn btn-primary" id="submit" type="submit" value="保存" hidden /></div>     
+            </form>
+            {% comment %} <div><button class="btn btn-primary" id="run" align="center" onclick="myFunction()" >运行</button></div>   {% endcomment %}
+        </div>
+    </body>
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        window.onload = function() {
+            
+            sam_conc1 = document.getElementsByClassName("sam_conc1");
+            sam_conc2 = document.getElementsByClassName("sam_conc2");
+            sam_conc3 = document.getElementsByClassName("sam_conc3");
+            mean = document.getElementsByClassName("mean");
+   
+            for (var i = 0; i<mean.length; i++){
+                var sum = 0;
+                sum += parseFloat(sam_conc1[i].innerHTML);
+                sum += parseFloat(sam_conc2[i].innerHTML);
+                sum += parseFloat(sam_conc3[i].innerHTML);
+                mean[i].innerHTML = (sum / 3).toFixed(2);
+            }
+           
+            // submit = document.getElementsByClassName("submit")[0].removeAttribute("hidden");
+            // run = document.getElementsByClassName("run")[0].setAttribute("hidden", "hidden");  
+            // $("#submit").removeAttr("hidden").addClass("btn btn-danger");
+            // $("#run").attr("hidden","hidden").removeClass("btn btn-primary");        
+        }
+
+        //四舍五入保留2位小数（若第二位小数为0，则保留一位小数）
+        function keepTwoDecimal(num) {
+            var result = parseFloat(num);
+            result = Math.round(num * 100) / 100;
+            return result;
+        };
+
+        function myFunction(){
+            // 获取值
+            lowvalue = parseFloat(document.getElementsByName("lowvalue")[0].value);  //后端传递的回收率下限
+            upvalue = parseFloat(document.getElementsByName("upvalue")[0].value);    //后端传递的回收率上限
+            
+            sam_conc1 = document.getElementsByClassName("sam_conc1");
+            sam_conc2 = document.getElementsByClassName("sam_conc2");
+            sam_conc3 = document.getElementsByClassName("sam_conc3");
+            mean = document.getElementsByClassName("mean");
+
+            standard_conc1 = document.getElementsByClassName("standard_conc1");
+            standard_conc2 = document.getElementsByClassName("standard_conc2");
+            standard_conc3 = document.getElementsByClassName("standard_conc3");
+
+            standard_volume1 = document.getElementsByClassName("standard_volume1");
+            standard_volume2 = document.getElementsByClassName("standard_volume2");
+            standard_volume3 = document.getElementsByClassName("standard_volume3");
+
+            end_volume1 = document.getElementsByClassName("end_volume1");
+            end_volume2 = document.getElementsByClassName("end_volume2");
+            end_volume3 = document.getElementsByClassName("end_volume3");
+            
+            theory_conc1 = document.getElementsByClassName("theory_conc1");
+            theory_conc2 = document.getElementsByClassName("theory_conc2");
+            theory_conc3 = document.getElementsByClassName("theory_conc3");
+
+            end_lowconc1 = document.getElementsByClassName("end_lowconc1");
+            end_lowconc2 = document.getElementsByClassName("end_lowconc2");
+            end_lowconc3 = document.getElementsByClassName("end_lowconc3");
+
+            end_medianconc1 = document.getElementsByClassName("end_medianconc1");
+            end_medianconc2 = document.getElementsByClassName("end_medianconc2");
+            end_medianconc3 = document.getElementsByClassName("end_medianconc3");
+
+            end_highconc1 = document.getElementsByClassName("end_highconc1");
+            end_highconc2 = document.getElementsByClassName("end_highconc2");
+            end_highconc3 = document.getElementsByClassName("end_highconc3");
+
+            end_lowrecycle1 = document.getElementsByClassName("end_lowrecycle1");
+            end_lowrecycle2 = document.getElementsByClassName("end_lowrecycle2");
+            end_lowrecycle3 = document.getElementsByClassName("end_lowrecycle3");
+
+            end_medianrecycle1 = document.getElementsByClassName("end_medianrecycle1");
+            end_medianrecycle2 = document.getElementsByClassName("end_medianrecycle2");
+            end_medianrecycle3 = document.getElementsByClassName("end_medianrecycle3");
+
+            end_highrecycle1 = document.getElementsByClassName("end_highrecycle1");
+            end_highrecycle2 = document.getElementsByClassName("end_highrecycle2");
+            end_highrecycle3 = document.getElementsByClassName("end_highrecycle3");
+   
+            for (var i = 0; i<mean.length; i++){
+                var sum = 0;
+                sum += parseFloat(sam_conc1[i].innerHTML);
+                sum += parseFloat(sam_conc2[i].innerHTML);
+                sum += parseFloat(sam_conc3[i].innerHTML);
+                mean[i].innerHTML = (sum / 3).toFixed(2);
+                theory_conc1[i].value = (standard_conc1[i].value*standard_volume1[i].value/end_volume1[i].value).toFixed(2);
+                theory_conc2[i].value = (standard_conc2[i].value*standard_volume2[i].value/end_volume2[i].value).toFixed(2);
+                theory_conc3[i].value = (standard_conc3[i].value*standard_volume3[i].value/end_volume3[i].value).toFixed(2);
+                
+                // 低浓度 回收率1    
+                end_lowrecycle1[i].value = keepTwoDecimal((end_lowconc1[i].innerHTML-mean[i].innerHTML)/theory_conc1[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_lowrecycle1[i].value)<lowvalue || parseFloat(end_lowrecycle1[i].value)>upvalue){
+                    end_lowrecycle1[i].style.color="red"
+                    end_lowrecycle1[i].style.fontWeight=700
+                } else {
+                    end_lowrecycle1[i].style.color="black"
+                    end_lowrecycle1[i].style.fontWeight=400
+                }
+
+                // 低浓度 回收率2    
+                end_lowrecycle2[i].value = keepTwoDecimal((end_lowconc2[i].innerHTML-mean[i].innerHTML)/theory_conc1[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_lowrecycle2[i].value)<lowvalue || parseFloat(end_lowrecycle2[i].value)>upvalue){
+                    end_lowrecycle2[i].style.color="red"
+                    end_lowrecycle2[i].style.fontWeight=700
+                } else {
+                    end_lowrecycle2[i].style.color="black"
+                    end_lowrecycle2[i].style.fontWeight=400    
+                }
+
+                // 低浓度 回收率3    
+                end_lowrecycle3[i].value = keepTwoDecimal((end_lowconc3[i].innerHTML-mean[i].innerHTML)/theory_conc1[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_lowrecycle3[i].value)<lowvalue || parseFloat(end_lowrecycle3[i].value)>upvalue){
+                    end_lowrecycle3[i].style.color="red"
+                    end_lowrecycle3[i].style.fontWeight=700
+                } else {
+                    end_lowrecycle3[i].style.color="black"
+                    end_lowrecycle3[i].style.fontWeight=400
+                }
+
+
+                // 中浓度 回收率1    
+                end_medianrecycle1[i].value = keepTwoDecimal((end_medianconc1[i].innerHTML-mean[i].innerHTML)/theory_conc2[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_medianrecycle1[i].value)<lowvalue || parseFloat(end_medianrecycle1[i].value)>upvalue){
+                    end_medianrecycle1[i].style.color="red"
+                    end_medianrecycle1[i].style.fontWeight=700
+                } else {
+                    end_medianrecycle1[i].style.color="black"
+                    end_medianrecycle1[i].style.fontWeight=400
+                }
+
+                // 中浓度 回收率2    
+                end_medianrecycle2[i].value = keepTwoDecimal((end_medianconc2[i].innerHTML-mean[i].innerHTML)/theory_conc2[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_medianrecycle2[i].value)<lowvalue || parseFloat(end_medianrecycle2[i].value)>upvalue){
+                    end_medianrecycle2[i].style.color="red"
+                    end_medianrecycle2[i].style.fontWeight=700
+                } else {
+                    end_medianrecycle2[i].style.color="black"
+                    end_medianrecycle2[i].style.fontWeight=400    
+                }
+
+                // 中浓度 回收率3    
+                end_medianrecycle3[i].value = keepTwoDecimal((end_medianconc3[i].innerHTML-mean[i].innerHTML)/theory_conc2[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_medianrecycle3[i].value)<lowvalue || parseFloat(end_medianrecycle3[i].value)>upvalue){
+                    end_medianrecycle3[i].style.color="red"
+                    end_medianrecycle3[i].style.fontWeight=700
+                } else {
+                    end_medianrecycle3[i].style.color="black"
+                    end_medianrecycle3[i].style.fontWeight=400
+                }
+
+                // 高浓度 回收率1    
+                end_highrecycle1[i].value = keepTwoDecimal((end_highconc1[i].innerHTML-mean[i].innerHTML)/theory_conc3[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_highrecycle1[i].value)<lowvalue || parseFloat(end_highrecycle1[i].value)>upvalue){
+                    end_highrecycle1[i].style.color="red"
+                    end_highrecycle1[i].style.fontWeight=700
+                } else {
+                    end_highrecycle1[i].style.color="black"
+                    end_highrecycle1[i].style.fontWeight=400
+                }
+
+                // 高浓度 回收率2    
+                end_highrecycle2[i].value = keepTwoDecimal((end_highconc2[i].innerHTML-mean[i].innerHTML)/theory_conc3[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_highrecycle2[i].value)<lowvalue || parseFloat(end_highrecycle2[i].value)>upvalue){
+                    end_highrecycle2[i].style.color="red"
+                    end_highrecycle2[i].style.fontWeight=700
+                } else {
+                    end_highrecycle2[i].style.color="black"
+                    end_highrecycle2[i].style.fontWeight=400    
+                }
+
+                // 高浓度 回收率3    
+                end_highrecycle3[i].value = keepTwoDecimal((end_highconc3[i].innerHTML-mean[i].innerHTML)/theory_conc3[i].value*100)
+
+                // 超过回收率上下限的值设置为粗体红色
+                if(parseFloat(end_highrecycle3[i].value)<lowvalue || parseFloat(end_highrecycle3[i].value)>upvalue){
+                    end_highrecycle3[i].style.color="red"
+                    end_highrecycle3[i].style.fontWeight=700
+                } else {
+                    end_highrecycle3[i].style.color="black"
+                    end_highrecycle3[i].style.fontWeight=400
+                }
+            }
+           
+            // submit = document.getElementsByClassName("submit")[0].removeAttribute("hidden");
+            // run = document.getElementsByClassName("run")[0].setAttribute("hidden", "hidden");  
+            // $("#submit").removeAttr("hidden").addClass("btn btn-danger");
+            // $("#run").attr("hidden","hidden").removeClass("btn btn-primary");        
+        }
+    </script>
+    {% endblock %}

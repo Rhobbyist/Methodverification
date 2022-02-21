@@ -1,0 +1,19 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+    <h2 class="alert alert-success">{{HttpResponse}}</h2>
+    <form action="{% url 'verifyagain' %}" method="POST" > 
+        <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+        <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+        <input hidden = "hidden" value="{{project}}" name="project">
+        <input hidden = "hidden" value="{{platform}}" name="platform">
+        <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+        <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+        <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+    </form>
+    <br>
+    <form action="{% url 'returnback' %}" method="POST">
+        <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+    </form> 
+
+{% endblock %}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>{{ title }} - 方法学验证管理系统</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'report/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'report/content/site.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'report/content/jquery.dataTables.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'media/css/jquery.dataTables.css' %}" />
+
+    <script src="{% static 'report/content/jquery-1.10.2.min.js' %}"></script>
+    <script src="{% static 'report/content/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'report/content/clipboard.js' %}"></script>
+
+    <style>
+        a.format:link {
+            color: #0000ff;
+            text-decoration: none;
+        }
+
+        a.format:active {
+            color: red;
+        }
+
+        a.format:visited {
+            color: #0000ff;
+            text-decoration: none;
+        }
+
+        a.format:hover {
+            text-decoration: underline;
+            background-color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header" style="width: 100%;">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="/" class="navbar-brand">方法学验证管理系统</a>
+                <a href="{% url 'verification' %}" class="format navbar-brand">验证界面</a>
+                <a href="{% url 'login' %}" class="format navbar-brand">报告生成界面</a>
+                <a href="/admin" class="format navbar-brand">后台管理系统</a> 
+
+                {% comment %} 判断用户是否登陆，登陆显示当前用户和注销按钮 {% endcomment %}
+                {% if User_class == 1%}
+                    <ul class="nav nav-pills pull-right">
+                        <li class="active format navbar-brand" style="font-size:14px;">当前用户: {{name}}</li>
+                        <a href="{% url 'logout' %}" type="submit" class="active format navbar-brand"
+                            style="font-size:14px;">注销</a>
+                    </ul>
+                {% comment %} 未登陆显示登录按钮 {% endcomment %}
+                {% else %}
+                    <ul class="nav nav-pills pull-right">
+                        <li class="active format navbar-brand" style="font-size:14px;">当前用户: 未登录</li>
+                        <a href="{% url 'login' %}" type="submit" class="active format navbar-brand"
+                            style="font-size:14px;">登录</a>
+                    </ul>
+                {% endif %}
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 定义子模板可以覆盖的内容 -->
+    <div class="container body-content">
+        {% block content %} {% endblock %}
+
+    </div>
+
+
+    {% block scripts %} {% endblock %}
+
+</body>
+
+</html>

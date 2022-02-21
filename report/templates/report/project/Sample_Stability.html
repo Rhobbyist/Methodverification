@@ -1,0 +1,580 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/ 
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+    .timeinput{
+        width:50px;
+        text-align:center;
+    }
+
+    /* 使结果不紧贴页面上方显示 */
+    .basicinfo{
+        margin-top:30px;
+
+    }
+
+    .page-header{
+        margin: 20px 0px 20px 0px;
+    }
+    
+
+</style>
+
+    <body>
+        <div class="container">    
+            <form action="{% url 'Sample_Stability_Save' %}" method="POST" > 
+
+                <!-- 1 验证基本信息展示 -->
+                <div class="basicinfo">
+                    <!-- 标题 -->
+                    <h2>验证基本信息</h2>
+                    <br>
+
+                    <!-- 仪器型号 -->
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">仪器型号</label>
+                        <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                    </div> 
+
+                    <!-- 检测平台及检测项目 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测平台</label>
+                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测项目</label>
+                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                            </div> 
+                        </div>
+                    </div>
+                    
+                    <!-- 仪器平台及仪器厂家 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器平台</label>
+                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器厂家</label>
+                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+
+                <!-- 室温字典及浓度水平 -->
+                <input hidden = "hidden" value="{{Result.Room_tem_dict}}" name="Room_tem_dict">
+                <input hidden = "hidden" value="{{Result.Room_conclevel_list}}" name="Room_conclevel_list">
+
+                <!-- 冷藏字典及浓度水平 -->
+                <input hidden = "hidden" value="{{Result.Refrigerate_tem_dict}}" name="Refrigerate_tem_dict">
+                <input hidden = "hidden" value="{{Result.Refrigerate_conclevel_list}}" name="Refrigerate_conclevel_list">
+
+                <!-- 冷冻字典及浓度水平 -->
+                <input hidden = "hidden" value="{{Result.Freeze_tem_dict}}" name="Freeze_tem_dict">
+                <input hidden = "hidden" value="{{Result.Freeze_conclevel_list}}" name="Freeze_conclevel_list">
+
+                <!-- 回收率下限 -->
+                <input hidden = "hidden" value="{{Result.lowrecycle}}" name="lowrecycle" id="lowrecycle">
+
+                <!-- 回收率上限 -->
+                <input hidden = "hidden" value="{{Result.uprecycle}}" name="uprecycle" id="uprecycle">
+
+                <!-- 验证结论判断：通过｜不通过。不通过时单击保存按钮后有不通过提示，并且数据不存入数据库（通过views.py中的函数实现） -->
+                <input hidden = "hidden" value=0 name="conclusion" id="conclusion">
+                    
+                <!-- 2 分界线 -->
+                <h1 class="page-header"></h1>
+                
+                <!-- 3 验证结果展示 -->
+                <h2>样品稳定性验证结果</h2>
+                {% for key,value in Result.Room_tem_dict.items %}
+
+                    <!-- 一 室温 -->
+                    {% if Result.Room_conclevel_list|length == 3 %}
+                        <table border="1" cellpadding="10" width="100%" >
+                            <caption><h3>{{key}}室温验证结果</h3></caption>
+                                <tr>
+                                    <th rowspan="2">时间(h)</th>
+                                    <th colspan="4">低浓度({{Result.Unit}})</th>
+                                    <th colspan="4">中浓度({{Result.Unit}})</th>
+                                    <th colspan="4">高浓度({{Result.Unit}})</th>
+                                </tr>
+                                <tr>
+                                    <th>实验数据</th>
+                                    <th>均值</th>
+                                    <th>CV(%)</th>
+                                    <th>回收率(%)</th>
+                                    <th>实验数据</th>
+                                    <th>均值</th>
+                                    <th>CV(%)</th>
+                                    <th>回收率(%)</th>
+                                    <th>实验数据</th>
+                                    <th>均值</th>
+                                    <th>CV(%)</th>
+                                    <th>回收率(%)</th>
+                                </tr>
+                                {%for r,c in value.items %}
+                                    <!-- 第一行 -->
+                                    <tr>
+                                        <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
+                                        <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                        <!-- 低浓度1,均值,CV,回收率1 -->
+                                        <td>{{c.0}}</td>
+                                        <td rowspan="3">{{c.9}}</td>
+                                        <td rowspan="3">{{c.12}}</td>
+                                        <td class="recycle">{{c.15}}</td>
+                                        <!-- 中浓度1,均值,CV,回收率1 -->
+                                        <td>{{c.3}}</td>
+                                        <td rowspan="3">{{c.10}}</td>
+                                        <td rowspan="3">{{c.13}}</td>
+                                        <td class="recycle">{{c.18}}</td>
+                                        <!-- 高浓度1,均值,CV,回收率1 -->
+                                        <td>{{c.6}}</td>
+                                        <td rowspan="3">{{c.11}}</td>
+                                        <td rowspan="3">{{c.14}}</td>
+                                        <td class="recycle">{{c.21}}</td>
+                                    </tr>
+
+                                    <!-- 第二行 -->
+                                    <tr>
+                                        <!-- 低浓度2,回收率2 -->
+                                        <td>{{c.1}}</td>
+                                        <td class="recycle">{{c.16}}</td>
+                                        <!-- 中浓度2,回收率2 -->
+                                        <td>{{c.4}}</td>
+                                        <td class="recycle">{{c.19}}</td>
+                                        <!-- 高浓度2,回收率2 -->
+                                        <td>{{c.7}}</td>
+                                        <td class="recycle">{{c.22}}</td>
+                                    </tr>
+
+                                    <!-- 第三行 -->
+                                    <tr>
+                                        <!-- 低浓度3,回收率3 -->
+                                        <td>{{c.2}}</td>
+                                        <td class="recycle">{{c.17}}</td>
+                                        <!-- 中浓度3,回收率3 -->
+                                        <td>{{c.5}}</td>
+                                        <td class="recycle">{{c.20}}</td>
+                                        <!-- 高浓度3,回收率3 -->
+                                        <td>{{c.8}}</td>
+                                        <td class="recycle">{{c.23}}</td>
+                                    </tr>
+                                {% endfor %}
+                        </table>
+                    {% elif Result.Room_conclevel_list|length == 2 %}
+                        <table border="1" cellpadding="10" width="100%" >
+                            <caption><h3>{{key}}室温验证结果</h3></caption>
+                                <tr>
+                                    <th rowspan="2">时间(h)</th>
+                                    <th colspan="4">{{Result.Room_conclevel_list.0}}浓度({{Result.Unit}})</th>
+                                    <th colspan="4">{{Result.Room_conclevel_list.1}}浓度({{Result.Unit}})</th>
+                                </tr>
+                                <tr>
+                                    <th>实验数据</th>
+                                    <th>均值</th>
+                                    <th>CV(%)</th>
+                                    <th>回收率(%)</th>
+                                    <th>实验数据</th>
+                                    <th>均值</th>
+                                    <th>CV(%)</th>
+                                    <th>回收率(%)</th>
+                                </tr>
+                                {%for r,c in value.items %}
+                                    <!-- 第一行 -->
+                                    <tr>
+                                        <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
+                                        <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                        <!-- 较低浓度1,均值,CV,回收率1 -->
+                                        <td>{{c.0}}</td>
+                                        <td rowspan="3">{{c.6}}</td>
+                                        <td rowspan="3">{{c.8}}</td>
+                                        <td class="recycle">{{c.10}}</td>
+                                        <!-- 较高浓度1,均值,CV,回收率1 -->
+                                        <td>{{c.3}}</td>
+                                        <td rowspan="3">{{c.7}}</td>
+                                        <td rowspan="3">{{c.9}}</td>
+                                        <td class="recycle">{{c.13}}</td>
+                                    </tr>
+
+                                    <!-- 第二行 -->
+                                    <tr>
+                                        <!-- 较低浓度2,回收率2 -->
+                                        <td>{{c.1}}</td>
+                                        <td class="recycle">{{c.11}}</td>
+                                        <!-- 较高浓度2,回收率2 -->
+                                        <td>{{c.4}}</td>
+                                        <td class="recycle">{{c.14}}</td>
+                                    </tr>
+
+                                    <!-- 第三行 -->
+                                    <tr>
+                                        <!-- 较低浓度3,回收率3 -->
+                                        <td>{{c.2}}</td>
+                                        <td class="recycle">{{c.12}}</td>
+                                        <!-- 较高浓度3,回收率3 -->
+                                        <td>{{c.5}}</td>
+                                        <td class="recycle">{{c.15}}</td>
+                                    </tr>
+                                {% endfor %}
+                        </table>
+                    {% endif %}
+
+                    <!-- 二 冷藏  -->
+                    {% for key,value in Result.Refrigerate_tem_dict.items %}
+                        <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                        {% if forloop.counter == forloop.parentloop.counter %}
+                            {% if Result.Refrigerate_conclevel_list|length == 3 %}
+                                <table border="1" cellpadding="10" width="100%">
+                                    <caption><h3>{{key}}冷藏验证结果</h3></caption>
+                                        <tr>
+                                            <th rowspan="2">时间(h)</th>
+                                            <th colspan="4">低浓度({{Result.Unit}})</th>
+                                            <th colspan="4">中浓度({{Result.Unit}})</th>
+                                            <th colspan="4">高浓度({{Result.Unit}})</th>
+                                        </tr>
+                                        <tr>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                        </tr>
+                                        {%for r,c in value.items %}
+                                            <!-- 第一行 -->
+                                            <tr>
+                                                <!-- 时间 -->
+                                                <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                <!-- 低浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.0}}</td>
+                                                <td rowspan="3">{{c.9}}</td>
+                                                <td rowspan="3">{{c.12}}</td>
+                                                <td class="recycle">{{c.15}}</td>
+                                                <!-- 中浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.3}}</td>
+                                                <td rowspan="3">{{c.10}}</td>
+                                                <td rowspan="3">{{c.13}}</td>
+                                                <td class="recycle">{{c.18}}</td>
+                                                <!-- 高浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.6}}</td>
+                                                <td rowspan="3">{{c.11}}</td>
+                                                <td rowspan="3">{{c.14}}</td>
+                                                <td class="recycle">{{c.21}}</td>
+                                            </tr>
+
+                                            <!-- 第二行 -->
+                                            <tr>
+                                                <!-- 低浓度2,回收率2 -->
+                                                <td>{{c.1}}</td>
+                                                <td class="recycle">{{c.16}}</td>
+                                                <!-- 中浓度2,回收率2 -->
+                                                <td>{{c.4}}</td>
+                                                <td class="recycle">{{c.19}}</td>
+                                                <!-- 高浓度2,回收率2 -->
+                                                <td>{{c.7}}</td>
+                                                <td class="recycle">{{c.22}}</td>
+                                            </tr>
+
+                                            <!-- 第三行 -->
+                                            <tr>
+                                                <!-- 低浓度3,回收率3 -->
+                                                <td>{{c.2}}</td>
+                                                <td class="recycle">{{c.17}}</td>
+                                                <!-- 中浓度3,回收率3 -->
+                                                <td>{{c.5}}</td>
+                                                <td class="recycle">{{c.20}}</td>
+                                                <!-- 高浓度3,回收率3 -->
+                                                <td>{{c.8}}</td>
+                                                <td class="recycle">{{c.23}}</td>
+                                            </tr>
+                                        {% endfor %}
+                                </table>
+                            {% elif Result.Refrigerate_conclevel_list|length == 2 %}
+                                <table border="1" cellpadding="10" width="100%" >
+                                    <caption><h3>{{key}}冷藏验证结果</h3></caption>
+                                        <tr>
+                                            <th rowspan="2">时间(h)</th>
+                                            <th colspan="4">{{Result.Refrigerate_conclevel_list.0}}浓度({{Result.Unit}})</th>
+                                            <th colspan="4">{{Result.Refrigerate_conclevel_list.1}}浓度({{Result.Unit}})</th>
+                                        </tr>
+                                        <tr>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                        </tr>
+                                        {%for r,c in value.items %}
+                                            <!-- 第一行 -->
+                                            <tr>
+                                                <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
+                                                <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.0}}</td>
+                                                <td rowspan="3">{{c.6}}</td>
+                                                <td rowspan="3">{{c.8}}</td>
+                                                <td class="recycle">{{c.10}}</td>
+                                                <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.3}}</td>
+                                                <td rowspan="3">{{c.7}}</td>
+                                                <td rowspan="3">{{c.9}}</td>
+                                                <td class="recycle">{{c.13}}</td>
+                                            </tr>
+        
+                                            <!-- 第二行 -->
+                                            <tr>
+                                                <!-- 较低浓度2,回收率2 -->
+                                                <td>{{c.1}}</td>
+                                                <td class="recycle">{{c.11}}</td>
+                                                <!-- 较高浓度2,回收率2 -->
+                                                <td>{{c.4}}</td>
+                                                <td class="recycle">{{c.14}}</td>
+                                            </tr>
+        
+                                            <!-- 第三行 -->
+                                            <tr>
+                                                <!-- 较低浓度3,回收率3 -->
+                                                <td>{{c.2}}</td>
+                                                <td class="recycle">{{c.12}}</td>
+                                                <!-- 较高浓度3,回收率3 -->
+                                                <td>{{c.5}}</td>
+                                                <td class="recycle">{{c.15}}</td>
+                                            </tr>
+                                        {% endfor %}
+                                </table>
+                            {% endif %}
+                        {% endif %}       
+                    {% endfor %} 
+                    
+                    <!-- 三 冷冻  -->
+                    {% for key,value in Result.Freeze_tem_dict.items %}
+                        <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                        {% if forloop.counter == forloop.parentloop.counter %}
+                            {% if Result.Freeze_conclevel_list|length == 3 %}
+                                <table border="1" cellpadding="10" width="100%">
+                                    <caption><h3>{{key}}冷冻验证结果</h3></caption>
+                                        <tr>
+                                            <th rowspan="2">时间(h)</th>
+                                            <th colspan="4">低浓度({{Result.Unit}})</th>
+                                            <th colspan="4">中浓度({{Result.Unit}})</th>
+                                            <th colspan="4">高浓度({{Result.Unit}})</th>
+                                        </tr>
+                                        <tr>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                        </tr>
+                                        {%for r,c in value.items %}
+                                            <!-- 第一行 -->
+                                            <tr>
+                                                <!-- 时间 -->
+                                                <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                <!-- 低浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.0}}</td>
+                                                <td rowspan="3">{{c.9}}</td>
+                                                <td rowspan="3">{{c.12}}</td>
+                                                <td class="recycle">{{c.15}}</td>
+                                                <!-- 中浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.3}}</td>
+                                                <td rowspan="3">{{c.10}}</td>
+                                                <td rowspan="3">{{c.13}}</td>
+                                                <td class="recycle">{{c.18}}</td>
+                                                <!-- 高浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.6}}</td>
+                                                <td rowspan="3">{{c.11}}</td>
+                                                <td rowspan="3">{{c.14}}</td>
+                                                <td class="recycle">{{c.21}}</td>
+                                            </tr>
+
+                                            <!-- 第二行 -->
+                                            <tr>
+                                                <!-- 低浓度2,回收率2 -->
+                                                <td>{{c.1}}</td>
+                                                <td class="recycle">{{c.16}}</td>
+                                                <!-- 中浓度2,回收率2 -->
+                                                <td>{{c.4}}</td>
+                                                <td class="recycle">{{c.19}}</td>
+                                                <!-- 高浓度2,回收率2 -->
+                                                <td>{{c.7}}</td>
+                                                <td class="recycle">{{c.22}}</td>
+                                            </tr>
+
+                                            <!-- 第三行 -->
+                                            <tr>
+                                                <!-- 低浓度3,回收率3 -->
+                                                <td>{{c.2}}</td>
+                                                <td class="recycle">{{c.17}}</td>
+                                                <!-- 中浓度3,回收率3 -->
+                                                <td>{{c.5}}</td>
+                                                <td class="recycle">{{c.20}}</td>
+                                                <!-- 高浓度3,回收率3 -->
+                                                <td>{{c.8}}</td>
+                                                <td class="recycle">{{c.23}}</td>
+                                            </tr>
+                                        {% endfor %}
+                                </table>
+                            {% elif Result.Freeze_conclevel_list|length == 2 %}
+                                <table border="1" cellpadding="10" width="100%" >
+                                    <caption><h3>{{key}}冷冻验证结果</h3></caption>
+                                        <tr>
+                                            <th rowspan="2">时间(h)</th>
+                                            <th colspan="4">{{Result.Freeze_conclevel_list.0}}浓度({{Result.Unit}})</th>
+                                            <th colspan="4">{{Result.Freeze_conclevel_list.1}}浓度({{Result.Unit}})</th>
+                                        </tr>
+                                        <tr>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                            <th>实验数据</th>
+                                            <th>均值</th>
+                                            <th>CV(%)</th>
+                                            <th>回收率(%)</th>
+                                        </tr>
+                                        {%for r,c in value.items %}
+                                            <!-- 第一行 -->
+                                            <tr>
+                                                <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
+                                                <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.0}}</td>
+                                                <td rowspan="3">{{c.6}}</td>
+                                                <td rowspan="3">{{c.8}}</td>
+                                                <td class="recycle">{{c.10}}</td>
+                                                <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                <td>{{c.3}}</td>
+                                                <td rowspan="3">{{c.7}}</td>
+                                                <td rowspan="3">{{c.9}}</td>
+                                                <td class="recycle">{{c.13}}</td>
+                                            </tr>
+        
+                                            <!-- 第二行 -->
+                                            <tr>
+                                                <!-- 较低浓度2,回收率2 -->
+                                                <td>{{c.1}}</td>
+                                                <td class="recycle">{{c.11}}</td>
+                                                <!-- 较高浓度2,回收率2 -->
+                                                <td>{{c.4}}</td>
+                                                <td class="recycle">{{c.14}}</td>
+                                            </tr>
+        
+                                            <!-- 第三行 -->
+                                            <tr>
+                                                <!-- 较低浓度3,回收率3 -->
+                                                <td>{{c.2}}</td>
+                                                <td class="recycle">{{c.12}}</td>
+                                                <!-- 较高浓度3,回收率3 -->
+                                                <td>{{c.5}}</td>
+                                                <td class="recycle">{{c.15}}</td>
+                                            </tr>
+                                        {% endfor %}
+                                </table>
+                            {% endif %}
+                        {% endif %}       
+                    {% endfor %}     
+                {% endfor %}    
+                <br>
+                <div><button class="btn btn-primary" id="run" onclick="myFunction()">保存</button></div>
+            </form>         
+        </div>
+
+    </body>
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        // js判断回收率中是否有大于115和小于85的值，有的话设置为特殊字体:粗体红色
+        window.onload = function(){
+            // 验证结论，初始值为0，大于0说明不通过
+            var conclusion = document.getElementById("conclusion")  
+            num = parseInt(conclusion.value)
+
+            var lowvalue = document.getElementById("lowrecycle")   // 回收率上限
+            var upvalue = document.getElementById("uprecycle")     // 回收率下限
+            var Recyclelist = document.getElementsByClassName("recycle")
+            
+            // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
+            for(let i=0; i<Recyclelist.length; i++){
+                if (Recyclelist[i].innerText=="/"){
+                    // pass
+                }else{
+                    if(parseFloat(Recyclelist[i].innerText) < parseFloat(lowvalue.value) || parseFloat(Recyclelist[i].innerText) > parseFloat(upvalue.value)){
+                        Recyclelist[i].style.color="red"
+                        Recyclelist[i].style.fontWeight=700
+                        num++ 
+                    } 
+                }          
+            }
+
+            // 改变conclusion中的值
+            conclusion.value = num
+            console.log(conclusion.value)
+        }
+
+        // 判断用户是否忘记点击保存按钮，需优化
+        // window.onbeforeunload = function (e) {
+        //     e = e || window.event
+        //     if (e) {
+        //         e.returnValue = '网站可能不会保存您的修改哦~'
+        //     }
+        //     return '网站可能不会保存您的修改哦~'
+        // } 
+    </script>
+    {% endblock %}

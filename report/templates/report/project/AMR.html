@@ -1,0 +1,146 @@
+{% extends "report/layout.html" %} 
+{% block content %}
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+    th{
+        text-align: center;
+    }
+    td{
+        text-align: center;
+    }
+    p{
+        text-align: center;
+    }
+</style>
+
+    <body>
+        <div class="container">
+            <form action="{% url 'AMRsave' %}" method="POST" >
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <input hidden = "hidden" value="{{dicAMR.judgenum}}" name="judgenum">
+                <input hidden = "hidden" value="{{dicAMR.id}}" name="id">    
+                <h2>AMR验证结果</h2>
+                    {%for key,value in dicAMR.AMR_dict.items %}               
+                        <table border="1" cellpadding="12" align="center">
+                            <caption><h4>{{key}}验证结果</h4></caption>
+                            <tr>
+                                <th>浓度序号</th>
+                                <th>理论浓度({{dicAMR.Unit}})</th>
+                                <th>检测值({{dicAMR.Unit}})</th>
+                                <th>回收率（%）</th>
+                                <th>平均回收率（%）</th>
+                                <th>检测值CV（%）</th>
+                            </tr>
+                            {%for c,r in value.items %}
+                            <tr>
+                                <td rowspan="6">{{c}}</td> 
+                                <td rowspan="6">{{r.0}}</td>
+                                <td>{{r.1}}</td>
+                                <td>{{r.7}}</td>
+                                <td rowspan="6">{{r.13}}</td>
+                                <td rowspan="6">{{r.14}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.2}}</td>
+                                <td>{{r.8}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.3}}</td>
+                                <td>{{r.9}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.4}}</td>
+                                <td>{{r.10}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.5}}</td>
+                                <td>{{r.11}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.6}}</td>
+                                <td>{{r.12}}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                        <br>
+                    {% endfor %}  
+                          
+                    <div>
+                        {% for obj in dicAMR.objs_verify %}
+                            <p><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></p>
+                            <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
+                                <textarea rows="1" cols="120" name = "picturename">
+                                </textarea>
+                            </div>
+                            <br> 
+                        {% endfor %}        
+                    </div>
+                    {% if dicAMR.picturenum == 0 %}
+                        <!-- <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div> -->
+                    {% else %}
+                        <div><input type="submit" class="btn btn-danger" value="保存"></div> 
+                    {% endif %}
+            </form>
+            {% if dicAMR.picturenum == 0 %}
+                <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{group}}" name="group">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                </form>
+                <br>
+                <form action="{% url 'returnback' %}" method="POST">
+                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                </form>
+            {% else %}
+                 
+            {% endif %}
+        </div>
+
+    </body>
+
+    <script type="text/javascript">
+        // // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
+        window.onload = function(){
+        //     var tr=document.getElementsByTagName("tr");
+        //     for(var i= 0;i<tr.length;i++)
+        //     {
+        //     bgcChange(tr[i]);
+        //     }
+            
+        //     }
+        //     function bgcChange(obj)
+        //     {
+        //     obj.onmouseover=function(){
+        //     obj.style.backgroundColor="#D8D8D8";
+        //     }
+        //     obj.onmouseout=function(){
+        //     obj.style.backgroundColor="#fff";
+        //     }
+        
+        // 将不通过的结果标红，并去除“不通过三个字”
+            var td=document.getElementsByTagName("td");
+            for(var i= 0;i<td.length;i++)
+            {
+                if(td[i].innerHTML.search("(不通过!)") != -1){
+                    td[i].innerHTML=td[i].innerHTML.split("(不通过!)")[0]
+                    td[i].style.color="red"
+                }
+            }
+        }
+    </script>
+    {% endblock %}
+
