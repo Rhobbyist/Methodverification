@@ -14,8 +14,6 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 
-# Create your views here.
-
 # 接收验证界面传递过来的参数
 def get_verification_page(request):
 
@@ -29,6 +27,7 @@ def get_verification_page(request):
     else:
         User_class = 1
 
+    # 用户在验证界面点击确定按钮后，走post请求
     if request.method == 'POST':
         # 激素11项专用
         if request.POST["quota"] == "激素11项专用":
@@ -37,7 +36,7 @@ def get_verification_page(request):
             return render(request, 'report/project/QC.html', locals())
 
         else:
-            # 接收验证界面传过来的数据
+            # 一 接收验证界面传过来的数据
             instrument_num = request.POST["instrument_num"].strip() # 仪器编号,strip()的作用是去除前后空格
             Detectionplatform = request.POST["Detectionplatform"]  # 检测平台
             project = request.POST["project"]  # 检测项目
@@ -47,20 +46,20 @@ def get_verification_page(request):
             verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
             # verifyoccasiontexts = request.POST["verifyoccasiontexts"] #自定义验证时机
             End_conclusion = request.POST["End_conclusion"]  # 报告最终结论
-            verifytime = time.strftime('%Y-%m-%d', time.localtime(time.time()))  # 初始验证时间
+            # verifytime = time.strftime('%Y-%m-%d', time.localtime(time.time()))  # 初始验证时间
 
-            # 后台管理系统查找单位,有效位数和化合物个数,此处由于单位,有效位数和化合物个数都为必填项,因此使用get()方法时不需要try
+            # 二 后台管理系统查找单位,有效位数和化合物个数,此处由于单位,有效位数和化合物个数都为必填项,因此使用get()方法时不需要try
             Unit = Special.objects.get(Detectionplatform=Detectionplatform, project=project).unit  # 单位
             digits = Special.objects.get(project=project).Effective_digits  # 有效位数
             Number_of_compounds = Special.objects.get(project=project).Number_of_compounds  # 化合物个数
 
-            # 判断此份报告是否已被创建
+            # 三 判断此份报告是否已被创建
             if ReportInfo.objects.filter(number=instrument_num, project=project):
                 reportinfo = ReportInfo.objects.get(number=instrument_num,Detectionplatform=Detectionplatform,project=project,platform=platform,manufacturers=manufacturers)
             else:
                 reportinfo = ReportInfo.objects.create(number=instrument_num,Detectionplatform=Detectionplatform,project=project,platform=platform,manufacturers=manufacturers)
 
-            # 验证原因
+            # 四 验证原因关联
             if verifyoccasion == "新项目开发":
                 if Validation_Reason.objects.filter(reportinfo_id=reportinfo):
                     pass
@@ -74,7 +73,7 @@ def get_verification_page(request):
             else:
                 pass
 
-            # AB厂家需根据离子对名称和离子对数值进行表格读取
+            # 五 AB厂家需根据离子对名称和离子对数值进行表格读取
             normAB = []
             ZP_Method_precursor_ion = []  # 母离子列表
             ZP_Method_product_ion = []  # 子离子列表
@@ -90,9 +89,8 @@ def get_verification_page(request):
             except:
                 pass
             
-            # 9个验证指标数据提取
-
-            # 精密度
+            # 六 9个验证指标数据提取
+            # 1 精密度
             if request.POST["quota"] == "精密度":
                 if request.POST["jmd"] == "重复性精密度":
                     namejmd = "重复性精密度"

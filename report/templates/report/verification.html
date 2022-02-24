@@ -60,7 +60,7 @@
             <br>
             <div class="row">
                 <div class="col-md-6">
-                    {% comment %} 仪器编号 {% endcomment %}
+                    <!-- 仪器编号 -->
                     {% if instrument_num_verifyagain %}
                         <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" value={{instrument_num_verifyagain}} readonly></div>
                     {% else %}
@@ -68,7 +68,7 @@
                     {% endif %}
                     <br>
 
-                    {% comment %} 技术平台及厂家 {% endcomment %}
+                    <!-- 技术平台及厂家 -->
                     {% if platform_verifyagain %}
                         <div>技术平台及厂家:
                             <input type="text" name="platform" class="verifyinput" value={{platform_verifyagain}} readonly>
