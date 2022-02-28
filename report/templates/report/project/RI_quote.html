@@ -1,0 +1,157 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/ 
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        width:250px;
+    } 
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+    .timeinput{
+        width:50px;
+        text-align:center;
+    }
+</style>
+
+    <body>
+        <div class="container">
+            <!-- 1 验证基本信息展示 -->
+            <div class="basicinfo">
+                <!-- 标题 -->
+                <h2>验证基本信息</h2>
+                <br>
+
+                <!-- 仪器型号 -->
+                <div class="form-group">
+                    <label for="exampleInputEmail1">仪器型号</label>
+                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                </div> 
+
+                <!-- 检测平台及检测项目 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测平台</label>
+                            <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测项目</label>
+                            <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                        </div> 
+                    </div>
+                </div>
+                
+                <!-- 仪器平台及仪器厂家 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器平台</label>
+                            <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器厂家</label>
+                            <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>   
+            
+            <!-- 室温字典及浓度水平 -->
+            <input hidden = "hidden" value="{{Result.Referenceinterval_dict}}" name="Referenceinterval_dict" id="Referenceinterval_dict">
+
+
+            <!-- 2 分界线 -->
+            <h1 class="page-header"></h1>
+
+            <!-- 3 验证结果展示 -->
+            <h2>验证指标：参考区间验证</h2>
+            <div class="basicinfo2">
+                {%for key,value in Result.Referenceinterval_dict.items %}
+                    <div class="row">
+                        <h3>请输入{{key}}的参考区间上下限</h3>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">参考区间上限</label>
+                                <!-- type="number"限定只能输入数字 -->
+                                <input type="number" class="form-control upvalue" name={{key}} onkeyup="myFunction()">
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">参考区间下限</label>
+                                <input type="number" class="form-control lowvalue" name={{key}} onkeyup="myFunction()">
+                            </div>
+                        </div>
+                    </div>
+                    <div>化合物{{key}}所引用的参考区间上下限为  -   ，其中有 例数据在参考区间范围内，占比   ;有 例数据在参考区间范围外，占比   </div>
+                <br>
+                {% endfor %}                               
+            </div>
+        </div>
+
+    </body>
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        // 提取字典，提取后是字符串格式，需转换为字典格式
+        var Referenceinterval_dict = document.getElementById("Referenceinterval_dict") 
+
+        // str为字符串
+        str = Referenceinterval_dict.value
+
+        // 将str中的单引号变成双引号，否则下一步JSON.parse会报错
+        str2 = str.replace(/'/g, '"');
+
+        // 使用JSON.parse将字符串转换为字典
+        parsed_dict = JSON.parse(str2)
+
+        // 获取用户输入的参考区间上下限
+        function myFunction(){
+            var upvaluelist = document.getElementsByClassName("upvalue")
+            var lowvaluelist = document.getElementsByClassName("lowvalue")
+
+            for (var i = 0; i<upvaluelist.length; i++){
+                console.log(upvaluelist[i].name)
+                console.log(upvaluelist[i].value)
+                console.log(lowvaluelist[i].value)
+                console.log(parsed_dict[lowvaluelist[i].name])
+            }
+        }
+
+        // for(var key in parsed_dict){
+        //     console.log(key)
+        //     console.log(parsed_dict[key]);
+        // }
+
+
+    </script>
+    {% endblock %}

@@ -5,7 +5,7 @@ from report.effectnum import *
 import numpy as np
 import re
 
-def fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+def create_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV）
 
@@ -365,6 +365,81 @@ def fileread(files, Detectionplatform, reportinfo, project, platform,manufacture
             insert_list.append(Reference_Interval(reportinfo=reportinfo, norm=key,Experimentnum=forloopindex,Result=i))
 
     Reference_Interval.objects.bulk_create(insert_list)
+    return {'Referenceinterval_dict': Referenceinterval_dict, "Unit": Unit}
+
+def quote_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+
+    # 第一步:后台数据抓取（最小样本数，最大允许CV）
+
+    # 后台管理系统-各项目参数设置-PT指标设置里找到是否设置了每个化合物的单位
+    special = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=special)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+
+    # 后台管理系统中设置的本项目化合物名称
+    PTnorm = []  
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+
+    # 后台管理系统中设置的本项目每个化合物单位
+    Unitlist = []
+    for i in pt_accept:
+        Unitlist.append(i.unit)
+
+
+    #  第二步:开始文件读取
+    '''
+      数据读取完毕后,需要生成一个字典,分别对应不同化合物的原始数据。数据格式如下：
+      Referenceinterval_dict = {norm1:[原始数据]，norm2:[原始数据]，norm3:[原始数据]}
+    '''
+
+    # 创新需要生成的结果容器
+    Referenceinterval_dict = {}
+
+    # 各仪器平台及各仪器厂家数据读取
+    for file in files:
+        if platform=="液质":
+            if manufacturers =="Agilent":
+                # 1 读取csv文件（Agilent）
+                file.seek(0)  # https://www.jianshu.com/p/0d15ed85df2b
+                file_data = file.read().decode('utf-8')
+                lines = file_data.split('\r\n')
+                for i in range(len(lines)): 
+                    if len(lines[i])!=0:
+                        lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])  # 以逗号分隔字符串,但忽略双引号内的逗号
+                        # lines[i]=lines[i].split(',') # 按逗号分隔后把每一行都变成一个列表
+                    else:
+                        lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])
+                        del lines[i] #最后一行如为空行，则删除该元素
+
+                # 从第一行确定化合物名称(含有"-Q Results"),并添加进入化合物列表
+                norm=[] #化合物列表
+                for j in range(len(lines[0])):
+                    if "-Q Results" in lines[0][j]:
+                        if lines[0][j].split("-Q")[0][0]!='"':  # 若原始字符串中含有','，切割完后首位会多出一个'"',需去除  
+                                norm.append(lines[0][j].split("-Q")[0])
+                        else:
+                                norm.append(lines[0][j].split("-Q")[0][1:])
+
+                # 从第二行确定:实验号（Sample Name）,浓度（Final Conc.）的索引
+                nameindex=0  #实验号索引
+                concindex=[] #浓度索引列表（可能不止一个化合物，因此需要把索引放在一个列表里）
+                for j in range(len(lines[1])):  #从第二行开始       
+                    if lines[1][j] == "Sample Name" :
+                        nameindex=j
+                    elif lines[1][j]  == "Final Conc." :
+                        concindex.append(j)
+
+                # 添加原始数据
+                for j in range(len(norm)):
+                    normlist = []  # 每个化合物的结果列表
+                    for i in range(len(lines)):  # 循环原始数据中的每一行
+                        if "Reference_interval" in lines[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据          
+                            normlist.append(effectnum(lines[i][concindex[j]], digits)) 
+
+                    Referenceinterval_dict[norm[j]] = normlist
+
+    print(Referenceinterval_dict)
     return {'Referenceinterval_dict': Referenceinterval_dict, "Unit": Unit}
 
 def data_scrap(id):

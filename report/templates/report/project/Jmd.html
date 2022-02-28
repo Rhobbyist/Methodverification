@@ -24,6 +24,51 @@
         {% if Result.nrows >= Result.lownumber %}
             <div class="container">
                 <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <!-- 1 验证基本信息展示 -->
+                    <div class="basicinfo">
+                        <!-- 标题 -->
+                        <h2>验证基本信息</h2>
+                        <br>
+
+                        <!-- 仪器型号 -->
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器型号</label>
+                            <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                        </div> 
+
+                        <!-- 检测平台及检测项目 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测平台</label>
+                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测项目</label>
+                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                                </div> 
+                            </div>
+                        </div>
+                        
+                        <!-- 仪器平台及仪器厂家 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器平台</label>
+                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器厂家</label>
+                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
                     <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
                     <input hidden = "hidden" value="{{project}}" name="project">
@@ -34,7 +79,12 @@
                     {% comment %} cv上限 {% endcomment %}
                     <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV">
 
-                    <h2>{{Result.namejmd}}验证结果</h2>
+                    <!-- 2 分界线 -->
+                    <h1 class="page-header"></h1>
+
+                    <!-- 3 验证结果展示 -->
+                    <h2>验证指标：{{Result.namejmd}}</h2>
+                    <h2>验证结果：<span id="verifyresult">tongguo</span></h2>
                     <br>
                     <div class="row">
                         {%for key,value in Result.jmd_dict.items %}
@@ -120,9 +170,17 @@
         
             // js判断cv中是否有大于20的值，有的话设置为特殊字体:粗体红色 
             var CVlist = document.getElementsByClassName("CV");
-            var maxCV = document.getElementById("maxCV")   {% comment %} 回收率上限 {% endcomment %}
 
-            // {% comment %} js中，th通过.innerText获取元素的值，input框通过.value获取元素的值 {% endcomment %}
+            // 回收率上限
+            var maxCV = document.getElementById("maxCV")  
+            
+            // 验证结果
+            var verifyresult = document.getElementById("verifyresult")
+
+            // 验证结果判断计数器
+            var falsecounter = 0
+
+            // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
             for(let i=0; i<CVlist.length; i++){
                 if (CVlist[i].innerText=="CV(%)"){
                     // pass
@@ -130,9 +188,21 @@
                     if(parseFloat(CVlist[i].innerText) > parseFloat(maxCV.value)){
                         CVlist[i].style.color="red"
                         CVlist[i].style.fontWeight=700
+                        falsecounter+=1
                     } 
                 }          
             }
+
+            // 不通过时显示红色的“不通过!”,通过时显示绿色的“通过!”
+            if(falsecounter>0){
+                verifyresult.innerHTML="不通过!";
+                verifyresult.style.color= "red";
+            }else{
+                verifyresult.innerHTML="通过!";
+                verifyresult.style.color= "green";
+            }
+
+            
 
         }
     </script>

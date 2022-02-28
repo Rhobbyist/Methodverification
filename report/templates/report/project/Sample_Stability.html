@@ -155,7 +155,13 @@
                                     <!-- 第一行 -->
                                     <tr>
                                         <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
-                                        <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+
+                                        <!-- 首次循环，时间为0h时设置不能修改 -->
+                                        {% if forloop.first %}
+                                            <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} readonly></td>
+                                        {% else %}
+                                            <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                        {% endif %}
                                         <!-- 低浓度1,均值,CV,回收率1 -->
                                         <td>{{c.0}}</td>
                                         <td rowspan="3">{{c.9}}</td>
@@ -222,7 +228,13 @@
                                     <!-- 第一行 -->
                                     <tr>
                                         <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
-                                        <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+
+                                        <!-- 首次循环，时间为0h时设置不能修改 -->
+                                        {% if forloop.first %}
+                                            <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} readonly></td>
+                                        {% else %}
+                                            <td rowspan="3"><input class="timeinput" type="text" name="Room_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                        {% endif %}
                                         <!-- 较低浓度1,均值,CV,回收率1 -->
                                         <td>{{c.0}}</td>
                                         <td rowspan="3">{{c.6}}</td>
@@ -289,7 +301,13 @@
                                             <!-- 第一行 -->
                                             <tr>
                                                 <!-- 时间 -->
-                                                <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+
+                                                <!-- 首次循环，时间为0h时设置不能修改 -->
+                                                {% if forloop.first %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} readonly></td>
+                                                {% else %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                {% endif %}
                                                 <!-- 低浓度1,均值,CV,回收率1 -->
                                                 <td>{{c.0}}</td>
                                                 <td rowspan="3">{{c.9}}</td>
@@ -356,7 +374,13 @@
                                             <!-- 第一行 -->
                                             <tr>
                                                 <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
-                                                <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+
+                                                <!-- 首次循环，时间为0h时设置不能修改 -->
+                                                {% if forloop.first %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} readonly></td>
+                                                {% else %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Refrigerate_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                {% endif %}
                                                 <!-- 较低浓度1,均值,CV,回收率1 -->
                                                 <td>{{c.0}}</td>
                                                 <td rowspan="3">{{c.6}}</td>
@@ -425,7 +449,13 @@
                                             <!-- 第一行 -->
                                             <tr>
                                                 <!-- 时间 -->
-                                                <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+
+                                                <!-- 首次循环，时间为0h时设置不能修改 -->
+                                                {% if forloop.first %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} readonly></td>
+                                                {% else %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                {% endif %}
                                                 <!-- 低浓度1,均值,CV,回收率1 -->
                                                 <td>{{c.0}}</td>
                                                 <td rowspan="3">{{c.9}}</td>
@@ -492,7 +522,12 @@
                                             <!-- 第一行 -->
                                             <tr>
                                                 <!-- 时间 oninput = "value=value.replace(/[^\d]/g,'')">  限定只能输入数字 -->
-                                                <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                <!-- 首次循环，时间为0h时设置不能修改 -->
+                                                {% if forloop.first %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} readonly></td>
+                                                {% else %}
+                                                    <td rowspan="3"><input class="timeinput" type="text" name="Freeze_tem_time_{{key}}" value={{r}} oninput="value=value.replace(/[^\d]/g,'')"></td>
+                                                {% endif %}
                                                 <!-- 较低浓度1,均值,CV,回收率1 -->
                                                 <td>{{c.0}}</td>
                                                 <td rowspan="3">{{c.6}}</td>

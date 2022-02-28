@@ -14,6 +14,7 @@
                         <th class="format">检测平台</th>
                         <th class="format">项目</th>
                         <th class="format">初始验证时间</th>
+                        <th class="format">新建验证指标</th>
                         <th class="format">报告预览</th>
                         <th class="format">删除</th>
                     </tr>
@@ -25,8 +26,9 @@
                             <td class="format">{{ item.Detectionplatform}}</td>
                             <td class="format">{{ item.project }}</td>
                             <td class="format">{{ item.verifytime|date:"Y年m月d日" }}</td>  <!--格式化日期，方便用datatables排序-->
-                            <td class="format"><a href="{% url 'endreport' item.id %}">报告预览</a></td>
-                            <td class="format"><a href="{% url 'delete' item.id %}">删除</a></td>
+                            <td class="format"><a href="{% url 'verifyagain' item.id %}">新建验证指标</a></td>
+                            <td class="format"><a href="{% url 'reportpreview' item.id %}">报告预览</a></td>
+                            <td class="format"><a href="{% url 'reportdelete' item.id %}">删除</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>   

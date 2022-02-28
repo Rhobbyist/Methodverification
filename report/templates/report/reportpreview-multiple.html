@@ -144,11 +144,13 @@
 
     /* 三 验证数据 */
 
-    .jmdtd,.stabilitytd{
+    /* 每个验证指标外层容器td，设置padding25px */
+    .jmdtd,.stabilitytd,.reference_intervaltd{
         padding: 0px 25px;
     }
 
-    .JMDtitle,.Stabilitytitle{
+    /* 每个验证指标一级标题 */
+    .JMD_title,.Stability_title,.ReferenceInterval_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -156,22 +158,42 @@
         line-height: 40px;
     }
 
-    .Stability_handle_Table{
+    /* 每个验证指标二级标题 */
+    .PNJMD_title{
+        font-size: 16px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: left;
+        line-height: 40px;
+    }
+
+    /* 每个验证指标下的表格 */
+    .PNjmd_Table{
         table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
         word-break: break-all;  
         border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
         border: 2px solid #000;
         border-left: none;
         border-right: none;
-        width: 100%;
-        /* width: 700px; */
+        width: 580px;
         margin: 0 auto; /*居中 */ 
     }
 
-    p {
-        margin: 0;
+    /* 每个验证指标下的表格的表头 */
+    .PNjmd_Tabletr th{
+        /* 字体加粗居中 */
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+
+        /* 设置下边框 */
+        border: 2px solid #000;
+        border-left: none;
+        border-right: none;
+        font-weight: bold;
     }
 
+    /* ------------------------------------- */
     /*四号字体*/
     p.smallfour {
         font-size: 16px;
@@ -501,43 +523,43 @@
                 {% if PNjmd_data.JMD_endreport_dict or PJjmd_data.JMD_endreport_dict %} 
                     <tr class="jmdtr">
                         <td class="jmdtd">
-                            <div class="JMDtitle">{{JMDindex}}. 精密度（Precision）</div>
+                            <div class="JMD_title">{{JMDindex}}. 精密度（Precision）</div>
                             <!-- 1.1 重复性精密度实验数据 -->
                             {% if PNjmd_data.JMD_endreport_dict %}
-                                <div class="smallfour">{{JMDindex}}.{{PNjmdindex}} 重复性精密度（Intra-assay Precision）</div>
+                                <div class="PNJMD_title">{{JMDindex}}.{{PNjmdindex}} 重复性精密度（Intra-assay Precision）</div>
                                 {% for r in PNjmd_data.textlist %}
-                                    <div class="five"> {{forloop.counter}}) {{r}}</div>
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="five" style="width: 100%;">{{PNjmd_data.serial}})
+                                <div class="maintext">{{PNjmd_data.serial}})
                                     表{{tablePNindex_start}}-{{tablePNindex_end}} 即为重复性精密度数据，{{PNjmd_data.JMD_CONCLUSION}}</div>
                                 
                                 {%for key,value in PNjmd_data.JMD_endreport_dict.items %}
-                                    <table class="mainbody" cellpadding="4" align="center">
+                                    <table class="PNjmd_Table" cellpadding="4">
                                         <caption>表{{forloop.counter|add:tablePNindex_start|add:-1}}. {{key}}重复性精密度实验数据</caption>
                                         {% if PNjmd_data.lownum %}
-                                            <tr>
-                                                <th class="title topdown-1">实验号</th>
-                                                <th class="title topdown-1">中浓度({{Unitdict|get_item:key|default:unit}})</th>
-                                                <th class="title topdown-1">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                            <tr class="PNjmd_Tabletr">
+                                                <th>实验号</th>
+                                                <th>中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th>高浓度({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
                                         {% elif PNjmd_data.mediannum %}
-                                            <tr>
-                                                <th class="title topdown-1">实验号</th>
-                                                <th class="title topdown-1">低浓度({{Unitdict|get_item:key|default:unit}})</th>
-                                                <th class="title topdown-1">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                            <tr class="PNjmd_Tabletr">
+                                                <th>实验号</th>
+                                                <th>低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th>高浓度({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
                                         {% elif PNjmd_data.highnum %}
-                                            <tr>
-                                                <th class="title topdown-1">实验号</th>
-                                                <th class="title topdown-1">低浓度({{Unitdict|get_item:key|default:unit}})</th>
-                                                <th class="title topdown-1">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                            <tr class="PNjmd_Tabletr">
+                                                <th>实验号</th>
+                                                <th>低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th>中浓度({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
                                         {% else %}
-                                            <tr>
-                                                <th class="title topdown-1">实验号</th>
-                                                <th class="title topdown-1">低浓度({{Unitdict|get_item:key|default:unit}})</th>
-                                                <th class="title topdown-1">中浓度({{Unitdict|get_item:key|default:unit}})</th>
-                                                <th class="title topdown-1">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                            <tr class="PNjmd_Tabletr">
+                                                <th>实验号</th>
+                                                <th>低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th>中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th>高浓度({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
                                         {% endif %}
                                         {% for r in value %}
@@ -3034,41 +3056,46 @@
 
         
         <!-- -----------------------------------------------------参考区间----------------------------------------------------- -->
-        {% if Reference_Interval_data.Referenceinterval_dict %}
-            <div class="four" style="text-align:left;">{{Stabilityindex}}. 稳定性（Stability）</div>
-            {% for r in Reference_Interval_data.textlist %}
-                <div class="five"> {{forloop.counter}}) {{r}}</div>
-            {% endfor %}
-            <div class="five" style="width: 100%;">{{Reference_Interval_data.serial}})
-                表{{table_Reference_Interval_index_start}} 即为参考区间实验数据</div>
-
-            {% comment %} 具体数据 {% endcomment %}        
-            <table class="mainbody" cellpadding="4" align="center">
-                <caption>表{{table_Reference_Interval_index_start}}.参考区间实验数据</caption>
-                <tr>
-                    <th class="title topdown-1">实验号</th>
-                    {%for key,value in Reference_Interval_data.Referenceinterval_dict.items %}
-                        <th class="title topdown-1">{{key}}</th>
+        <tr class="reference_intervaltr">
+            <td class="reference_intervaltd">
+                {% if Reference_Interval_data.Referenceinterval_dict %}
+                    <div class="Reference_Intervaltitle">{{Reference_Interval_index}}. 稳定性（Stability）</div>
+                    {% for r in Reference_Interval_data.textlist %}
+                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                     {% endfor %}
-                </tr>
-                {% for r in Reference_Interval_data.Referenceinterval_list %}
-                    <tr>
-                        {% if forloop.last %}
-                            <td class="five">参考区间</td>
-                            {%for c in r %}                  
-                                <td class="five">{{c}}</td>
+                    <div class="maintext" style="width: 100%;">{{Reference_Interval_data.serial}})
+                        表{{table_Reference_Interval_index_start}} 即为参考区间实验数据</div>
+
+                    {% comment %} 具体数据 {% endcomment %}        
+                    <table class="mainbody" cellpadding="4" align="center">
+                        <caption>表{{table_Reference_Interval_index_start}}.参考区间实验数据</caption>
+                        <tr>
+                            <th class="title topdown-1">实验号</th>
+                            {%for key,value in Reference_Interval_data.Referenceinterval_dict.items %}
+                                <th class="title topdown-1">{{key}}</th>
                             {% endfor %}
-                        {% else %}
-                            <td class="five">{{forloop.counter}}</td>
-                            {%for c in r %}                  
-                                <td class="five">{{c}}</td>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-            </table>
-            <br>
-        {% endif %}
+                        </tr>
+                        {% for r in Reference_Interval_data.Referenceinterval_list %}
+                            <tr>
+                                {% if forloop.last %}
+                                    <td class="five">参考区间</td>
+                                    {%for c in r %}                  
+                                        <td class="five">{{c}}</td>
+                                    {% endfor %}
+                                {% else %}
+                                    <td class="five">{{forloop.counter}}</td>
+                                    {%for c in r %}                  
+                                        <td class="five">{{c}}</td>
+                                    {% endfor %}
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    <br>
+                {% endif %}
+            </td>
+        </tr>
+        
 
 
 

@@ -356,7 +356,7 @@ def sd(lst):
 def cv(lst):
     meanresult = np.mean(lst)
     sdresult = np.std(lst,ddof=1)
-    cvresult = sdresult/meanresult
+    cvresult = sdresult/meanresult*100
 
     return new_round(cvresult)
 

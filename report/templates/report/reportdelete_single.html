@@ -1,219 +1,391 @@
 {% extends "report/layout.html" %} 
 {% block content %} 
 
-    <style>
-        /*基本格式*/
-        p{
-            margin-top: 0px;
-            margin-right: 0px;
-            margin-bottom: 0px;
-            margin-left: 0px;
-        }
-        p.smalltwo{font-size:24px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*小二号字体*/
-        p.smallthree{font-size:20px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*小三号字体*/
-        p.four{font-size:18.6px;font-weight: bold;font-family:Times New Roman,宋体;text-align:center;line-height:2;} /*四号字体*/
-        p.smallfour{font-size:16px;font-weight: bold;font-family:Times New Roman,宋体;line-height:2;} /*小四号字体*/
-        p.five{font-size:14px;font-family:Times New Roman,宋体;text-indent:2em;line-height:2;text-align:justify;} /*五号字体*/
+<!--CSS-->
+<style>
+    /* 删除整份报告 */
+    .deleteall{
+        font-size:18.6px;
+        font-weight: bold;
+        font-family:Times New Roman,宋体;
+        text-align:left;
+        line-height:2;
+    }
 
-        /*页眉页脚格式*/
-        div.thead{font-size:14px;font-family:Times New Roman,宋体;text-align:center;} 
-        div.tfoot{font-size:14px;font-style:oblique;font-family:Times New Roman,宋体;color:rgba(255,255,255,0);} /*color:rgba(255,255,255,0)为设置字体透明色的语法*/
-        pageFooter {display: table-footer-group;}
-        pageFooter:after {counter-increment: page;content: counter(page);}
+    /* 一 封面 */
+    .covertr,.covertd{
+        /* 设置固定高度，保证封面打印时独占第一页 */
+        display: block;
+        height: 889px; 
+        /* background-color: #bfa; */
+    }
 
-        /*表格格式*/
-        /* table.report-container {page-break-after:left;} */ 
+    /* 中英文大标题 */
+    .Cover_englishtitle_big,.Cover_chinesetitle_big{
+        font-size: 24px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+        line-height: 100px;
+    }
 
-        table.always{
-            page-break-after: always;
-        }
-        .always:last-child{
-            page-break-after: auto;
-        }   /* 解决打印时多出一页的问题 */
+    .Cover_englishtitle_big{
+        margin-top: 20px;
+    }
 
-        thead.report-header {display:table-header-group;
-        }
-        tfoot.report-footer {display:table-footer-group;
-                bottom: 0;
-                left: 0;
-                /* position: fixed; */
-                right: 0;}
+    /*中英文小标题*/
+    .Cover_englishtitle_small,.Cover_chinesetitle_small {
+        font-size: 18.6px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+        line-height: 100px;
+    }
 
-        table{table-layout:fixed;word-break:break-all;} /*table表格宽度固定，同时td内容过长也不会被撑开*/
-        caption{font-size:16px;font-weight: bold;font-family:Times New Roman,宋体;} 
-        th.title{font-weight:bold;font-family:Times New Roman,宋体;text-align:center;} /*表格中的表格字体*/
-        td.five{font-family:Times New Roman,宋体;text-align:center;} /*表格中的字体设置为五号字体*/
-        td.end{border: 1px solid transparent;}  /*报告编辑处的表格*/
-        td.bottom{border-bottom:none;} /*报告的表格不显示底部边框*/
-        td.top{border-top:none;} /*报告的表格不显示顶部边框*/
-        div.offset{
-            position: relative;
-            left:0px;
-            top:20px;}
+    /* 仪器编号，仪器型号，色谱柱 */
+    .Cover_instrumentnumber,.Cover_instrumentmodel,.Cover_column{
+        font-size: 18.6px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+        line-height: 50px;
+    }
 
-        /*图片格式*/
-        p.picture{font-size:14px;font-family:Times New Roman,宋体;font-weight: bold;text-align:center;line-height:1.5;} 
+    .Cover_column{
+        margin-bottom: 30px;
+    }
 
-        /*输入框格式*/
-        input{
-            border-bottom: 1px solid #000;
-            border-top: 0px;
-            border-left: 0px;
-            border-right: 0px;
+    /*ProtocolID，代码*/
+    .Cover_ProtocolID,.Cover_code {
+        font-size: 20px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+        line-height: 70px;
+    }
 
-            border: 1px solid #ccc;
-            padding: 7px 0px;
-            border-radius: 3px;
-            padding-left:5px;
-            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-            -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
-            -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
-            transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
-        }
 
-        input:checked {
-            height: 23px;
-            width: 23px;
-        }
+    /* 二 前言 */
 
-        input:focus{
-            border-color: #66afe9;
-            outline: 0;
-            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
-            box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
-        }
-    </style>
+    /* 外层td容器上下padding为0，左右为25 */
+    .prefacetd{
+        padding: 0px 25px;
+    }
 
-    <body>
-        <form action="{% url 'REPORTdelete' %}" method="POST">
+    /* 非表格中的正文样式 */
+    .maintext{
+        font-size: 14px;
+        font-family: Times New Roman, 宋体;
+        text-indent: 2em;
+        line-height: 40px;
+        text-align: justify;
+    }
+
+    /* 表格中的正文样式 */
+    .tablemaintext{
+        font-size: 14px;
+        font-family: Times New Roman, 宋体;
+        text-align:center
+    }
+
+    .Preface_chinesetitle{
+        font-size: 20px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+        line-height: 40px;
+        /* margin-top: -60px; */
+    }
+
+    .ValidationReason,.Instrument_Conditions,.Instrument,.Reagents_Consumables,.SamplePreparation{
+        font-size: 18.6px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: left;
+        line-height: 40px;
+    }
+
+    .MSMethod,.HPLCMethod,.DetectionEquipment,.AuxiliaryEquipment,.Reagents,.Consumables{
+        font-size: 16px;
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: left;
+        line-height: 40px;
+    }
+
+    .MSMethodTable,.HPLCMethodTable{
+        table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
+        word-break: break-all;  
+        border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
+        border: 2px solid #000;
+        border-left: none;
+        border-right: none;
+        width: 580px;
+        margin: 0 auto; /*居中 */ 
+    }
+
+    .MSMethodTabletr th{
+        /* 字体加粗居中 */
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+
+        /* 设置下边框 */
+        border: 2px solid #000;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
+
+    .HPLCMethodTabletr th{
+        /* 字体加粗居中 */
+        font-weight: bold;
+        font-family: Times New Roman, 宋体;
+        text-align: center;
+
+        /* 设置下边框 */
+        border: 2px solid #000;
+        border-left: none;
+        border-right: none;
+        font-weight: bold;
+        width: 20%;
+    }
+
+
+    /*页眉页脚格式*/
+    div.thead{font-size:14px;font-family:Times New Roman,宋体;text-align:center;}
+    div.tfoot{font-size:14px;font-style:oblique;font-family:Times New Roman,宋体;color:rgba(255,255,255,0);}
+    pageFooter {display: table-footer-group;}
+    pageFooter:after {counter-increment: page;content: counter(page);}
+
+    /*表格格式*/
+    /* table.report-container {page-break-after:left;} */
+
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+    
+    table.always{
+        page-break-after: always;
+    }
+    .always:last-child{
+        page-break-after: auto;
+    }  /* 解决打印时多出一页的问题 */
+
+    caption{font-size:16px;font-weight: bold;font-family:Times New Roman,宋体;}
+    thead.report-header {display:table-header-group;}
+    tfoot.report-footer {display:table-footer-group;
+            bottom: 0;
+            left: 0;
+            /* position: fixed; */
+            right: 0;}
+    th.title{font-weight:bold;font-family:Times New Roman,宋体;text-align:center;}
+    td.five{font-family:Times New Roman,宋体;text-align:center;} /*五号字体*/
+    td.end{border: 1px solid transparent;}  /*报告编辑处的表格*/
+    td.bottom{border-bottom:none;} /*报告的表格不显示底部边框*/
+    td.top{border-top:none;} /*报告的表格不显示顶部边框*/
+    div.offset{
+        position: relative;
+        left:0px;
+        top:20px;}
+    
+    /*图片格式*/
+    p.picture{font-size:14px;font-family:Times New Roman,宋体;font-weight: bold;text-align:center;} /*图片*/
+    
+    /*输入框格式*/
+    input{
+        border-bottom: 1px solid #000;
+        border-top: 0px;
+        border-left: 0px;
+        border-right: 0px;
+
+        border: 1px solid #ccc;
+        padding: 7px 0px;
+        border-radius: 3px;
+        padding-left:5px;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+        -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+        transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
+    }
+
+    input:checked {
+        height: 23px;
+        width: 23px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+</style>
+
+<body>
+    <form action="{% url 'reportdeleteselect' %}" method="POST">
         <h2 style="color: red;">请勾选您要删除的验证指标</h2>
-        <p class="four" style="text-align:left;"><input type="checkbox" name="quota" value="all" unchecked>删除整份报告</p>
-        <div id="content">
+        <div class="deleteall"><input type="checkbox" name="quota" value="all" unchecked>删除整份报告</div>
+        <div class="mainreport">
             <table class="always" width="100%" style="height: 490px;" cellpadding="25"> <!--cellpadding="25"设置打印时的内外边距-->
                 <thead class="report-header">
-                    <tr>
-                        <th class="report-header">
-                            <div class="text-left"><img src="/static/report/img/4.png" height="35px" width="90px"/></div>
-                            <div class="thead" >广州金域医学检验中心有限公司</div>  
-                            <div class="thead" >Guangzhou Kingmed Center for Clinical Laboratory</div> 
-                            <div style="width:100%; height:2px; border-top:1.2px solid 	#000000; clear:both;"></div>  <!--页眉文字下方添加横线的代码-->           
-                        </th>
-                    </tr>
+                <tr>
+                    <th class="report-header-cell">
+                        <div class="text-left"><img src="/static/report/img/4.png" height="35px" width="90px"/></div>
+                        <div class="thead">广州金域医学检验中心有限公司</div>  
+                        <div class="thead">Guangzhou Kingmed Center for Clinical Laboratory</div> 
+                         <!--页眉文字下方添加横线的代码-->    
+                        <div style="width:100%; height:2px; border-top:1.2px solid 	#000000; clear:both;"></div> 
+                    </th>
+                </tr>
                 </thead>
 
-    <!------------------------------------------------------封面------------------------------------------------------> 
-                <tbody class="report-content">              
+                <tfoot class="report-footer" style="display:table-footer-group;font-weight:bold">
                     <tr>
-                        <td class="report-content-cell">
-                            <br><br><br>
-                            <p class="smalltwo">VALIDATION PROTOCOL AND REPORT</p>
-                            <br><br><br><br>
-                            <p class="smalltwo">方法验证报告</p>
-                            <br><br><br><br>
-                            <p class="four">{{english_title}}</p>
-                            <br><br><br><br>
-                            <p class="four">{{chinese_title}}</p>
-                            <br><br>
-                            <p class="four">仪器编号：{{Instrument_number}}</p>
-                            <br><br><br>
-                            <p class="four">仪器型号：{{Instrument_model}}</p>
-                            <br>
-                            {% if ColumnTrue %}
-                                <p class="four">色谱柱：{{Column}}</p>
-                                <br><br><br><br>
+                        <td class="report-footer-cell">
+                            <div class="tfoot">&#12288</div>
+                            <div class="tfoot">&#12288</div>
+                        </td>
+                    </tr>
+                </tfoot>
+
+                <!--------------------------------------------------正文-------------------------------------------------->
+                <tbody class="report-content">              
+                    <!--------------------------------------------封面-------------------------------------------->
+                    <tr class="covertr">
+                        <td class="covertd">
+
+                            <!--英文大标题-->
+                            <div class="Cover_englishtitle_big">VALIDATION PROTOCOL AND REPORT</div>
+
+                            <!--中文大标题-->
+                            <div class="Cover_chinesetitle_big">方法验证报告</div>
+
+                            <!--英文小标题-->
+                            {% if english_title %}
+                                <div class="Cover_englishtitle_small">{{english_title}}</div>
                             {% else %}
-                                <p class="four" style="visibility:hidden;">色谱柱：{{Column}}</p>
-                                <br><br><br><br>
-                            {% endif %}                          
-                            <p class="smallthree">Protocol ID：{{Protocol_ID}}</p>
-                            <br>
-                            <p class="smallthree">代码：{{Protocol_ID}}</p>
-                            <br><br>
-    
-     <!------------------------------------------------------正文------------------------------------------------------> 
+                                <div class="Cover_englishtitle_small">英文标题未设置！</div>
+                            {% endif %}
 
-                        <p class="smallthree">{{chinese_title}}</p>
-                        <br>
-                        <p class="four" style="text-align:left;">1. 验证原因（Validation Reason）</p>
-                        <p class="five">{{text_Validation_Reason.0}}</p>
+                            <!-- 中文小标题 -->
+                            {% if chinese_title %}
+                                <div class="Cover_chinesetitle_small">{{chinese_title}}</div>
+                            {% else %}
+                                <div class="Cover_chinesetitle_small">中文标题未设置！</div>
+                            {% endif %}
 
-    <!------------------------------------------------------仪器条件------------------------------------------------------> 
-                        <p class="four" style="text-align:left;">2. 仪器条件（Instrument Conditions）</p>
-                        <p class="five">检测仪器：{{Instrument_model}}（仪器编号：{{Instrument_number}}）</p>
-                        {% if ColumnTrue %}
-                            <p class="five">色谱柱：{{Column}}</p>
-                        {% endif %}                    
-                        <p class="smallfour">2.1 质谱方法（HPLC Method）</p>
-                        {% for r in resulttest_method.zp_method_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
-                            <table border="1" cellpadding="4" width="700" align="center">
+                            <!-- 仪器编号，仪器型号，色谱柱 -->
+                        <div class="Cover_instrumentnumber">仪器编号：{{Instrument_number}}</div>
+                        <div class="Cover_instrumentmodel">仪器型号：{{Instrument_model}}</div>
+                        <div class="Cover_column">色谱柱：{{Column}}</div>
+
+                        <!-- Protocol ID，代码 -->
+                        <div class="Cover_ProtocolID">Protocol ID：{{Protocol_ID}}</div>
+                        <div class="Cover_code">代码：{{Protocol_ID}}</div>
+                        </td>
+                    </tr>
+
+                    <!-------------------------------------------- 一 前言:验证原因，仪器条件，设备...-------------------------------------------->
+                    <tr class="prefacetr">
+                        <td class="prefacetd">
+                            {% if chinese_title %}
+                                <div class="Preface_chinesetitle">{{chinese_title}}</div>               
+                            {% else %}
+                                <div class="Preface_chinesetitle">中文标题未设置！</div>                  
+                            {% endif %}
+                            <div class="ValidationReason">1. 验证原因（Validation Reason）</div>
+                            <div class="maintext">{{text_Validation_Reason.0}}</div>
+
+                            <!--------------------------------------------仪器条件-------------------------------------------->
+                            <div class="Instrument_Conditions">2. 仪器条件（Instrument Conditions）</div>
+                            <div class="maintext">检测仪器：{{Instrument_model}}（仪器编号：{{Instrument_number}}）</div>
+                            <div class="maintext">色谱柱：{{Column}}</div>
+
+                            <!----------------------质谱方法-------------------------->
+                            <div class="MSMethod">2.1 质谱方法（MS Method）</div>
+                            {% for r in Test_method_data.zp_method_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+
+                            <!----------------------质谱方法-------------------------->
+                            <table class="MSMethodTable" cellpadding="4">
                                 <caption>表1.质谱参数</caption>
+                                <tr class="MSMethodTabletr">
+                                    <th width="20%">分析物名称</th>
+                                    <th>母离子</th>
+                                    <th>子离子</th>
+                                    <th>TIME(S)</th>
+                                    <th width="20%">CONE(V)</th>
+                                    <th width="20%">COLLISION(V)</th>
+                                </tr>
+                                {% for r in Test_method_data.zp_method_list %}
                                 <tr>
-                                    <th class="title">分析物名称</th>
-                                    <th class="title">母离子(m/z)</th>
-                                    <th class="title">子离子(m/z)</th>
-                                    <th class="title">Times(msec)</th>
-                                    <th class="title">Declustering Potential(DP)(V)</th>
-                                    <th class="title">Collision Energy(CE)(V)</th>
-                                </tr>                           
-                                {% for r in resulttest_method.zp_method_list %}
-                                    <tr>
-                                        {% for c in r %}
-                                            <td class="five">{{c}}</td>
-                                        {% endfor %}
-                                    </tr>                            
-                                {% endfor %}
-                            </table>  
-                        <br>
-                        <p class="smallfour">2.2 液相方法（MS Method）</p>
-                        {% for r in resulttest_method.yx_method_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
-                            <table border="1" cellpadding="4" width="700" align="center">
-                                <caption>表2.液相梯度条件</caption>
-                                <tr>
-                                    <th class="title" width="20%">步骤</th>
-                                    <th class="title" width="20%">分析时间(min)</th>
-                                    <th class="title" width="20%">流速(mL/min)</th>
-                                    <th class="title" width="20%">流动相B%</th>
-                                    <th class="title" width="20%">流动相A%</th>
-                                </tr>                           
-                                {% for r in resulttest_method.yx_method_list %}
-                                    <tr>
-                                        {% for c in r %}
-                                            <td class="five">{{c}}</td>
-                                        {% endfor %}
-                                    </tr>                            
+                                    {% for c in r %}
+                                        <td class="tablemaintext">{{c}}</td>
+                                    {% endfor %}
+                                </tr>
                                 {% endfor %}
                             </table>
-                        <br>
-    <!------------------------------------------------------设备------------------------------------------------------> 
-                        <p class="four" style="text-align:left;">3. 设备（Instrument）</p>
-                        <p class="smallfour">3.1 检测设备（Detection equipment）</p>
-                        {% for r in resultequipment.Detection_equipment_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
-                        <p class="smallfour">3.2 辅助设备（Auxiliary equipment）</p>
-                        {% for r in resultequipment.Auxiliary_equipment_texts_list %}
-                            <p class="five">{{r|linebreaksbr}}</p>
-                        {% endfor %}
-        <!------------------------------------------------------试剂耗材------------------------------------------------------> 
-                        <p class="four" style="text-align:left;">4. 试剂和耗材（Reagents and Consumables）</p>
-                        <p class="smallfour">4.1 主要试剂（Reagents）</p>
-                        {% for r in resultReagents_Consumables.reagents_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
-                        <p class="smallfour">4.2 主要耗材（Consumables）</p>
-                        {% for r in resultReagents_Consumables.consumables_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
-        <!------------------------------------------------------样品处理------------------------------------------------------> 
-                        <p class="four" style="text-align:left;">5. 样品处理（Sample Preparation）</p>
-                        {% for r in resultSample_Preparation.Sample_Preparation_texts_list %}
-                            <p class="five">{{r}}</p>
-                        {% endfor %}
+                            
+                            <!----------------------液相方法-------------------------->
+                            <div class="HPLCMethod">2.2 液相方法（HPLC Method）</div>
+                            {% for r in Test_method_data.yx_method_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+                            <table class="HPLCMethodTable" cellpadding="4">
+                                <caption>表2.液相梯度条件</caption>
+                                <tr class="HPLCMethodTabletr">
+                                    <th>步骤</th>
+                                    <th>分析时间(min)</th>
+                                    <th>流速(mL/min)</th>
+                                    <th>流动相B%</th>
+                                    <th>流动相A%</th>
+                                </tr>
+                                {% for r in Test_method_data.yx_method_list %}
+                                <tr>
+                                    {% for c in r %}
+                                        <td class="tablemaintext">{{c}}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            
+                            <!---------------------------------------------设备---------------------------------------------->
+                            <div class="Instrument">3. 设备（Instrument）</div>
+                            <div class="DetectionEquipment">3.1 检测设备（Detection equipment）</div>
+                            {% for r in Equipment_data.Detection_equipment_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+                            
+                            <div class="AuxiliaryEquipment">3.2 辅助设备（Auxiliary equipment）</div>
+                            {% for r in Equipment_data.Auxiliary_equipment_texts_list %}
+                                <div class="maintext">{{r|linebreaksbr}}</div>
+                            {% endfor %}
+
+                            <!-------------------------------------------试剂耗材-------------------------------------------->
+                            <div class="Reagents_Consumables">4. 试剂和耗材（Reagents and Consumables）</div>
+                            <div class="Reagents">4.1 主要试剂（Reagents）</div>
+                            {% for r in Reagents_Consumables_data.reagents_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+
+                            <div class="Consumables">4.2 主要耗材（Consumables）</div>
+                            {% for r in Reagents_Consumables_data.consumables_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+
+                            <!-------------------------------------------样品处理------------------------------------------->
+                            <div class="SamplePreparation">5. 样品处理（Sample Preparation）</div>
+                            {% for r in Sample_Preparation_data.Sample_Preparation_texts_list %}
+                                <div class="maintext">{{r}}</div>
+                            {% endfor %}
+                        </td>
+                    </tr>
 
     <!------------------------------------------------------分界线------------------------------------------------------>      
 
@@ -268,7 +440,7 @@
                                 <br>
                             {% endfor %}
                         {% endif %}
-    
+
                         {% if resultPJ.JMD_endreport_dict %}
                             <p class="smallfour"><input type="checkbox" name="quota" value="中间精密度" unchecked>{{JMDindex}}.{{PJjmdindex}}  中间精密度（Inter-assay Precision）</p>
                             {% for r in resultPJ.textlist %}
@@ -363,7 +535,7 @@
                                 <br>
                         {% endif %}
                         
-    
+
     <!------------------------------------------------------准确度------------------------------------------------------>
                         {% if resultPT or resultrecycle.Recycle_endreport_dict %}
                             <p class="four" style="text-align:left;">{{ZQDindex}}. 准确度（Accuracy）</p>
@@ -374,7 +546,7 @@
                                 {% for r in resultPT.textlist %}
                                     <p class="five"> {{forloop.counter}}) {{r}}</p>
                                 {% endfor %}
-      
+        
                                 {%for key,value in resultPT.PT_endreport_dict.items %}
                                     <table cellpadding="4" width="700" align="center" border="1">
                                         <caption>表{{tablePTindex}}. {{key}}验证结果</caption>
@@ -512,7 +684,7 @@
                                 {% endfor %}              
                             <br>
                         {% endif %} 
-    
+
     <!------------------------------------------------------AMR------------------------------------------------------>   
                         {% if resultAMR.AMR_dict_report or resultLOD.objs or resultAMRconclusion%}
                             <p class="four" style="text-align:left;">{{AMRindex}}. 分析灵敏度与分析测量范围（Analytical Sensitivity and Analytical Measurement Range）</p>
@@ -596,7 +768,7 @@
                                 {% endfor %}                                                                       
                         {% endif %}
                         
-    
+
                         {% if resultLOD.objs %}
                             <p class="smallfour"><input type="checkbox" name="quota" value="方法检出限" unchecked>{{AMRindex}}.{{LODindex}} 方法检出限（Limit of Detection）</p>
                             <p class="five"> 1)逐级稀释标准品直至S/N接近并大于3时所对应的标准品浓度值，即为方法的检出限（LOD）；</p>
@@ -776,7 +948,7 @@
                                 </tr>
                             </table>
                         {% endif %}
-    
+
                         {% if resultAMRconclusion %}
                         <p class="smallfour"><input type="checkbox" name="quota" value="AMR最终结论" unchecked>{{AMRindex}}.{{AMRconclusionindex}} 结论（Summary of the AMR, LOQ and LOD study）</p>
                             <table border="1" cellpadding="4" width="700" align="center">
@@ -798,7 +970,7 @@
                             </table>
                         {% endif %}
                             
- <!------------------------------------------------------稀释倍数------------------------------------------------------>        
+    <!------------------------------------------------------稀释倍数------------------------------------------------------>        
                         {% if resultCRR%}
                             <p class="four" style="text-align:left;">{{CRRindex}}. 临床可报告范围（Clinical Reportable Range）</p>   
                             <p class="smallfour"><input type="checkbox" name="quota" value="稀释倍数" unchecked>{{CRRindex}}.{{crrindex}} 稀释倍数验证（Dilution）</p> 
@@ -862,8 +1034,8 @@
                                 {{resultCRR.CRR_conclusion2}}</p>
                         {% endif %}    
                         
-    
-<!------------------------------------------------------基质特异性------------------------------------------------------>        
+
+    <!------------------------------------------------------基质特异性------------------------------------------------------>        
                         {% if resultMS%}
                             <p class="four" style="text-align:left;"><input type="checkbox" name="quota" value="基质特异性" unchecked>{{MSindex}}. 基质特异性（Matrix Specificity）</p>   
                             {% for r in resultMS.MS_textlist_general %}
@@ -879,7 +1051,7 @@
                             </p> 
                         {% endif %}   
 
-<!------------------------------------------------------基质效应------------------------------------------------------>                           
+    <!------------------------------------------------------基质效应------------------------------------------------------>                           
                         {% if resultMatrix_effect%}
                             <p class="four" style="text-align:left;"><input type="checkbox" name="quota" value="基质效应" unchecked>{{Matrix_effectindex}}. 基质效应（Matrix effect）</p>   
                             {% for r in resultMatrix_effect.textlist %}
@@ -932,8 +1104,8 @@
                             {% endfor %} 
                         {% endif %} 
                         
-   
- <!------------------------------------------------------携带效应------------------------------------------------------>        
+
+    <!------------------------------------------------------携带效应------------------------------------------------------>        
                         {% if resultCarryover%}
                             <p class="four" style="text-align:left;"><input type="checkbox" name="quota" value="携带效应" unchecked>{{Carryoverindex}}. 携带效应（Carryover）{{resultCarryover.percent}}</p>   
                             {% for r in resultCarryover.textlist %}
@@ -951,7 +1123,7 @@
                                         </tr>
                                         <tr>
                                             {%for c in value.keys %}
-                                                <th class="title">{{c}}</td>
+                                                <th class="title">{{c}}</th>
                                             {% endfor %}
                                         </tr> 
                                         <tr>
@@ -1033,13 +1205,13 @@
                         {% endif %}  
 
 
- <!------------------------------------------------------稳定性------------------------------------------------------>        
+    <!------------------------------------------------------稳定性------------------------------------------------------>        
             
                         
                         
                         
 
- <!------------------------------------------------------最终结论------------------------------------------------------>                  
+    <!------------------------------------------------------最终结论------------------------------------------------------>                  
                         {% if resultEnd_conclusion %}
                             <p class="four" style="text-align:left;">{{titleindex|add:1}}. 结论（Conclusion）</p>   
                             <p class="five" > {{resultEnd_conclusion.0}}</p>
@@ -1067,55 +1239,16 @@
                             </tr>
                         </table> -->
                 </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-    <hr>
-        <input hidden = "hidden" value="{{id}}" name="id">
-        <input type="submit" value="确认删除" class="btn btn-danger" onclick="alert('删除成功！')">
-        |
-        <a href="{% url 'generation' %}">返回</a>
-        </form>
-    </body>
+                    </tr>
+                </tbody>
+            </table>
+</div>
+<hr>
+    <input hidden = "hidden" value="{{id}}" name="id">
+    <input type="submit" value="确认删除" class="btn btn-danger" onclick="alert('删除成功！')">
+    |
+    <a href="{% url 'generation' %}">返回</a>
+    </form>
+</body>
 
-    
-    <!--需增加js设置不打印末尾两页空白页的代码-->
-    <script language="javascript">
-        function printPage() {
-            // document.getElementsByID("edit").removeAttribute("hidden");
-            document.body.style = "padding-top: 0mm;";  //打印时把首页上方边距调为0，必须点击打印按钮才可以
-            window.print();
-            document.body.style = "";
-        }
-
-        function edit(){
-            javascript:document.body.contentEditable='true';document.designMode='on'; void 0;
-            alert("进入编辑状态,编辑完毕后无需刷新页面,直接打印即可")
-        }
-
-        let english_title = "{{ english_title }}"; //英文标题
-        let chinese_title = "{{ chinese_title }}"; //中文标题
-        let h = 889;  //每页纸的高度，单页A4纸总高度（不同的浏览器打印高度不一致，根据自己需求调整）
-        let bodyEle = $('body');
-        let bodyHeight = bodyEle.height(); //获取页面总长度 
-        let count = Math.ceil(bodyHeight/h); //获取页数
-        console.log(count);
-        console.log(bodyHeight);
-
-        //动态添加页码 通过绝对定位
-        // for(let i = 0; i < count; i++){
-        //     var topValue1 = Number(h * (i + 1)) + Number(22* i) + Number(211* (i+1)) - Number(25);
-        //     var topValue2 = Number(h * (i + 1)) + Number(22* i) + Number(211* (i+1)) - Number(10);
-                
-        //     let foot_englishtitle = '<div class="tfoot d-none d-print-block" id="englishtitle" style="position:absolute;top:' + topValue1 + 'px;left:40px;">' + english_title + '</div>';
-        //     let foot_chinesetitle = '<div class="tfoot d-none d-print-block" style="position:absolute;top:' + topValue2 + 'px;left:40px;">' + chinese_title + '</div>';  
-        //     let foot_PAGE = '<div class="tfoot d-none d-print-block" style="position:absolute;top:' + topValue2 + 'px;right:60px;">' + 'PAGE' +' '+ (i + 1) + '/' + count+ '</div>';  
-            
-
-        //     bodyEle.append(foot_PAGE)
-        //     bodyEle.append(foot_englishtitle);
-        //     bodyEle.append(foot_chinesetitle);           
-        // }
-    </script>
-    {% endblock %}
+{% endblock %}

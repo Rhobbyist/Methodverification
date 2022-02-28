@@ -1,6 +1,7 @@
 from re import S
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+from numpy import number
 from report import models
 from .forms import UploadFileForm
 from report import jmd, zqd, amr, crr, ms, Carry_over, Matrix_effect, testmethod, equipment, reagents_consumables, sample_preparation, QC, Sample_Stability,Sample_ReferenceInterval
@@ -14,7 +15,39 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 
-# 接收验证界面传递过来的参数
+# 登陆界面
+def get_login_page(request):
+
+    # post接受用户提交的数据
+    if request.method == 'POST':
+        username = request.POST.get("username")
+        password = request.POST.get("pwd")
+        user_obj = auth.authenticate(username=username, password=password)
+
+        # 判断用户是否存在,不存在仍然返回登陆界面
+        if not user_obj:  
+            message = "用户名或密码错误！"
+            return render(request, 'report/login.html', locals())
+        
+        # 登陆成功跳转至报告生成界面
+        else:
+            auth.login(request, user_obj)
+            return redirect("/generation")
+
+    else:
+        # 判断是否为未登录用户,不是返回登陆界面
+        if isinstance(request.user, auth.models.AnonymousUser):  
+            return render(request, 'report/login.html', locals())
+         # 否则跳转至报告生成界面
+        else:
+            return redirect("/generation")
+
+# 用户注销界面
+def get_logout_page(request):
+    logout(request)
+    return render(request, 'report/logout.html', locals())
+
+# 验证界面
 def get_verification_page(request):
 
     # 判断是否用户是否登录，以在最上方导航栏显示“登录”或“未登录”状态，与layout.html关联
@@ -95,7 +128,7 @@ def get_verification_page(request):
                 if request.POST["jmd"] == "重复性精密度":
                     namejmd = "重复性精密度"
                     files = request.FILES.getlist('fileuploads')
-                    Result = jmd.PN_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = jmd.IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 elif request.POST["jmd"] == "中间精密度":
                     namejmd = "中间精密度"
                     files = request.FILES.getlist('fileuploads')
@@ -190,12 +223,14 @@ def get_verification_page(request):
                 return render(request, 'report/project/Sample_Stability.html', locals())
 
             elif request.POST["quota"] == "参考区间":
-                if request.POST["referenceinterval"] == "验证参考区间":     
+                if request.POST["referenceinterval"] == "参考区间建立":     
                     files = request.FILES.getlist('fileuploads')
-                    Result = Sample_ReferenceInterval.fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
-                elif request.POST["referenceinterval"] == "引用参考区间":     
-                    pass
-                return render(request, 'report/project/Reference_Interval.html', locals())
+                    Result = Sample_ReferenceInterval.create_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    return render(request, 'report/project/RI_Create.html', locals())
+                elif request.POST["referenceinterval"] == "参考区间验证":        
+                    files = request.FILES.getlist('fileuploads')
+                    Result = Sample_ReferenceInterval.quote_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    return render(request, 'report/project/RI_quote.html', locals())
 
 
             elif request.POST["quota"] == "最终结论":
@@ -222,46 +257,15 @@ def get_verification_page(request):
 
     return render(request, 'report/verification.html', locals())
 
-# 用户注销界面
-def get_logout_page(request):
-    logout(request)
-    return render(request, 'report/logout.html', locals())
-
-# 登陆界面
-def get_login_page(request):
-    if request.method == 'POST':
-        username = request.POST.get("username")
-        password = request.POST.get("pwd")
-        user_obj = auth.authenticate(username=username, password=password)
-        if not user_obj:  # 判断用户是否存在
-            message = "用户名或密码错误！"
-            return render(request, 'report/login.html', locals())
-        else:
-            auth.login(request, user_obj)
-            return redirect("/generation")
-
-    else:
-        if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
-            return render(request, 'report/login.html', locals())
-        else:
-            return redirect("/generation")
-
 # 报告生成界面
 def get_generation_page(request):
     # 判断是否用户是否登录，以在最上方导航栏显示“登录”或“未登录”状态，与layout.html关联
     name = User.objects.get(username=request.user).first_name
-    print(name)
     if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
         User_class = 0  # 页面右上方显示"未登录"(layout.html)
     else:
         User_class = 1  # 页面右上方显示当前登录用户名(layout.html)
-    # if request.method == 'POST':
-    #     project = request.POST["project"]
-    #     if len(project)!=0:
-    #         data = ReportInfo.objects.filter(project=project)
-    #     else:
-    #         data = ReportInfo.objects.all()
-    # else:
+
     if name == "余木俊" or name == "陈文彬":
         data = ReportInfo.objects.filter(Detectionplatform="微量营养素检测平台")
     elif name == "李冰玲":
@@ -270,10 +274,11 @@ def get_generation_page(request):
         data = ReportInfo.objects.filter(Detectionplatform="遗传代谢病检测平台")
     else:
         data = ReportInfo.objects.all()
+        # data = ReportInfo.objects.filter().exclude(number="test").all()
     return render(request, 'report/generation.html', locals())
 
-# 最终报告预览界面
-def get_endreport_page(request, id):
+# 最终报告预览界面(点击报告预览后跳转界面)
+def get_reportpreview_page(request, id):
     # 从数据库中抓取当前用户名传递到layout.html
     try:
         name = User.objects.get(username=request.user).first_name
@@ -487,7 +492,7 @@ def get_endreport_page(request, id):
             resultEnd_conclusion = []
             for i in End_conclusion_table:
                 resultEnd_conclusion.append(i.text)
-        return render(request, 'report/endreport-single.html', locals())
+        return render(request, 'report/reportpreview-single.html', locals())
 
     else:  # 多个化合物
         # 验证原因
@@ -500,17 +505,17 @@ def get_endreport_page(request, id):
         tableindex = 3  # 总表格索引从3开始。表1质谱参数，表2液相梯度条件
 
         # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
-        JMDindex = titleindex  # 精密度主标题索引
-        PNjmdindex = 0  # 重复性精密度副标题索引
+        JMDindex = titleindex  # 精密度主标题索引 6
+        PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
-        tablePNindex_start = tableindex # 第一个化合物的表格索引
-        tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引
+        tablePNindex_start = tableindex # 第一个化合物的表格索引  表3
+        tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
         # 重复性精密度数据
         PNjmd_data = jmd.related_PNjmd(id)
         if PNjmd_data:
-            PNjmdindex += 1  # 重复性精密度副标题索引+1。-- 6.1
-            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5
+            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
         # 中间精密度
         PJjmd_data = jmd.related_PJjmd(id)
@@ -703,87 +708,36 @@ def get_endreport_page(request, id):
             resultEnd_conclusion = []
             for i in End_conclusion_table:
                 resultEnd_conclusion.append(i.text)
-        return render(request, 'report/endreport-Multiple.html', locals())
+        return render(request, 'report/reportpreview-multiple.html', locals())
 
+# 在报告生成界面点击删除时跳转的界面
+def get_reportdelete_page(request, id):
+    # 从数据库中抓取当前用户名传递到layout.html
+    try:
+        name = User.objects.get(username=request.user).first_name
+    except:
+        name = "未注册用户"
 
-def REPORTdelete(request):
-    name = User.objects.get(username=request.user).first_name
-    if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
+    # 判断是否为未登录用户
+    if isinstance(request.user, auth.models.AnonymousUser):  
         User_class = 0
     else:
         User_class = 1
-    if request.method == 'POST':
-        id = int(request.POST.getlist("id")[0])
-        quotalist = request.POST.getlist("quota")
-        print(quotalist)
 
-        if 'all' not in quotalist:
-            if '重复性精密度' in quotalist:
-                JMD.objects.filter(reportinfo_id=id, namejmd='重复性精密度').delete()
-
-            if '中间精密度' in quotalist:
-                JMD.objects.filter(reportinfo_id=id, namejmd='中间精密度').delete()
-
-            if 'PT' in quotalist:
-                PT.objects.filter(reportinfo_id=id).delete()
-
-            if '加标回收率' in quotalist:
-                RECYCLE.objects.filter(reportinfo_id=id).delete()
-
-            if '方法定量限与线性范围' in quotalist:
-                AMR.objects.filter(reportinfo_id=id).delete()
-                AMRpicture.objects.filter(reportinfo_id=id).delete()
-
-            if '方法检出限' in quotalist:
-                LOD.objects.filter(reportinfo_id=id).delete()
-                LODpicture.objects.filter(reportinfo_id=id).delete()
-
-            if 'AMR最终结论' in quotalist:
-                AMRconsluion.objects.filter(reportinfo_id=id).delete()
-
-            if '稀释倍数' in quotalist:
-                CRR.objects.filter(reportinfo_id=id).delete()
-                CRR2.objects.filter(reportinfo_id=id).delete()
-
-            if '基质特异性' in quotalist:
-                MS.objects.filter(reportinfo_id=id).delete()
-
-            if '基质效应' in quotalist:
-                Matrixeffect.objects.filter(reportinfo_id=id).delete()
-
-            if '携带效应' in quotalist:
-                Carryover.objects.filter(reportinfo_id=id).delete()
-                Carryover2.objects.filter(reportinfo_id=id).delete()
-
-        else:
-            report = ReportInfo.objects.filter(id=id)
-            report.delete()
-
-        data = ReportInfo.objects.all()
-        return render(request, 'report/generation.html', {"data": data})
-
-# 在报告生成界面点击删除时出现的确认删除界面
-def delete(request, id):
-    name = User.objects.get(username=request.user).first_name
-    if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
-        User_class = 0
-    else:
-        User_class = 1
-    # ReportInfo里找到仪器编号
+    # 基本参数，此处由于在验证界面提交数据时已经进行了判断，因此在使用get()方法时不需要try
     Instrument_number = ReportInfo.objects.get(id=id).number  # 仪器编号
+    Detectionplatform = ReportInfo.objects.get(id=id).Detectionplatform  # 检测平台
+    project = ReportInfo.objects.get(id=id).project  # 检测项目
+    platform = ReportInfo.objects.get(id=id).platform  # 仪器项目
+    manufacturers = ReportInfo.objects.get(id=id).manufacturers # 仪器厂家
 
-    # 基本参数
-    Detectionplatform = ReportInfo.objects.get(id=id).Detectionplatform  # 找到项目组
-    project = ReportInfo.objects.get(id=id).project  # 找到项目
-    platform = ReportInfo.objects.get(id=id).platform
-    manufacturers = ReportInfo.objects.get(id=id).manufacturers
-    special_id = Special.objects.get(project=project).id  # 找到特殊参数里对应的项目
-
+    # project为必设置项,因此此部分不需要try
+    special_id = Special.objects.get(project=project).id  # 找到特殊参数设置里对应的项目
     chinese_title = Special.objects.get(project=project).chinese_titie  # 中文标题
     english_title = Special.objects.get(project=project).english_titie  # 英文标题
     unit = Special.objects.get(project=project).unit  # 单位
     digits = Special.objects.get(project=project).Effective_digits  # 有效位数
-    n = int(Special.objects.get(project=project).Number_of_compounds)  # 化合物个数
+    Number_of_compounds = int(Special.objects.get(project=project).Number_of_compounds)  # 化合物个数
 
     # 检测方法里找到仪器型号和色谱柱。可能存在用户忘记设置的情况，因此需要try
     try:
@@ -802,7 +756,24 @@ def delete(request, id):
     else:
         Protocol_ID = "英文标题格式不对，需含有'by'关键词！！！"
 
-    if n == 1:  # 单个化合物
+    # 判断是否单独为某个化合物设置了单位 unit = {"化合物1":"单位1","化合物2":"单位6"}、
+    UNIT_TABLE = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=UNIT_TABLE)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+    Unitlist = []  # 每个化合物单位列表
+    Unitdict = {}  # 每个化合物单位字典
+
+    for i in pt_accept:
+        Unitlist.append(i.unit)
+
+    if Unitlist == [] or Unitlist[0] == "":  # 如果全部没设置或者只是单位没设置
+        pass
+    else:
+        for i in pt_accept:
+            Unitdict[i.norm] = i.unit
+
+
+    if Number_of_compounds == 1:  # 单个化合物
         # 验证原因
         data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id)
         text_Validation_Reason = []
@@ -957,196 +928,106 @@ def delete(request, id):
             resultEnd_conclusion = []
             for i in End_conclusion_table:
                 resultEnd_conclusion.append(i.text)
-        return render(request, 'report/endreport-delete_single.html', locals())
+        return render(request, 'report/reportdelete_single.html', locals())
 
     else:  # 多个化合物
         # 验证原因
-        data_Validation_Reason = Validation_Reason.objects.filter(
-            reportinfo_id=id)
+        data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id) 
         text_Validation_Reason = []
         for i in data_Validation_Reason:
             text_Validation_Reason.append(i.reason)
 
-        # 精密度
-        titleindex = 5  # 总标题索引
-        tableindex = 3  # 总表格索引
-        JMDindex = 5  # 精密度主标题索引
-        PNjmdindex = 0  # 重复性精密度副标题索引
-        tablePNindex_start = tableindex  # 验证指标前有质谱参数和液相梯度条件固定两个表格，因此从3开始
-        tablePNindex_end = tableindex+n-1
+        titleindex = 6  # 总标题索引从6开始  -- 6
+        tableindex = 3  # 总表格索引从3开始。表1质谱参数，表2液相梯度条件
 
-        # 重复性精密度
-        resultPN = jmd.related_PNjmd(id)
-        if resultPN:
-            PNjmdindex += 1  # 重复性精密度副标题索引+1
-            tableindex += n  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5
+        # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
+        JMDindex = titleindex  # 精密度主标题索引 6
+        PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
-        # 中间精密度
-        resultPJ = jmd.related_PJjmd(id)
-        PJjmdindex = PNjmdindex  # 重复性精密度副标题索引赋值给中间精密度副标题索引
-        tablePJindex_start = tableindex
-        tablePJindex_end = tableindex+n-1
-        if resultPJ:
-            PJjmdindex += 1  # 中间精密度副标题索引+1
-            tableindex += n  # 总表格索引+n
+        tablePNindex_start = tableindex # 第一个化合物的表格索引  表3
+        tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
-        # 精密度结论
-        if resultPN and resultPJ:
-            resultjmdendconclusion = jmd.related_jmdendconclusion(id)
-            JMDendconclusionindex = PJjmdindex
-            tablejmdendconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
-            if resultjmdendconclusion:
-                JMDendconclusionindex += 1  # 精密度结论副标题索引+1
-                tableindex += 1
+        # 重复性精密度数据
+        PNjmd_data = jmd.related_PNjmd(id)
+        if PNjmd_data:
+            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
-        if resultPN or resultPJ:  # 如果有重复性精密度和中间精密度,总标题索引+1
-            JMDindex += 1
-            titleindex += 1
+        
+        return render(request, 'report/reportdelete_mutiple.html', locals())
 
-        # 正确度
-        ZQDindex = titleindex
-        PTindex = 0
-        tablePTindex_start = tableindex
-        tablePTindex_end = tableindex+n-1
+# 在删除界面勾选删除选项(删除整份报告或删除一个或多个验证指标)后返回的界面，也是报告生成界面
+def get_reportdeleteselect_page(request):
+    name = User.objects.get(username=request.user).first_name
+    if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
+        User_class = 0
+    else:
+        User_class = 1
+    if request.method == 'POST':
+        id = int(request.POST.getlist("id")[0])
+        quotalist = request.POST.getlist("quota")
+        print(quotalist)
 
-        resultPT = zqd.related_PT(id)
-        if resultPT:
-            PTindex += 1  # 1
-            tableindex += n
+        if 'all' not in quotalist:
+            if '重复性精密度' in quotalist:
+                JMD.objects.filter(reportinfo_id=id, namejmd='重复性精密度').delete()
 
-        # 加标回收
-        RECYCLEindex = PTindex  # 1
-        tableRECYCLEindex_start = tableindex
-        tableRECYCLEindex_end = tableindex+n-1
+            if '中间精密度' in quotalist:
+                JMD.objects.filter(reportinfo_id=id, namejmd='中间精密度').delete()
 
-        resultrecycle = zqd.related_recycle(id)
+            if 'PT' in quotalist:
+                PT.objects.filter(reportinfo_id=id).delete()
 
-        if resultrecycle:
-            RECYCLEindex += 1  # 2
-            tableindex += n
+            if '加标回收率' in quotalist:
+                RECYCLE.objects.filter(reportinfo_id=id).delete()
 
-        if resultPT or resultrecycle:
-            ZQDindex += 1  # 7
-            titleindex += 1  # 7
+            if '方法定量限与线性范围' in quotalist:
+                AMR.objects.filter(reportinfo_id=id).delete()
+                AMRpicture.objects.filter(reportinfo_id=id).delete()
 
-        # AMR
-        AMRindex = titleindex  # 7
-        resultAMR = amr.related_AMR(id, unit)
-        tableAMRindex_start = tableindex
-        tableAMRindex_end = tableindex+n-1
+            if '方法检出限' in quotalist:
+                LOD.objects.filter(reportinfo_id=id).delete()
+                LODpicture.objects.filter(reportinfo_id=id).delete()
 
-        amrindex = 0
-        pictureindex = 1  # 总图片索引
-        pictureAMRindex_start = pictureindex
-        pictureAMRindex_end = pictureindex+n*2-1
+            if 'AMR最终结论' in quotalist:
+                AMRconsluion.objects.filter(reportinfo_id=id).delete()
 
-        if resultAMR:
-            amrindex += 1
-            pictureindex += n*2  # 总图片索引
-            tableindex += n
+            if '稀释倍数' in quotalist:
+                CRR.objects.filter(reportinfo_id=id).delete()
+                CRR2.objects.filter(reportinfo_id=id).delete()
 
-        # LOD
-        resultLOD = amr.related_LOD(id)
-        LODindex = amrindex
+            if '基质特异性' in quotalist:
+                MS.objects.filter(reportinfo_id=id).delete()
 
-        tableLODindex = tableindex
-        pictureLODindex = pictureindex
+            if '基质效应' in quotalist:
+                Matrixeffect.objects.filter(reportinfo_id=id).delete()
 
-        if resultLOD:
-            LODindex += 1
-            pictureLODindex += 1
-            pictureindex += 1
-
-        resultAMRconclusion = amr.related_AMRconclusion(id)
-        AMRconclusionindex = LODindex
-        if resultAMRconclusion:
-            AMRconclusionindex += 1
-            tableindex += 1
-            n += 1
-
-        if resultAMR or resultLOD:
-            AMRindex += 1
-            titleindex += 1
-
-        # CRR(稀释倍数)
-        CRR2_True = 1  # 判断是用通用性模板还是特殊模板(元素组)
-        if Detectionplatform == "元素":
-            CRR2_True -= 1
-
-            CRRindex = titleindex
-            resultCRR = crr.related_CRR(id)
-            crrindex = 0
-            tableCRRindex = tableindex
-
-            if resultCRR:
-                crrindex += 1
-                CRRindex += 1
-                titleindex += 1
-                tableindex += 1
+            if '携带效应' in quotalist:
+                Carryover.objects.filter(reportinfo_id=id).delete()
+                Carryover2.objects.filter(reportinfo_id=id).delete()
 
         else:
-            CRRindex = titleindex
-            resultCRR = crr.related_CRR(id)
-            crrindex = 0
-            tableCRRindex_start = tableindex
-            tableCRRindex_end = tableindex+n-1
+            report = ReportInfo.objects.filter(id=id)
+            report.delete()
 
-            if resultCRR:
-                crrindex += 1
-                CRRindex += 1
-                titleindex += 1
-                tableindex += n
+        data = ReportInfo.objects.all()
+        return render(request, 'report/generation.html', {"data": data})
 
-        # 基质特异性
-        MSindex = titleindex
-        resultMS = ms.related_MS(id)
-        pictureMSindex_start = pictureindex
-        pictureMSindex_end = pictureindex+2
-        if resultMS:
-            MSindex += 1
-            titleindex += 1
+# 在报告生成界面点击继续验证时跳转的界面
+def get_verifyagain_page(request, id):
+    name = User.objects.get(username=request.user).first_name
+    if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
+        User_class = 0
+    else:
+        User_class = 1
 
-        # 基质效应
-        Matrix_effectindex = titleindex
-        tableMatrix_effectindex_start = tableindex
-        tableMatrix_effectindex_end = tableindex+n-1
-        resultMatrix_effect = Matrix_effect.related_Matrix_effect(id)
-        if resultMatrix_effect:
-            Matrix_effectindex += 1
-            titleindex += 1
-            tableindex += n
-
-        # 携带效应
-        Carryover2_True = 0  # 判断是用通用性模板还是特殊模板(元素组)
-        if Detectionplatform == "元素":
-            Carryover2_True += 1
-
-        Carryoverindex = titleindex
-        resultCarryover = Carry_over.related_Carryover(id)
-
-        tableCarryoverindex_start = tableindex
-        tableCarryoverindex_end = tableindex+(n+7)//7
-
-        if resultCarryover:
-            Carryoverindex += 1
-            titleindex += 1
-            n += 1
-
-        # 检测方法
-        resulttest_method = testmethod.related_testmethod(id)
-
-        resultequipment = equipment.related_equipment(id)
-        resultReagents_Consumables = reagents_consumables.related_Reagents_Consumables(
-            id)
-        resultSample_Preparation = sample_preparation.related_Sample_Preparation(
-            id)
-
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
-        return render(request, 'report/endreport-delete_Mutiple.html', locals())
+    instrument_num_verifyagain = ReportInfo.objects.get(id=id).number
+    Detectionplatform_verifyagain = ReportInfo.objects.get(id=id).Detectionplatform  # 找到项目组
+    project_verifyagain = ReportInfo.objects.get(id=id).project  # 找到项目
+    platform_verifyagain = ReportInfo.objects.get(id=id).platform
+    manufacturers_verifyagain = ReportInfo.objects.get(id=id).manufacturers
+    verifyoccasion_verifyagain = "新项目开发"
+    return render(request, 'report/verification.html', locals())
 
 # 接收验证界面PT指标传递过来的参数
 def PTsave(request):
@@ -1860,6 +1741,8 @@ def Sample_Stability_Save(request):
 
             HttpResponse = "样品处理后稳定性数据保存成功!"
             return render(request, 'report/Datasave.html', locals())
+
+
 
 def verifyagain(request):
     if request.method == 'POST':

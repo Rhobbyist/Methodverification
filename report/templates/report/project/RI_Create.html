@@ -1,0 +1,128 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/ 
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        width:250px;
+    } 
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+    .timeinput{
+        width:50px;
+        text-align:center;
+    }
+</style>
+
+    <body>
+        <div class="container">
+            <!-- 1 验证基本信息展示 -->
+            <div class="basicinfo">
+                <!-- 标题 -->
+                <h2>验证基本信息</h2>
+                <br>
+
+                <!-- 仪器型号 -->
+                <div class="form-group">
+                    <label for="exampleInputEmail1">仪器型号</label>
+                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                </div> 
+
+                <!-- 检测平台及检测项目 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测平台</label>
+                            <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测项目</label>
+                            <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                        </div> 
+                    </div>
+                </div>
+                
+                <!-- 仪器平台及仪器厂家 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器平台</label>
+                            <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器厂家</label>
+                            <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>   
+            
+            <!-- 2 分界线 -->
+            <h1 class="page-header"></h1>
+
+            <!-- 3 验证结果展示 -->
+            <h2>参考区间验证结果</h2>
+            <br>
+            <div class="row">
+                {%for key,value in Result.Referenceinterval_dict.items %}
+                    <div class="col-md-4">
+                        <table border="1" cellpadding="8" id="table">
+                        <caption><h3>{{key}}</h3></caption>                      
+                            <tr>
+                                <th width="40%">实验号</th>
+                                <th width="60%">结果<br/>({{Result.Unit}})</th>
+                            </tr>           
+                            {% for r in value %}
+                                <!-- 判断是否为最后一次循环，是的话实验号为“参考区间” -->
+                                {% if forloop.last %}
+                                    <tr> 
+                                        <td>参考区间</td>                                            
+                                        <td>{{r}}</td>
+                                    </tr> 
+                                {% else %}
+                                    <tr>
+                                        <td>{{forloop.counter}}</td>                                            
+                                        <td>{{r}}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </table>
+                        <br>
+                    </div> 
+                {% endfor %}                               
+            </div>
+        </div>
+
+    </body>
+    {% endblock %}
+
+    {% block scripts %}
+
+    {% endblock %}

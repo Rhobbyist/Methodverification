@@ -9,8 +9,8 @@ from report.layout import *
 from datetime import datetime
 import re
 
-# 精密度数据读取
-def PN_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+# 重复性精密度数据读取
+def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV）
     id1 = Special.objects.get(project=project).id
@@ -96,20 +96,20 @@ def PN_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
                     elif lines[1][j] == "Final Conc.":
                         concindex.append(j)
 
-                # 匹配原始数据中与精密度相关(实验号前含有"JMD-)的行
+                # 匹配原始数据中与重复性精密度相关(实验号前含有"IntraP-)的行
                 for j in range(len(norm)):
                     low = []  # 低浓度列表
                     median = []  # 中浓度列表
                     high = []  # 高浓度列表
                     normlist = []  # 一个化合物的低中高三个浓度合并列表
                     for i in range(len(lines)):  # 循环原始数据中的每一行
-                        if "JMD-L" in lines[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据
+                        if "IntraP-L" in lines[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据
                             if j < 1:  # 如有多个化合物，只循环添加第一个化合物的样本量，否则样本量数目会重复添加
                                 jmdnum += 1  # 样本量加1,最终需要将此数目与设定的最小样本数相比          
                             low.append(effectnum(lines[i][concindex[j]], digits)) 
-                        elif "JMD-M" in lines[i][nameindex]:
+                        elif "IntraP-M" in lines[i][nameindex]:
                             median.append(effectnum(lines[i][concindex[j]], digits))
-                        elif "JMD-H" in lines[i][nameindex]:
+                        elif "IntraP-H" in lines[i][nameindex]:
                             high.append(effectnum(lines[i][concindex[j]], digits))
 
                     normlist.append(low)
@@ -527,24 +527,24 @@ def PN_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
 
     #  第四步:数据存入数据库
     # 样本量大于最小样本量，并且超过cv上限的值等于0才将数据存入数据库中
-    # if cvjudgenum == 0 and jmdnum >= lownumber:
-    #     insert_list = []
-    #     for key, value in jmd_dict.items():
-    #         for i in value:
-    #             if lownum != 0 and mediannum == 0 and highnum == 0:  # 低浓度无数据，中高浓度有数据，只存中高浓度
-    #                 insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-    #                                    norm=key, Experimentnum=i[0], median=i[1], high=i[2]))
-    #             elif lownum == 0 and mediannum != 0 and highnum == 0:  # 中浓度无数据，低高浓度有数据，只存低高浓度
-    #                 insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-    #                                    norm=key, Experimentnum=i[0], low=i[1], high=i[2]))
-    #             elif lownum == 0 and mediannum == 0 and highnum != 0:  # 高浓度无数据，低中浓度有数据，只存低中浓度
-    #                 insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-    #                                    norm=key, Experimentnum=i[0], low=i[1], median=i[2]))
-    #             else:
-    #                 insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-    #                                    norm=key, Experimentnum=i[0], low=i[1], median=i[2], high=i[3]))
+    if cvjudgenum == 0 and jmdnum >= lownumber:
+        insert_list = []
+        for key, value in jmd_dict.items():
+            for i in value:
+                if lownum != 0 and mediannum == 0 and highnum == 0:  # 低浓度无数据，中高浓度有数据，只存中高浓度
+                    insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
+                                       norm=key, Experimentnum=i[0], median=i[1], high=i[2]))
+                elif lownum == 0 and mediannum != 0 and highnum == 0:  # 中浓度无数据，低高浓度有数据，只存低高浓度
+                    insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
+                                       norm=key, Experimentnum=i[0], low=i[1], high=i[2]))
+                elif lownum == 0 and mediannum == 0 and highnum != 0:  # 高浓度无数据，低中浓度有数据，只存低中浓度
+                    insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
+                                       norm=key, Experimentnum=i[0], low=i[1], median=i[2]))
+                else:
+                    insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
+                                       norm=key, Experimentnum=i[0], low=i[1], median=i[2], high=i[3]))
 
-    #     JMD.objects.bulk_create(insert_list)
+        JMD.objects.bulk_create(insert_list)
 
     return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 

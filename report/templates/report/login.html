@@ -6,6 +6,7 @@
     .contain{
         display:table;
         height:80%;
+        /* width: 500px; */
     }
 
     .row{
@@ -21,10 +22,13 @@
         float:none;
         text-align:center;
         margin-right:50px;
+        padding: 30px;
     }
     input{
         width: 100%;
     }
+
+    
 </style>
 </head>
 
@@ -32,8 +36,9 @@
 <div class="contain" style="width: 100%;text-align:center;">
     <div class="row" style="width: 100%;text-align:center;">
         <br><br><br><br>
-        <div class="well col-centered" style="width:350px;text-align:center;">
-            <h3>欢迎登录方法学验证系统</h3>
+        <div class="well col-centered" style="width:380px;text-align:center;">
+            <h3>欢迎登录方法学验证管理系统</h3>
+            <br>
             {{ message }}
             <form action="{% url 'login' %}" method="post">
                 <div class="input-group input-group-md">
