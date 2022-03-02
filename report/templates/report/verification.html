@@ -64,7 +64,7 @@
                     {% if instrument_num_verifyagain %}
                         <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" value={{instrument_num_verifyagain}} readonly></div>
                     {% else %}
-                        <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" placeholder="请输入仪器编号..."></div>
+                        <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" placeholder="请输入仪器编号..." required></div>
                     {% endif %}
                     <br>
 
@@ -76,13 +76,14 @@
                         </div>
                     {% else %}
                         <div>技术平台及厂家:
-                            <select name="platform" id="platform" onchange="platformChange()" class="verifyinput">
-                                <option selected="selected">请选择技术平台...</option>
+                            <select name="platform" id="platform" onchange="platformChange()" class="verifyinput" required>
+                                <option value="">请选择技术平台...</option>
+                                <!-- <option selected="selected">请选择技术平台...</option> -->
                                 <option>液质</option>
                                 <option>ICP-MS</option>
                                 <option>液相</option>
                             </select>
-                            <select name="manufacturers" id="manufacturers" class="verifyinput">
+                            <select name="manufacturers" id="manufacturers" class="verifyinput" required>
                                 <option>请选择厂家...</option>
                             </select>
                         </div>        
@@ -96,11 +97,11 @@
                         </div>
                     {% else %}
                         <div>检测平台及项目名称:
-                            <select name="Detectionplatform" id="Detectionplatform" class="verifyinput">
-                                <option selected="selected">请选择检测平台...</option>
+                            <select name="Detectionplatform" id="Detectionplatform" class="verifyinput" required>
+                                <option value="">请选择检测平台...</option>
                             </select>
-                            <select name="project" id="project" class="verifyinput">
-                                <option selected="selected">请选择项目...</option>
+                            <select name="project" id="project" class="verifyinput" required>
+                                <option value="">请选择项目...</option>
                             </select>
                         </div>
                         <script>
@@ -149,8 +150,8 @@
                     {% else %}
                         <div>
                             验证时机:
-                            <select onchange="t(this)" class="verifyinput" name="verifyoccasion">
-                                <option selected="selected">请选择验证时机...</option>
+                            <select onchange="t(this)" class="verifyinput" name="verifyoccasion" required>
+                                <option value="">请选择验证时机...</option>
                                 <option value="新项目开发">新项目开发</option>
                                 <option value="期间核查">期间核查</option>
                                 <option value="自定义">自定义</option>

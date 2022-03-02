@@ -132,7 +132,7 @@ def get_verification_page(request):
                 elif request.POST["jmd"] == "中间精密度":
                     namejmd = "中间精密度"
                     files = request.FILES.getlist('fileuploads')
-                    dicjmd = jmd.PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = jmd.InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 return render(request, 'report/project/Jmd.html', locals())
 
             elif request.POST["quota"] == "正确度":
@@ -321,7 +321,7 @@ def get_reportpreview_page(request, id):
     if "by" in english_title and str(ReportInfo.objects.get(id=id).verifytime) != "":
         Protocol_ID = english_title.split("by")[1] + str(ReportInfo.objects.get(id=id).verifytime)[0:4] + str(ReportInfo.objects.get(id=id).verifytime)[5:7]   # Protocol ID
     else:
-        Protocol_ID = "英文标题格式不对，需含有'by'关键词！！！"
+        Protocol_ID = "英文标题格式不对,需含有'by'关键词!!!"
 
     # 判断是否单独为某个化合物设置了单位 unit = {"化合物1":"单位1","化合物2":"单位6"}、
     UNIT_TABLE = Special.objects.get(project=project)
@@ -341,25 +341,25 @@ def get_reportpreview_page(request, id):
 
     if Number_of_compounds == 1:  # 单个化合物
         # 验证原因
-        data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id)
+        data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id) 
         text_Validation_Reason = []
         for i in data_Validation_Reason:
             text_Validation_Reason.append(i.reason)
 
-        titleindex = 6  # 总标题索引从6开始
-        tableindex = 3  # 总表格索引从3开始
+        titleindex = 6  # 总标题索引从6开始  -- 6
+        tableindex = 3  # 总表格索引从3开始。表1质谱参数，表2液相梯度条件
 
-        # 精密度
-        JMDindex = titleindex  # 精密度主标题索引
-        PNjmdindex = 0  # 重复性精密度副标题索引
+        # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
+        JMDindex = titleindex  # 精密度主标题索引 6
+        PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
-        tablePNindex = tableindex  # 验证指标前有质谱参数和液相梯度条件固定两个表格，因此从3开始
+        tablePNindex = tableindex # 重复性精密度表格索引  表3
 
-        # 重复性精密度
-        resultPN = jmd.related_PNjmd(id)
-        if resultPN:
-            PNjmdindex += 1  # 重复性精密度副标题索引+1
-            tableindex += 1
+        # 重复性精密度数据
+        PNjmd_data = jmd.related_PNjmd(id)
+        if PNjmd_data:
+            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
         # 中间精密度
         resultPJ = jmd.related_PJjmd(id)
@@ -371,7 +371,7 @@ def get_reportpreview_page(request, id):
             tableindex += 1  # 总表格索引+n
 
         # 精密度结论
-        if resultPN and resultPJ:
+        if PNjmd_data and resultPJ:
             resultjmdendconclusion = jmd.related_jmdendconclusion(id)
             JMDendconclusionindex = PJjmdindex
             tablejmdendconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
@@ -379,7 +379,7 @@ def get_reportpreview_page(request, id):
                 JMDendconclusionindex += 1  # 精密度结论副标题索引+1
                 tableindex += 1
 
-        if resultPN or resultPJ:  # 如果有重复性精密度和中间精密度,总标题索引+1
+        if PNjmd_data or resultPJ:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1
 
         # 正确度
@@ -422,7 +422,7 @@ def get_reportpreview_page(request, id):
         LODindex = amrindex
         tableLODindex = tableindex
         pictureLODindex_start = pictureindex
-        pictureLODindex_end = pictureindex+n-1
+        pictureLODindex_end = pictureindex+Number_of_compounds-1
 
         resultLOD = amr.related_LOD(id)
         if resultLOD:
@@ -506,34 +506,36 @@ def get_reportpreview_page(request, id):
 
         # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
         JMDindex = titleindex  # 精密度主标题索引 6
+
+        # 1  重复性精密度数据
         PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
         tablePNindex_start = tableindex # 第一个化合物的表格索引  表3
         tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
-        # 重复性精密度数据
         PNjmd_data = jmd.related_PNjmd(id)
         if PNjmd_data:
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
-        # 中间精密度
-        PJjmd_data = jmd.related_PJjmd(id)
+        # 2 中间精密度数据
         PJjmdindex = PNjmdindex  # 中间精密度副标题索引
 
         tablePJindex_start = tableindex
         tablePJindex_end = tableindex+Number_of_compounds-1
 
-        # 中间精密度数据
+        PJjmd_data = jmd.related_PJjmd(id)
         if PJjmd_data:
             PJjmdindex += 1  # 中间精密度副标题索引+1  -- 6.2
             tableindex += Number_of_compounds  # 总表格索引+n
 
-        # 精密度结论
+        # 3 精密度结论数据
+        JMDconclusionindex = PJjmdindex
+        tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
+
         if PNjmd_data and PJjmd_data:
             jmdconclusion_data = jmd.related_jmdendconclusion(id)
-            JMDconclusionindex = PJjmdindex
-            tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
+           
             if jmdconclusion_data:
                 JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
@@ -754,7 +756,7 @@ def get_reportdelete_page(request, id):
     if "by" in english_title and str(ReportInfo.objects.get(id=id).verifytime) != "":
         Protocol_ID = english_title.split("by")[1] + str(ReportInfo.objects.get(id=id).verifytime)[0:4] + str(ReportInfo.objects.get(id=id).verifytime)[5:7]   # Protocol ID
     else:
-        Protocol_ID = "英文标题格式不对，需含有'by'关键词！！！"
+        Protocol_ID = "英文标题格式不对,需含有'by'关键词!!!"
 
     # 判断是否单独为某个化合物设置了单位 unit = {"化合物1":"单位1","化合物2":"单位6"}、
     UNIT_TABLE = Special.objects.get(project=project)
@@ -775,163 +777,6 @@ def get_reportdelete_page(request, id):
 
     if Number_of_compounds == 1:  # 单个化合物
         # 验证原因
-        data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id)
-        text_Validation_Reason = []
-        for i in data_Validation_Reason:
-            text_Validation_Reason.append(i.reason)
-
-        # 精密度
-        titleindex = 5  # 各标题索引
-        tableindex = 3  # 总表格索引
-        JMDindex = 5  # 精密度索引
-        PNjmd_data = jmd.related_PNjmd(id)
-
-        PNjmdindex = 0  # 精密度副索引
-        tablePNindex = tableindex
-
-        if PNjmd_data:
-            PNjmdindex += 1
-            tableindex += 1
-
-        resultPJ = jmd.related_PJjmd(id)
-        PJjmdindex = PNjmdindex
-        tablePJindex = tableindex
-
-        if resultPJ:
-            PJjmdindex += 1
-            tableindex += 1
-
-        resultjmdendconclusion = jmd.related_jmdendconclusion(id)
-        JMDendconclusionindex = PJjmdindex
-        tablejmdendconclusionindex = tableindex
-
-        if resultjmdendconclusion:
-            JMDendconclusionindex += 1
-            tableindex += 1
-
-        if PNjmd_data or resultPJ:
-            JMDindex += 1  # 6
-            titleindex += 1  # 6
-
-        # 正确度
-        ZQDindex = titleindex  # 6
-        resultPT = zqd.related_PT(id)
-        tablePTindex = tableindex
-
-        PTindex = 0
-        if resultPT:
-            PTindex += 1  # 1
-            tableindex += 1  # PT表格索引
-
-        resultrecycle = zqd.related_recycle(id)
-        RECYCLEindex = PTindex  # 1
-        tableRECYCLEindex = tableindex
-
-        if resultrecycle:
-            RECYCLEindex += 1  # 2
-            tableindex += 1
-
-        if resultPT or resultrecycle:
-            ZQDindex += 1  # 7
-            titleindex += 1  # 7
-
-        # AMR
-        AMRindex = titleindex  # 7
-        resultAMR = amr.related_AMR(id, unit)
-
-        amrindex = 0
-        pictureindex = 1  # 总图片索引
-        pictureAMRindex_start = pictureindex  # AMR图片索引
-        pictureAMRindex_end = pictureAMRindex_start+1
-        tableAMRindex = tableindex
-
-        if resultAMR:
-            amrindex += 1
-            pictureindex += 2  # 总图片索引
-            tableindex += 1
-
-        resultLOD = amr.related_LOD(id)
-        LODindex = amrindex
-        pictureLODindex = pictureindex
-
-        if resultLOD:
-            LODindex += 1
-            pictureLODindex += 1
-            pictureindex += 1
-
-        resultAMRconclusion = amr.related_AMRconclusion(id)
-        AMRconclusionindex = LODindex
-        tableAMRconclusionindex = tableindex
-
-        if resultAMRconclusion:
-            AMRconclusionindex += 1
-            tableindex += 1
-
-        if resultAMR or resultLOD:
-            AMRindex += 1
-            titleindex += 1
-
-        # CRR(稀释倍数)
-        CRRindex = titleindex
-        resultCRR = crr.related_CRR(id)
-        crrindex = 0
-        tableCRRindex = tableindex
-
-        if resultCRR:
-            crrindex += 1
-            CRRindex += 1
-            titleindex += 1
-            tableindex += 1
-
-        # 基质特异性
-        MSindex = titleindex
-        resultMS = ms.related_MS(id)
-        pictureMSindex = pictureindex
-
-        if resultMS:
-            MSindex += 1
-            titleindex += 1
-            pictureMSindex += 1
-            pictureindex += 1
-
-        # 基质效应
-        Matrix_effectindex = titleindex
-        resultMatrix_effect = Matrix_effect.related_Matrix_effect(id)
-        tableMatrix_effectindex = tableindex
-
-        if resultMatrix_effect:
-            Matrix_effectindex += 1
-            titleindex += 1
-            tableindex += 1
-
-        # 携带效应
-        Carryoverindex = titleindex
-        resultCarryover = Carry_over.related_Carryover(id)
-        tableCarryoverindex = tableindex
-
-        if resultCarryover:
-            Carryoverindex += 1
-            titleindex += 1
-            tableindex += 1
-
-        # 检测方法
-        resulttest_method = testmethod.related_testmethod(id)
-
-        resultequipment = equipment.related_equipment(id)
-        resultReagents_Consumables = reagents_consumables.related_Reagents_Consumables(
-            id)
-        resultSample_Preparation = sample_preparation.related_Sample_Preparation(
-            id)
-
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
-        return render(request, 'report/reportdelete_single.html', locals())
-
-    else:  # 多个化合物
-        # 验证原因
         data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id) 
         text_Validation_Reason = []
         for i in data_Validation_Reason:
@@ -944,6 +789,29 @@ def get_reportdelete_page(request, id):
         JMDindex = titleindex  # 精密度主标题索引 6
         PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
+        tablePNindex = tableindex # 重复性精密度表格索引  表3
+
+        # 重复性精密度数据
+        PNjmd_data = jmd.related_PNjmd(id)
+        if PNjmd_data:
+            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+            tableindex += Number_of_compounds 
+        return render(request, 'report/reportdelete_single.html', locals())
+
+    else:  # 多个化合物
+        # 验证原因
+        data_Validation_Reason = Validation_Reason.objects.filter(reportinfo_id=id) 
+        text_Validation_Reason = []
+        for i in data_Validation_Reason:
+            text_Validation_Reason.append(i.reason)
+
+        titleindex = 6  # 总标题索引从6开始  -- 6
+        tableindex = 3  # 总表格索引从3开始。表1质谱参数，表2液相梯度条件
+
+        # ---------------------------------------1 精密度（每个化合物一个表格）---------------------------------------
+        JMDindex = titleindex  # 精密度主标题索引 6
+        PNjmdindex = 0  # 重复性精密度副标题索引   6.1
+
         tablePNindex_start = tableindex # 第一个化合物的表格索引  表3
         tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
@@ -953,7 +821,49 @@ def get_reportdelete_page(request, id):
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
+        # 中间精密度
+        PJjmd_data = jmd.related_PJjmd(id)
+        PJjmdindex = PNjmdindex  # 中间精密度副标题索引
+
+        tablePJindex_start = tableindex
+        tablePJindex_end = tableindex+Number_of_compounds-1
+
+        # 中间精密度数据
+        if PJjmd_data:
+            PJjmdindex += 1  # 中间精密度副标题索引+1  -- 6.2
+            tableindex += Number_of_compounds  # 总表格索引+n
+
+        # 精密度结论
+        if PNjmd_data and PJjmd_data:
+            jmdconclusion_data = jmd.related_jmdendconclusion(id)
+            JMDconclusionindex = PJjmdindex
+            tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
+            if jmdconclusion_data:
+                JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
+                tableindex += 1
+
+        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+            titleindex += 1 # -- 7
+
         
+        # 仪器条件
+        Test_method_data = testmethod.related_testmethod(id)
+
+        # 设备
+        Equipment_data = equipment.related_equipment(id)
+
+        # 试剂耗材
+        Reagents_Consumables_data = reagents_consumables.related_Reagents_Consumables(id)
+
+        # 样品处理
+        Sample_Preparation_data= sample_preparation.related_Sample_Preparation(id)
+
+        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
+        if End_conclusion_table:
+            resultEnd_conclusion = []
+            for i in End_conclusion_table:
+                resultEnd_conclusion.append(i.text)
+    
         return render(request, 'report/reportdelete_mutiple.html', locals())
 
 # 在删除界面勾选删除选项(删除整份报告或删除一个或多个验证指标)后返回的界面，也是报告生成界面

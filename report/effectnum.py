@@ -347,6 +347,7 @@ def mean(lst):
 
     return new_round(meanresult)
 
+# sd
 def sd(lst):
     sdresult = np.std(lst, ddof=1)
 

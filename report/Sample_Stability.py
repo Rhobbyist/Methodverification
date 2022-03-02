@@ -1306,7 +1306,6 @@ def data_scrap(id):
                         if index == 0:
                               # 3个水平全覆盖
                               if "/" not in [k.L01,k.L02,k.L03,k.M01,k.M02,k.M03,k.H01,k.H02,k.H03]:
-                                    ["低","中","高"]
                                     Room_conclevel_list = ["低","中","高"]
                                     middle_list.extend([k.L01,k.L02,k.L03,k.M01,k.M02,k.M03,k.H01,k.H02,k.H03]) # 添加基础数据
                                     middle_dict[str(int(k.time))]=middle_list # 添加时间

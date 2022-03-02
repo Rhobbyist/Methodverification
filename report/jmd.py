@@ -314,10 +314,11 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     COLUMNS = len(tablequantify.columns)
                     rowdatalist = []  # 每一行的数据列表
                     rowdatagatherlist = []  # 每一行的数据列表汇总列表
+
                     for i in range(ROWS*COLUMNS):
                         text = cells[i].text.replace("\n", "")
                         text = text.strip()  # 去除空白符
-                        if i % 12 != 0 or i == 0:  # docx文件固定为12列
+                        if i % COLUMNS != 0 or i == 0:
                             rowdatalist.append(text)
                         else:
                             rowdatagatherlist.append(rowdatalist)
@@ -328,7 +329,6 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     nameindex = 0
                     concindex = 0  # 浓度索引，AB的数据格式决定每个化合物的浓度所在列一定是同一列
                     
-
                     # 读取表格的第一行的单元格,判断实验号和浓度索引
                     for i in range(len(rowdatagatherlist[0])):
                         if rowdatagatherlist[0][i] == "Sample Name":
@@ -341,13 +341,13 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     high = []  # 高浓度列表
                     normlist = []  # 一个化合物的低中高三个浓度合并列表
                     for i in range(len(rowdatagatherlist)):
-                        if "JMD-L" in rowdatagatherlist[i][nameindex]:
+                        if "IntraP-L" in rowdatagatherlist[i][nameindex]:
                             if k < 1:
                                 jmdnum += 1
                             low.append(effectnum(rowdatagatherlist[i][concindex], digits))
-                        elif "JMD-M" in rowdatagatherlist[i][nameindex]:
+                        elif "IntraP-M" in rowdatagatherlist[i][nameindex]:
                             median.append(effectnum(rowdatagatherlist[i][concindex], digits))
-                        elif "JMD-H" in rowdatagatherlist[i][nameindex]:
+                        elif "IntraP-H" in rowdatagatherlist[i][nameindex]:
                             high.append(effectnum(rowdatagatherlist[i][concindex], digits))
 
                     normlist.append(low)
@@ -549,35 +549,39 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
     return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 
 
-def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV,化合物个数）
     id1 = Special.objects.get(project=project).id
-    id2 = Interprecisionspecial.objects.get(special_id=id1).id
-    norm_num = Special.objects.get(project=project).Number_of_compounds
-
-    # 后台管理系统-各项目参数设置-PT指标设置里找到化合物名称
-    # zqd = Special.objects.get(project=project)
-    # pt_special = PTspecial.objects.get(special=zqd)
-    # pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
-    # PTnorm=[] # 待测物质列表
-    # for i in pt_accept:
-    #     PTnorm.append(i.norm)
-
+    id2 = Repeatprecisionspecial.objects.get(special_id=id1).id
+    norm_num =  Special.objects.get(project=project).Number_of_compounds
+    
     # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
     if Interprecisionspecialmethod.objects.filter(interprecisionspecial=id2):
-        number = Interprecisionspecialmethod.objects.get(
-            interprecisionspecial=id2).minSample  # 最小样本数
-        CV = Interprecisionspecialmethod.objects.get(
-            interprecisionspecial=id2).maxCV  # 最大允许CV
+        lownumber = Interprecisionspecialmethod.objects.get(interprecisionspecial=id2).minSample  # 最小样本数
+        maxCV = Interprecisionspecialmethod.objects.get(interprecisionspecial=id2).maxCV  # 最大允许CV
 
     else:
-        jmd_general = General.objects.get(name="通用性项目")
-        pjjmd_general = Interprecisiongeneral.objects.get(general=jmd_general)
-        number = Interprecisiongeneralmethod.objects.get(
-            interprecisiongeneral=pjjmd_general).minSample  # 最小样本数
-        CV = Interprecisiongeneralmethod.objects.get(
-            interprecisiongeneral=pjjmd_general).maxCV  # 最大允许CV
+        general_1 = General.objects.get(name="通用性项目")
+        jmd_general = Interprecisiongeneral.objects.get(general=general_1)
+        lownumber = Interprecisiongeneralmethod.objects.get(interprecisiongeneral=jmd_general).minSample  # 最小样本数
+        maxCV = Interprecisiongeneralmethod.objects.get(interprecisiongeneral=jmd_general).maxCV  # 最大允许CV
+
+    # 后台管理系统-各项目参数设置-PT指标设置里找到是否设置了每个化合物的单位
+    special = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=special)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+
+    # 后台管理系统中设置的本项目化合物名称
+    PTnorm = []  
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+
+    # 后台管理系统中设置的本项目每个化合物单位
+    Unitlist = []
+    for i in pt_accept:
+        Unitlist.append(i.unit)
+
 
     #  第二步:开始文件读取
 
@@ -601,16 +605,15 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
     norm = []  # 指标列表
 
     for k in range(norm_num):
-        low = []
-        median = []
-        high = []
-        normlist = []
+        low = []  # 低浓度列表
+        median = []  # 中浓度列表
+        high = []  # 高浓度列表
+        normlist = []  # 一个化合物的低中高三个浓度合并列表
         for index, file in enumerate(files):
             if platform == "液质":
                 if manufacturers == "Agilent":
-                    # 1 读取csv文件（Agilent）
-                    # 此网址查找到的答案:https://www.jianshu.com/p/0d15ed85df2b
-                    csv_file = file.seek(0)
+                    # 1 读取csv文件（Agilent）https://www.jianshu.com/p/0d15ed85df2b
+                    file.seek(0)
                     file_data = file.read().decode('utf-8')
                     lines = file_data.split('\r\n')
                     for i in range(len(lines)):
@@ -623,7 +626,7 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
                             del lines[i]  # 最后一行如为空行，则删除该元素
 
                     # 从第一行确定化合物名称(含有"-Q Results"),并添加进入化合物列表
-                    if k < 1 and index < 1:
+                    if k < 1 and index < 1:   # 第一个循环即可确定，无需重复循环占用内存空间
                         for j in range(len(lines[0])):  # 从第一行开始
                             if "-Q Results" in lines[0][j]:
                                 # 若原始字符串中含有','，切割完后首位会多出一个'"',需去除
@@ -641,20 +644,16 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
                         elif lines[1][j] == "Final Conc.":
                             concindex.append(j)
 
-                    # 匹配原始数据中与精密度相关(实验号前含有"L-"或"M-"或"H-")的行
+                    # 匹配原始数据中与重复性精密度相关(实验号前含有"InterP-)的行
                     for i in range(len(lines)):  # 循环原始数据中的每一行
-                        if "L-" in lines[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据
+                        if "InterP-L" in lines[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据
                             if k < 1:  # 如有多个化合物，只循环添加第一个化合物的样本量，否则样本量数目会重复添加
-                                jmdnum += 1  # 样本量加1
-                            # 添加浓度,取有效位数,再转换为数字,方便计算均值和标准差
-                            low.append(
-                                float(effectnum(lines[i][concindex[k]], digits)))
-                        elif "M-" in lines[i][nameindex]:
-                            median.append(
-                                float(effectnum(lines[i][concindex[k]], digits)))
-                        elif "H-" in lines[i][nameindex]:
-                            high.append(
-                                float(effectnum(lines[i][concindex[k]], digits)))
+                                jmdnum += 1  # 样本量加1,最终需要将此数目与设定的最小样本数相比          
+                            low.append(effectnum(lines[i][concindex[k]], digits)) 
+                        elif "InterP-M" in lines[i][nameindex]:
+                            median.append(effectnum(lines[i][concindex[k]], digits))
+                        elif "InterP-H" in lines[i][nameindex]:
+                            high.append(effectnum(lines[i][concindex[k]], digits))
 
                 elif manufacturers == "Waters":
                     data = xlrd.open_workbook(
@@ -802,16 +801,19 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
                 elif manufacturers == "AB":
                     if k < 1 and index < 1:
                         norm = normAB
-                    # norm_notdistinct=[] # 未去重的指标列表
-                    file_data = Document(file)
-                    paragraphs = []  # 段落列表，需依此及母离子和子离子列表判断table索引
 
-                    # 将待测物质添加进入norm列表中
+                    # 获取上传的文件
+                    file_data = Document(file)
+
+                    # 每个表格最上方的标题内容列表，含有母离子和子离子的信息。需依此及母离子和子离子列表判断table索引
+                    paragraphs = [] 
+
+                    # 若标题长度为0或为换行等，不添加进入标题内容列表
                     for p in file_data.paragraphs:
                         if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
                             paragraphs.append(p.text.strip())
 
-                    # 确定table索引
+                    # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格
                     tableindex = []
                     for i in range(len(paragraphs)):
                         for j in range(len(ZP_Method_precursor_ion)):
@@ -819,43 +821,46 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
                                 tableindex.append(2*i+1)
 
                     tables = file_data.tables  # 获取文件中的表格集
-                    # for k in tableindex:
-                    tablePJ = tables[tableindex[k]]  # 获取文件中的相关表格
-                    nameindex = 0
-                    concindex = 0
 
-                    cells = tablePJ._cells
-                    ROWS = len(tablePJ.rows)
-                    COLUMNS = len(tablePJ.columns)
-                    data = []  # 每一行的数据
-                    datas = []  # 大列表，包含每一行的数据
+                    tablequantify = tables[tableindex[k]]  # 获取文件中的相关表格
+
+                    # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
+                    cells = tablequantify._cells
+                    ROWS = len(tablequantify.rows)
+                    COLUMNS = len(tablequantify.columns)
+                    rowdatalist = []  # 每一行的数据列表
+                    rowdatagatherlist = []  # 每一行的数据列表汇总列表
+
                     for i in range(ROWS*COLUMNS):
                         text = cells[i].text.replace("\n", "")
                         text = text.strip()  # 去除空白符
-                        if i % 12 != 0 or i == 0:  # docx文件固定为12列
-                            data.append(text)
+                        if i % COLUMNS != 0 or i == 0:
+                            rowdatalist.append(text)
                         else:
-                            datas.append(data)
-                            data = []
-                            data.append(text)
-                    datas.append(data)
+                            rowdatagatherlist.append(rowdatalist)
+                            rowdatalist = []
+                            rowdatalist.append(text)
+                    rowdatagatherlist.append(rowdatalist)
+
+                    nameindex = 0
+                    concindex = 0  # 浓度索引，AB的数据格式决定每个化合物的浓度所在列一定是同一列
 
                     # 读取表格的第一行的单元格,判断实验号和浓度索引
-                    for i in range(len(datas[0])):
-                        if datas[0][i] == "Sample Name":
+                    for i in range(len(rowdatagatherlist[0])):
+                        if rowdatagatherlist[0][i] == "Sample Name":
                             nameindex = i
-                        elif "Calculated Conc" in datas[0][i]:
+                        elif "Calculated Conc" in rowdatagatherlist[0][i]:
                             concindex = i
 
-                    for i in range(len(datas)):
-                        if "L-S2" in datas[i][nameindex]:
+                    for i in range(len(rowdatagatherlist)):
+                        if "InterP-L" in rowdatagatherlist[i][nameindex]:
                             if k < 1:
                                 jmdnum += 1
-                            low.append(float(datas[i][concindex]))
-                        elif "M-S2" in datas[i][nameindex]:
-                            median.append(float(datas[i][concindex]))
-                        elif "H-S2" in datas[i][nameindex]:
-                            high.append(float(datas[i][concindex]))
+                            low.append(effectnum(rowdatagatherlist[i][concindex], digits))
+                        elif "InterP-M" in rowdatagatherlist[i][nameindex]:
+                            median.append(effectnum(rowdatagatherlist[i][concindex], digits))
+                        elif "InterP-H" in rowdatagatherlist[i][nameindex]:
+                            high.append(effectnum(rowdatagatherlist[i][concindex], digits))
 
             elif platform == "液相":
                 data = xlrd.open_workbook(
@@ -948,6 +953,8 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
         jmdone.append(normlist)
 
     ####文件读写完毕####
+
+
     #  第三步:文件读取完毕后的操作
     # norm=PTnorm
     '''
@@ -955,6 +962,9 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
     print(jmd_dict):
     {"D3":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...],"D2":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...]}
     '''
+
+    # 创新第三步需要生成的结果容器
+    jmd_dict = {} 
 
     # 先判断低中高三个浓度是否都有数据。如果低中高中的任一列表为空集，则数字加1，最后html中判断如果数字存在（不为0），则代表该浓度为空列表，无数据，则HTML中不显示
     for i in jmdone:
@@ -964,148 +974,103 @@ def PJ_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Un
             mediannum += 1
         elif i[2] == []:
             highnum += 1
-
-    # 头部定义相关需要提取生成的结果
-    jmd_dict = {}  # 精密度最终字典
+ 
+    # 查找数据库中已经提交的数据数量,以便递增实验号
+    count = JMD.objects.filter(reportinfo=reportinfo, namejmd=namejmd, norm=norm[0]).count()
 
     # 在jmdone列表里添加实验号
-
-    jmdtwo = []  # 精密度临时列表二 格式: [ [ ['1', '51.880', '104.36'], ['2', '49.950', '104.59'],...],[['1', '53.190', '106.83'], ['2', '48.860', '109.71'], ...] ]
-
-    # 查找数据库中已经提交的数据数量
-    count = JMD.objects.filter(
-        reportinfo=reportinfo, namejmd=namejmd, norm=norm[0]).count()
+    jmdtwo = [] 
     for i in jmdone:
-        indextwo = []  # 加入实验号后的临时列表
+        normlist2 = []  # 加入实验号后的临时列表
         for j in range(len(i[0])):  # 列表长度(也是样本量)
             group = []
             group.append(indexone[j+count])
             for k in i:
                 if k != []:  # 可能没有低中高浓度的其中一个或几个，如果没有append会报错
                     group.append(k[j])
-            indextwo.append(group)
-        jmdtwo.append(indextwo)
+            normlist2.append(group)
+        jmdtwo.append(normlist2)
 
     # 计算均值，标准差，CV
-    mean = []  # 均值列表,可能不止一个化合物,格式为[ ["均值",低浓度均值,中浓度均值,高浓度均值], ["均值",低浓度均值,中浓度均值,高浓度均值] ]
-    sd = []
-    cv = []
+    meanlist = []  # 均值列表,可能不止一个化合物,格式为[ ["均值",低浓度均值,中浓度均值,高浓度均值], ["均值",低浓度均值,中浓度均值,高浓度均值] ]
+    sdlist = []  # 标准差列表
+    cvlist = []  # cv列表
     cvjudgenum = 0  # 判断超过cv上限的值有多少个，不管有几个化合物，只有此值大于1，都不将数据保存到数据库
     for i in jmdone:
         meangroup = ["均值"]
         sdgroup = ["标准差"]
         cvgroup = ["CV(%)"]
         for j in i:
-            if j != []:
-                meangroup.append(str(new_round(np.mean(j), 2)))
-                sdgroup.append(str(new_round(np.std(j, ddof=1), 2)))
-
-                # 判断cv是否通过，如不通过需增加提示
-                molecular = new_round(np.std(j, ddof=1), 2)
-                Denominator = new_round(np.mean(j), 2)
-                if float(new_round(float(molecular)/float(Denominator)*100, 2)) > 20:
-                    cvgroup.append(
-                        str(new_round(float(molecular)/float(Denominator)*100, 1))+"(不通过!)")
-                    cvjudgenum += 1
-                else:
-                    cvgroup.append(
-                        str(new_round(float(molecular)/float(Denominator)*100, 1)))
-        mean.append(meangroup)
-        sd.append(sdgroup)
-        cv.append(cvgroup)
+            if j!= []:
+                j2 = list(map(float,j)) # 列表中的字符串转换为浮点数
+                meangroup.append(mean(j2))
+                sdgroup.append(sd(j2))
+                cvgroup.append(cv(j2))
+        meanlist.append(meangroup)
+        sdlist.append(sdgroup)
+        cvlist.append(cvgroup)
 
     # 列表末尾添加均值,标准差,CV
     for i in range(len(jmdtwo)):
-        jmdtwo[i].append(mean[i])
-        jmdtwo[i].append(sd[i])
-        jmdtwo[i].append(cv[i])
+        jmdtwo[i].append(meanlist[i])
+        jmdtwo[i].append(sdlist[i])
+        jmdtwo[i].append(cvlist[i])
 
-    # 有效位数保留
-    for i in jmdtwo:
-        for j in i:
-            for k in range(len(j)):
-                if isinstance(j[k], float) == True or isinstance(j[k], int) == True:
-                    j[k] = effectnum(j[k], digits)
-
-    # norm=PTnorm
-    print(norm)
-    for i in range(len(jmdtwo)):
+    # 添加键到字典中
+    for i in range(len(norm)):
         jmd_dict[norm[i]] = jmdtwo[i]
+    
+    print(jmd_dict)
 
     #  第四步:数据存入数据库
     # 如果超过cv上限的值等于0才将数据存入数据库中
-    if cvjudgenum == 0 and jmdnum >= number:
+    if cvjudgenum == 0 and jmdnum >= lownumber:
         insert_list = []
+
         for key, value in jmd_dict.items():
             for i in value:
                 if lownum != 0 and mediannum == 0 and highnum == 0:  # 低浓度无数据，中高浓度有数据，只存中高浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], median=i[1], high=i[2]))
+                    if i[0]!="均值" and i[0]!="标准差" and i[0]!="CV(%)":  # 中间精密度不在数据库中保存计算结果，报告预览时重新计算
+                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,norm=key, Experimentnum=i[0], median=i[1], high=i[2]))
                 elif lownum == 0 and mediannum != 0 and highnum == 0:  # 中浓度无数据，低高浓度有数据，只存低高浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], low=i[1], high=i[2]))
+                    if i[0]!="均值" and i[0]!="标准差" and i[0]!="CV(%)":  # 中间精密度不在数据库中保存计算结果，报告预览时重新计算
+                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,norm=key, Experimentnum=i[0], low=i[1], high=i[2]))
                 elif lownum == 0 and mediannum == 0 and highnum != 0:  # 高浓度无数据，低中浓度有数据，只存低中浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], low=i[1], median=i[2]))
+                    if i[0]!="均值" and i[0]!="标准差" and i[0]!="CV(%)":  # 中间精密度不在数据库中保存计算结果，报告预览时重新计算
+                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,norm=key, Experimentnum=i[0], low=i[1], median=i[2]))
                 else:
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-                                           norm=key, Experimentnum=i[0], low=i[1], median=i[2], high=i[3]))
+                    if i[0]!="均值" and i[0]!="标准差" and i[0]!="CV(%)":  # 中间精密度不在数据库中保存计算结果，报告预览时重新计算
+                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,norm=key, Experimentnum=i[0], low=i[1], median=i[2], high=i[3]))
 
         JMD.objects.bulk_create(insert_list)
 
-    else:
-        # pass
-        insert_list = []
-        for key, value in jmd_dict.items():
-            for i in value:
-                if lownum != 0 and mediannum == 0 and highnum == 0:  # 低浓度无数据，中高浓度有数据，只存中高浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], median=i[1], high=i[2]))
-                elif lownum == 0 and mediannum != 0 and highnum == 0:  # 中浓度无数据，低高浓度有数据，只存低高浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], low=i[1], high=i[2]))
-                elif lownum == 0 and mediannum == 0 and highnum != 0:  # 高浓度无数据，低中浓度有数据，只存低中浓度
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(
-                            reportinfo=reportinfo, namejmd=namejmd, norm=key, Experimentnum=i[0], low=i[1], median=i[2]))
-                else:
-                    if i[0] != '均值' and i[0] != '标准差' and i[0] != 'CV(%)':
-                        insert_list.append(JMD(reportinfo=reportinfo, namejmd=namejmd,
-                                           norm=key, Experimentnum=i[0], low=i[1], median=i[2], high=i[3]))
-
-        JMD.objects.bulk_create(insert_list)
-
-    return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "number": int(number), "CV": CV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
+    return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 
 
 def related_PNjmd(id):
     # 第一步：后台描述性内容数据提取
-
-    # 根据id找到项目
+    # 1 根据id找到项目
     project = ReportInfo.objects.get(id=id).project
 
-    # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
-    # 特殊数据抓取
-    jmd_special = Special.objects.get(project=project)
-    pnjmd_special = Repeatprecisionspecial.objects.get(special=jmd_special)
-    textlist_special = []  # 特殊参数设置描述性内容
-    if Repeatprecisionspecialtexts.objects.filter(repeatprecisionspecial=pnjmd_special).count() > 0:
-        text_special = Repeatprecisionspecialtexts.objects.filter(
-            repeatprecisionspecial=pnjmd_special)
-        for i in text_special:
-            textlist_special.append(i.text)
+    # 2 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
+    #特殊参数设置描述性内容
+    textlist_special = []
+    try:
+        special_1 = Special.objects.get(project=project) 
+        special_2 = Repeatprecisionspecial.objects.get(special=special_1)           
+        if Repeatprecisionspecialtexts.objects.filter(repeatprecisionspecial=special_2).count()>0:
+            text_special = Repeatprecisionspecialtexts.objects.filter(repeatprecisionspecial=special_2)  
+            for i in text_special:
+                textlist_special.append(i.text)
+    except:
+        pass
 
-    # 通用数据抓取
-    jmd_general = General.objects.get(name="通用性项目")  # 通用参数设置描述性内容
-    pnjmd_general = Repeatprecisiongeneral.objects.get(general=jmd_general)
-    text_general = Repeatprecisiongeneraltexts.objects.filter(repeatprecisiongeneral=pnjmd_general)
-    textlist_general = []
+    # 3 通用数据抓取
+    # 描述性内容
+    textlist_general = [] 
+    general_1 = General.objects.get(name="通用性项目") #通用参数设置描述性内容
+    general_2 = Repeatprecisiongeneral.objects.get(general=general_1)
+    text_general = Repeatprecisiongeneraltexts.objects.filter(repeatprecisiongeneral=general_2)      
     for i in text_general:
         textlist_general.append(i.text)
 
@@ -1128,60 +1093,58 @@ def related_PNjmd(id):
     # 第二步：报告数据提取
 
     '''
-    注释:需要生成一个字典JMD_endreport_dict和一句话JMD_CONCLUSION,数据格式如下：
+    注释:需要生成一个字典JMD_endreport_dict和一句话JMD_CONCLUSION,数据格式如下:
     JMD_endreport_dict:{"D3":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...],"D2":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...]}
-    JMD_CONCLUSION:结果表明25OHD3、25OHD2的变异系数CV分别在x1%-x2%,y1%-y2%范围内，均小于20%，满足检测要求。
+    JMD_CONCLUSION:结果表明25OHD3、25OHD2的变异系数CV分别在x1%-x2%,y1%-y2%范围内,均小于20%,满足检测要求。
     '''
-    dataPNJMD = JMD.objects.filter(reportinfo_id=id, namejmd="重复性精密度")
 
-    if dataPNJMD:
-        JMD_endreport_dict = {}  # 最终需要的字典
+    # 定义需要生成的字典
+    JMD_dict = {}  # 最终需要的字典
 
-        JMD_endreport_norm = []  # 待测物质列表
+    try:
+        # 1 基础数据抓取
+        PNJMD_data = JMD.objects.filter(reportinfo_id=id, namejmd="重复性精密度")
 
-        for i in dataPNJMD:
-            JMD_endreport_norm.append(i.norm)
-
-        JMD_endreport_norm_distinct = []  # 去重
-        for i in JMD_endreport_norm:
-            if i not in JMD_endreport_norm_distinct:
-                JMD_endreport_norm_distinct.append(i)
+        JMD_norm = []  # 待测物质列表
+        for i in PNJMD_data:
+            if i.norm not in JMD_norm:
+                JMD_norm.append(i.norm)
 
         JMD_CV = {}  # CV字典，方便提取CV范围到JMD_CONCLUSION中
         lownum = 0  # 低浓度数据量，如果低浓度数据量为0，则在前端模板不显示，也不将数据存入数据库，下同
         mediannum = 0
         highnum = 0
 
-        for i in JMD_endreport_norm_distinct:
-            JMD_endreport_norm = []
+        for i in JMD_norm:
+            middle_list = []  # 每个化合物的数据列表
             JMD_CV[i] = []
-            dataPNJMD_group = JMD.objects.filter(
-                reportinfo_id=id, namejmd="重复性精密度", norm=i)
-            for j in dataPNJMD_group:
-                group = []
-                group.append(j.Experimentnum)
+            middle_table = JMD.objects.filter(reportinfo_id=id, namejmd="重复性精密度", norm=i)
+            for j in middle_table:
+                rowlist = []  # 每一行的小列表
+                rowlist.append(j.Experimentnum)
 
                 # 没有为每个化合物单独设置有效位数，则调用通用性设置
                 if Digitsdict == {} or list(Digitsdict.values())[0] == None:
                     # 判断低中高三个浓度是否都有数据，同文件读取步骤
                     if j.low == "" and j.median != '' and j.high != '':
                         lownum += 1
-                        group.append(j.median)
-                        group.append(j.high)
+                        rowlist.append(j.median)
+                        rowlist.append(j.high)
                     elif j.low != "" and j.median == '' and j.high != '':
                         mediannum += 1
-                        group.append(j.low)
-                        group.append(j.high)
+                        rowlist.append(j.low)
+                        rowlist.append(j.high)
                     elif j.low != "" and j.median != '' and j.high == '':
                         highnum += 1
-                        group.append(j.low)
-                        group.append(j.median)
+                        rowlist.append(j.low)
+                        rowlist.append(j.median)
                     else:
-                        group.append(j.low)
-                        group.append(j.median)
-                        group.append(j.high)
-                    JMD_endreport_norm.append(group)
+                        rowlist.append(j.low)
+                        rowlist.append(j.median)
+                        rowlist.append(j.high)
+                    middle_list.append(rowlist)
 
+                    # 实验号为CV，添加结果进入CV字典
                     if j.Experimentnum == "CV(%)":
                         if j.low == "" and j.median != '' and j.high != '':
                             JMD_CV[i].append(j.median)
@@ -1198,45 +1161,46 @@ def related_PNjmd(id):
                             JMD_CV[i].append(j.high)
 
                 else:  # 为每个化合物单独设置了有效位数，则调用每个化合物的设置
-                    # 原始数据才取有效位数，计算结果保持不变
+                    # 原始数据才取有效位数，计算结果(均值，标准差，cv)有效位数保持不变
                     if j.Experimentnum != "CV(%)" and j.Experimentnum != "均值" and j.Experimentnum != "标准差":
                         # 判断低中高三个浓度是否都有数据，同文件读取步骤
                         if j.low == "" and j.median != '' and j.high != '':
                             lownum += 1
-                            group.append(effectnum(j.median, Digitsdict[i]))
-                            group.append(effectnum(j.high, Digitsdict[i]))
+                            rowlist.append(effectnum(j.median, Digitsdict[i]))
+                            rowlist.append(effectnum(j.high, Digitsdict[i]))
                         elif j.low != "" and j.median == '' and j.high != '':
                             mediannum += 1
-                            group.append(effectnum(j.low, Digitsdict[i]))
-                            group.append(effectnum(j.high, Digitsdict[i]))
+                            rowlist.append(effectnum(j.low, Digitsdict[i]))
+                            rowlist.append(effectnum(j.high, Digitsdict[i]))
                         elif j.low != "" and j.median != '' and j.high == '':
                             highnum += 1
-                            group.append(effectnum(j.low, Digitsdict[i]))
-                            group.append(effectnum(j.median, Digitsdict[i]))
+                            rowlist.append(effectnum(j.low, Digitsdict[i]))
+                            rowlist.append(effectnum(j.median, Digitsdict[i]))
                         else:
-                            group.append(effectnum(j.low, Digitsdict[i]))
-                            group.append(effectnum(j.median, Digitsdict[i]))
-                            group.append(effectnum(j.high, Digitsdict[i]))
-                        JMD_endreport_norm.append(group)
+                            rowlist.append(effectnum(j.low, Digitsdict[i]))
+                            rowlist.append(effectnum(j.median, Digitsdict[i]))
+                            rowlist.append(effectnum(j.high, Digitsdict[i]))
+                        middle_list.append(rowlist)
 
                     else:
+                        # 计算结果(均值，标准差，cv)有效位数保持不变
                         if j.low == "" and j.median != '' and j.high != '':
                             lownum += 1
-                            group.append(j.median)
-                            group.append(j.high)
+                            rowlist.append(j.median)
+                            rowlist.append(j.high)
                         elif j.low != "" and j.median == '' and j.high != '':
                             mediannum += 1
-                            group.append(j.low)
-                            group.append(j.high)
+                            rowlist.append(j.low)
+                            rowlist.append(j.high)
                         elif j.low != "" and j.median != '' and j.high == '':
                             highnum += 1
-                            group.append(j.low)
-                            group.append(j.median)
+                            rowlist.append(j.low)
+                            rowlist.append(j.median)
                         else:
-                            group.append(j.low)
-                            group.append(j.median)
-                            group.append(j.high)
-                        JMD_endreport_norm.append(group)
+                            rowlist.append(j.low)
+                            rowlist.append(j.median)
+                            rowlist.append(j.high)
+                        middle_list.append(rowlist)
 
                     if j.Experimentnum == "CV(%)":
                         if j.low == "" and j.median != '' and j.high != '':
@@ -1253,51 +1217,53 @@ def related_PNjmd(id):
                             JMD_CV[i].append(j.median)
                             JMD_CV[i].append(j.high)
 
-            JMD_endreport_dict[i] = JMD_endreport_norm
+            JMD_dict[i] = middle_list
 
-        JMD_CONCLUSION = "结果表明" + \
-            "、" .join(list(JMD_CV.keys()))+"的变异系数CV分别在 "  # 最终需要的结论
+        JMD_CONCLUSION = "结果表明" + "、" .join(list(JMD_CV.keys()))+"的变异系数CV分别在 "  # 最终需要的结论
 
         JMD_CVrange = []
         for value in JMD_CV.values():
             JMD_CVrange.append(str(min(value))+"%"+"-"+str(max(value))+"%")
 
-        string = "," .join(list(JMD_CVrange))+"范围内，均小于20%，满足检测要求。"
+        string = "," .join(list(JMD_CVrange))+"范围内,均小于20%,满足检测要求。"
 
         for i in string:
             JMD_CONCLUSION = JMD_CONCLUSION + i
 
         if len(textlist_special) != 0:
-            return {"JMD_endreport_dict": JMD_endreport_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+            return {"JMD_dict":JMD_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
                     "JMD_CONCLUSION": JMD_CONCLUSION, "lownum": lownum, "mediannum": mediannum, "highnum": highnum}
         else:
-            return {"JMD_endreport_dict": JMD_endreport_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+            return {"JMD_dict":JMD_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                     "JMD_CONCLUSION": JMD_CONCLUSION, "lownum": lownum, "mediannum": mediannum, "highnum": highnum}
 
+    except:
+        pass
 
 def related_PJjmd(id):
     # 第一步：后台描述性内容数据提取
-
-    # 根据id找到项目
+    # 1 根据id找到项目
     project = ReportInfo.objects.get(id=id).project
 
-    # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
-    # 特殊数据抓取
-    jmd_special = Special.objects.get(project=project)
-    pjjmd_special = Interprecisionspecial.objects.get(special=jmd_special)
-    textlist_special = []  # 特殊参数设置描述性内容
-    if Interprecisionspecialtexts.objects.filter(interprecisionspecial=pjjmd_special).count() > 0:
-        text_special = Interprecisionspecialtexts.objects.filter(
-            interprecisionspecial=pjjmd_special)
-        for i in text_special:
-            textlist_special.append(i.text)
+    # 2 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
+    #特殊参数设置描述性内容
+    textlist_special = []
+    try:
+        special_1 = Special.objects.get(project=project) 
+        special_2 = Interprecisionspecial.objects.get(special=special_1)           
+        if Interprecisionspecialtexts.objects.filter(interprecisionspecial=special_2).count()>0:
+            text_special = Interprecisionspecialtexts.objects.filter(interprecisionspecial=special_2)  
+            for i in text_special:
+                textlist_special.append(i.text)
+    except:
+        pass
 
-    # 通用数据抓取
-    jmd_general = General.objects.get(name="通用性项目")  # 通用参数设置描述性内容
-    pjjmd_general = Interprecisiongeneral.objects.get(general=jmd_general)
-    text_general = Interprecisiongeneraltexts.objects.filter(
-        interprecisiongeneral=pjjmd_general)
-    textlist_general = []
+    # 3 通用数据抓取
+    # 描述性内容
+    textlist_general = [] 
+    general_1 = General.objects.get(name="通用性项目") #通用参数设置描述性内容
+    general_2 = Interprecisiongeneral.objects.get(general=general_1)
+    text_general = Interprecisiongeneraltexts.objects.filter(interprecisiongeneral=general_2)      
     for i in text_general:
         textlist_general.append(i.text)
 
@@ -1316,8 +1282,6 @@ def related_PJjmd(id):
     else:
         for i in pt_accept:
             Digitsdict[i.norm] = i.digits
-
-    print(Digitsdict)
 
     # 第二步：报告数据提取
     '''
@@ -1325,64 +1289,72 @@ def related_PJjmd(id):
     JMD_endreport_dict:{"D3":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...],"D2":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...]}
     JMD_CONCLUSION:结果表明25OHD3、25OHD2的变异系数CV分别在x1%-x2%,y1%-y2%范围内，均小于20%，满足检测要求。
     '''
-    dataPJJMD = JMD.objects.filter(reportinfo_id=id, namejmd="中间精密度")
 
-    if dataPJJMD:
-        JMD_endreport_dict = {}  # 最终需要的字典
+    # 定义需要生成的字典
+    JMD_dict = {}  # 最终需要的字典
 
-        JMD_endreport_norm = []  # 待测物质列表
+    try:
+        # 1 基础数据抓取
+        PJJMD_data = JMD.objects.filter(reportinfo_id=id, namejmd="中间精密度")
 
-        for i in dataPJJMD:
-            JMD_endreport_norm.append(i.norm)
-
-        JMD_endreport_norm_distinct = []
-        for i in JMD_endreport_norm:
-            if i not in JMD_endreport_norm_distinct:
-                JMD_endreport_norm_distinct.append(i)
+        JMD_norm = []  # 待测物质列表
+        for i in PJJMD_data:
+            if i.norm not in JMD_norm:
+                JMD_norm.append(i.norm)
 
         JMD_CV = {}  # CV字典，方便提取CV范围到JMD_CONCLUSION中
         lownum = 0  # 低浓度数据量，如果低浓度数据量为0，则在前端模板不显示，也不将数据存入数据库，下同
         mediannum = 0
         highnum = 0
 
-        for i in JMD_endreport_norm_distinct:
-            JMD_endreport_norm = []
+        # 中间精密度进行数据抓取时，与重复性精密度不同的一点：需要重新计算均值，标准差和cv
+        for i in JMD_norm:
+            middle_list = []
             JMD_CV[i] = []
-            dataPJJMD_group = JMD.objects.filter(
-                reportinfo_id=id, namejmd="中间精密度", norm=i)
 
+            # 低中高原始数据的单独数据列表，方便重新计算均值，标准差和cv。这里和重复性精密度不同，因此重复性精密度无需定义这三个列表
             lowdata = []
             mediandata = []
             highdata = []
 
-            for j in dataPJJMD_group:
-                group = []
-                group.append(j.Experimentnum)
+            middle_table = JMD.objects.filter(reportinfo_id=id, namejmd="中间精密度", norm=i)
+            for j in middle_table:
+                rowlist = []  # 每一行的小列表
+                rowlist.append(j.Experimentnum)
 
                 # 没有为每个化合物单独设置有效位数，则调用通用性设置
                 if Digitsdict == {} or list(Digitsdict.values())[0] == None:
+                    # 判断低中高三个浓度是否都有数据，同文件读取步骤
                     if j.low == "" and j.median != '' and j.high != '':
                         lownum += 1
-                        group.append(j.median)
-                        group.append(j.high)
+                        rowlist.append(j.median)
+                        rowlist.append(j.high)
+
+                        # 单独数据列表添加数据，因为后续要执行计算，因此需要转换为浮点数
                         mediandata.append(float(j.median))
                         highdata.append(float(j.high))
                     elif j.low != "" and j.median == '' and j.high != '':
                         mediannum += 1
-                        group.append(j.low)
-                        group.append(j.high)
+                        rowlist.append(j.low)
+                        rowlist.append(j.high)
+
+                        # 单独数据列表添加数据，因为后续要执行计算，因此需要转换为浮点数
                         lowdata.append(float(j.low))
                         highdata.append(float(j.high))
                     elif j.low != "" and j.median != '' and j.high == '':
                         highnum += 1
-                        group.append(j.low)
-                        group.append(j.median)
+                        rowlist.append(j.low)
+                        rowlist.append(j.median)
+
+                        # 单独数据列表添加数据，因为后续要执行计算，因此需要转换为浮点数
                         lowdata.append(float(j.low))
                         mediandata.append(float(j.median))
                     else:
-                        group.append(j.low)
-                        group.append(j.median)
-                        group.append(j.high)
+                        rowlist.append(j.low)
+                        rowlist.append(j.median)
+                        rowlist.append(j.high)
+
+                        # 单独数据列表添加数据，因为后续要执行计算，因此需要转换为浮点数
                         lowdata.append(float(j.low))
                         mediandata.append(float(j.median))
                         highdata.append(float(j.high))
@@ -1391,124 +1363,91 @@ def related_PJjmd(id):
                     # 判断低中高三个浓度是否都有数据，同文件读取步骤
                     if j.low == "" and j.median != '' and j.high != '':
                         lownum += 1
-                        group.append(j.median)
-                        group.append(j.high)
-                        mediandata.append(
-                            float(effectnum(j.median, Digitsdict[i])))
-                        highdata.append(
-                            float(effectnum(j.high, Digitsdict[i])))
+                        rowlist.append(effectnum(j.median, Digitsdict[i]))
+                        rowlist.append(effectnum(j.high, Digitsdict[i]))
+
+                        mediandata.append(floateffectnum(j.median, Digitsdict[i]))
+                        highdata.append(floateffectnum(j.high, Digitsdict[i]))
                     elif j.low != "" and j.median == '' and j.high != '':
                         mediannum += 1
-                        group.append(effectnum(j.low, Digitsdict[i]))
-                        group.append(effectnum(j.high, Digitsdict[i]))
-                        lowdata.append(float(effectnum(j.low, Digitsdict[i])))
-                        highdata.append(
-                            float(effectnum(j.high, Digitsdict[i])))
+                        rowlist.append(effectnum(j.low, Digitsdict[i]))
+                        rowlist.append(effectnum(j.high, Digitsdict[i]))
+
+                        lowdata.append(floateffectnum(j.low, Digitsdict[i]))
+                        highdata.append(floateffectnum(j.high, Digitsdict[i]))
                     elif j.low != "" and j.median != '' and j.high == '':
                         highnum += 1
-                        group.append(j.low)
-                        group.append(j.median)
-                        lowdata.append(float(effectnum(j.low, Digitsdict[i])))
-                        mediandata.append(
-                            float(effectnum(j.median, Digitsdict[i])))
+                        rowlist.append(effectnum(j.low, Digitsdict[i]))
+                        rowlist.append(effectnum(j.median, Digitsdict[i]))
+
+                        lowdata.append(floateffectnum(j.low, Digitsdict[i]))
+                        mediandata.append(floateffectnum(j.median, Digitsdict[i]))
                     else:
-                        group.append(j.low)
-                        group.append(j.median)
-                        group.append(j.high)
-                        lowdata.append(float(effectnum(j.low, Digitsdict[i])))
-                        mediandata.append(
-                            float(effectnum(j.median, Digitsdict[i])))
-                        highdata.append(
-                            float(effectnum(j.high, Digitsdict[i])))
-                JMD_endreport_norm.append(group)
+                        rowlist.append(effectnum(j.low, Digitsdict[i]))
+                        rowlist.append(effectnum(j.median, Digitsdict[i]))
+                        rowlist.append(effectnum(j.high, Digitsdict[i]))
 
+                        lowdata.append(floateffectnum(j.low, Digitsdict[i]))
+                        mediandata.append(floateffectnum(j.median, Digitsdict[i]))
+                        highdata.append(floateffectnum(j.high, Digitsdict[i]))
+                middle_list.append(rowlist)
+
+            # 重新计算均值，标准差和cv
+
+            # 1 三个浓度水平全覆盖
             if lownum == 0 and mediannum == 0 and highnum == 0:
-                lowmean = str(new_round(np.mean(lowdata), 2))
-                medianmean = str(new_round(np.mean(mediandata), 2))
-                highmean = str(new_round(np.mean(highdata), 2))
+                middle_list.append(['均值', mean(lowdata), mean(mediandata), mean(highdata)])
+                middle_list.append(['标准差', sd(lowdata), sd(mediandata), sd(highdata)])
+                middle_list.append(['CV(%)', cv(lowdata), cv(mediandata), cv(highdata)])
 
-                lowsd = str(new_round(np.std(lowdata, ddof=1), 2))
-                mediansd = str(new_round(np.std(mediandata, ddof=1), 2))
-                highsd = str(new_round(np.std(highdata, ddof=1), 2))
+                JMD_CV[i]=[cv(lowdata), cv(mediandata), cv(highdata)]
 
-                JMD_endreport_norm.append(
-                    ['均值', lowmean, medianmean, highmean])
-                JMD_endreport_norm.append(['标准差', lowsd, mediansd, highsd])
-                JMD_endreport_norm.append(['CV(%)', str(new_round(float(lowsd)/float(lowmean)*100, 1)), str(new_round(
-                    float(mediansd)/float(medianmean)*100, 1)), str(new_round(float(highsd)/float(highmean)*100, 1))])
-
-                JMD_CV[i].append(new_round(float(lowsd)/float(lowmean)*100, 1))
-                JMD_CV[i].append(
-                    new_round(float(mediansd)/float(medianmean)*100, 1))
-                JMD_CV[i].append(
-                    new_round(float(highsd)/float(highmean)*100, 1))
-
+            # 2 中高浓度
             elif lownum != 0 and mediannum == 0 and highnum == 0:
-                medianmean = str(new_round(np.mean(mediandata), 2))
-                highmean = str(new_round(np.mean(highdata), 2))
+                middle_list.append(['均值',mean(mediandata), mean(highdata)])
+                middle_list.append(['标准差', sd(mediandata), sd(highdata)])
+                middle_list.append(['CV(%)', cv(mediandata), cv(highdata)])
 
-                mediansd = str(new_round(np.std(mediandata, ddof=1), 2))
-                highsd = str(new_round(np.std(highdata, ddof=1), 2))
+                JMD_CV[i]=[cv(mediandata), cv(highdata)]
 
-                JMD_endreport_norm.append(['均值', medianmean, highmean])
-                JMD_endreport_norm.append(['标准差', mediansd, highsd])
-                JMD_endreport_norm.append(['CV(%)', str(new_round(float(
-                    mediansd)/float(medianmean), 2)), str(new_round(float(highsd)/float(highmean), 1))])
-
-                JMD_CV[i].append(
-                    new_round(float(mediansd)/float(medianmean), 1))
-                JMD_CV[i].append(new_round(float(highsd)/float(highmean), 1))
-
+            # 3 低高浓度
             elif lownum == 0 and mediannum != 0 and highnum == 0:
-                lowmean = str(new_round(np.mean(lowdata), 2))
-                highmean = str(new_round(np.mean(highdata), 2))
+                middle_list.append(['均值',mean(lowdata), mean(highdata)])
+                middle_list.append(['标准差', sd(lowdata), sd(highdata)])
+                middle_list.append(['CV(%)', cv(lowdata), cv(highdata)])
 
-                lowsd = str(new_round(np.std(lowdata, ddof=1), 2))
-                highsd = str(new_round(np.std(highdata, ddof=1), 2))
+                JMD_CV[i]=[cv(lowdata), cv(highdata)]
 
-                JMD_endreport_norm.append(['均值', lowmean, highmean])
-                JMD_endreport_norm.append(['标准差', lowsd, highsd])
-                JMD_endreport_norm.append(['CV(%)', str(new_round(float(
-                    lowsd)/float(lowmean), 2)), str(new_round(float(highsd)/float(highmean), 1))])
-
-                JMD_CV[i].append(new_round(float(lowsd)/float(lowmean), 1))
-                JMD_CV[i].append(new_round(float(highsd)/float(highmean), 1))
-
+            # 低中浓度
             elif lownum == 0 and mediannum == 0 and highnum != 0:
-                lowmean = str(new_round(np.mean(lowdata), 2))
-                medianmean = str(new_round(np.mean(mediandata), 2))
+                middle_list.append(['均值', mean(lowdata), mean(mediandata)])
+                middle_list.append(['标准差', sd(lowdata), sd(mediandata)])
+                middle_list.append(['CV(%)', cv(lowdata), cv(mediandata)])
 
-                lowsd = str(new_round(np.std(lowdata, ddof=1), 2))
-                mediansd = str(new_round(np.std(mediandata, ddof=1), 2))
+                JMD_CV[i]=[cv(lowdata), cv(mediandata)]
 
-                JMD_endreport_norm.append(['均值', lowmean, medianmean])
-                JMD_endreport_norm.append(['标准差', lowsd, mediansd])
-                JMD_endreport_norm.append(['CV(%)', str(new_round(float(
-                    lowsd)/float(lowmean), 2)), str(new_round(float(mediansd)/float(medianmean), 1))])
+            JMD_dict[i] = middle_list
 
-                JMD_CV[i].append(new_round(float(lowsd)/float(lowmean), 1))
-                JMD_CV[i].append(
-                    new_round(float(mediansd)/float(medianmean), 1))
-
-            JMD_endreport_dict[i] = JMD_endreport_norm
-
-        JMD_CONCLUSION = "结果表明" + "、" .join(list(JMD_CV.keys()))  # 最终需要的结论
+        JMD_CONCLUSION = "结果表明" + "、" .join(list(JMD_CV.keys()))+"的变异系数CV分别在 "  # 最终需要的结论
 
         JMD_CVrange = []
         for value in JMD_CV.values():
             JMD_CVrange.append(str(min(value))+"%"+"-"+str(max(value))+"%")
 
-        # JMD_CONCLUSION = JMD_CONCLUSION +"的变异系数CV分别在"+ "," .join(JMD_CVrange)+"范围内，均小于20%，满足检测要求。"
-        JMD_CONCLUSION = JMD_CONCLUSION + "的变异系数CV均小于20%，满足检测要求。"
+        string = "," .join(list(JMD_CVrange))+"范围内,均小于20%,满足检测要求。"
 
-        print(JMD_endreport_dict)
+        for i in string:
+            JMD_CONCLUSION = JMD_CONCLUSION + i
+
         if len(textlist_special) != 0:
-            return {"JMD_endreport_dict": JMD_endreport_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+            return {"JMD_dict": JMD_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
                     "JMD_CONCLUSION": JMD_CONCLUSION, "lownum": lownum, "mediannum": mediannum, "highnum": highnum}
         else:
-            return {"JMD_endreport_dict": JMD_endreport_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+            return {"JMD_dict": JMD_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                     "JMD_CONCLUSION": JMD_CONCLUSION, "lownum": lownum, "mediannum": mediannum, "highnum": highnum}
 
+    except:
+        pass
 # 精密度最终结论表格数据提取
 
 
@@ -1520,106 +1459,111 @@ def related_jmdendconclusion(id):
     JMD_CONCLUSION:结果表明25OHD3、25OHD2的变异系数CV分别在x1%-x2%,y1%-y2%范围内，均小于20%，满足检测要求。
     '''
 
-    dataJMD = JMD.objects.filter(reportinfo_id=id)
-    JMD_endreport_norm = []
-    for i in dataJMD:
-        JMD_endreport_norm.append(i.norm)
+    # 定义需要生成的字典
+    JMD_dict = {}  # 最终需要的字典
 
-    JMD_endreport_norm_distinct = []
-    for i in JMD_endreport_norm:
-        if i not in JMD_endreport_norm_distinct:
-            JMD_endreport_norm_distinct.append(i)
+    try:
+        # 1 基础数据抓取
+        JMD_data = JMD.objects.filter(reportinfo_id=id)
 
-    JMD_CONCLUSION_table = {}
+        JMD_norm = []  # 待测物质列表
+        for i in JMD_data:
+            if i.norm not in JMD_norm:
+                JMD_norm.append(i.norm)
 
-    for i in JMD_endreport_norm_distinct:
-        norm_list = []
-        data_norm_PN = JMD.objects.filter(
-            reportinfo_id=id, norm=i, namejmd="重复性精密度")
-        if data_norm_PN:
-            L_times = 0
-            M_times = 0
-            H_times = 0
-            for j in data_norm_PN:
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.low != "":
-                    L_times += 1
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.median != "":
-                    M_times += 1
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.high != "":
-                    H_times += 1
-            norm_list.append(L_times)
-            norm_list.append(M_times)
-            norm_list.append(H_times)
+        for i in JMD_norm:
+            middle_list = []  # 每个化合物的数据列表
+            
+            # 重复性精密度
+            middle_table_PN = JMD.objects.filter(reportinfo_id=id, norm=i, namejmd="重复性精密度")
+            if middle_table_PN:
 
-            for k in data_norm_PN:
-                if k.Experimentnum == "均值":
-                    norm_list.append(k.low)
-                    norm_list.append(k.median)
-                    norm_list.append(k.high)
-                elif k.Experimentnum == "CV(%)":
-                    norm_list.append(k.low)
-                    norm_list.append(k.median)
-                    norm_list.append(k.high)
+                # 低中高浓度测定次数
+                L_times = 0  
+                M_times = 0
+                H_times = 0
+                for j in middle_table_PN:
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.low != "":
+                        L_times += 1
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.median != "":
+                        M_times += 1
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.high != "":
+                        H_times += 1
+                middle_list.append(L_times)
+                middle_list.append(M_times)
+                middle_list.append(H_times)
 
-        data_norm_PJ = JMD.objects.filter(
-            reportinfo_id=id, norm=i, namejmd="中间精密度")
-        if data_norm_PJ:
-            L_times = 0
-            M_times = 0
-            H_times = 0
-            lowdata = []
-            mediandata = []
-            highdata = []
-            for j in data_norm_PJ:
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.low != "":
-                    L_times += 1
-                    lowdata.append(float(j.low))
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.median != "":
-                    M_times += 1
-                    mediandata.append(float(j.median))
-                if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.high != "":
-                    H_times += 1
-                    highdata.append(float(j.high))
-            norm_list.append(L_times)
-            norm_list.append(M_times)
-            norm_list.append(H_times)
+                for k in middle_table_PN:
+                    if k.Experimentnum == "均值":
+                        middle_list.append(k.low)
+                        middle_list.append(k.median)
+                        middle_list.append(k.high)
+                    elif k.Experimentnum == "CV(%)":
+                        middle_list.append(k.low)
+                        middle_list.append(k.median)
+                        middle_list.append(k.high)
 
-            if lowdata != []:
-                lowmean = str(new_round(np.mean(lowdata), 2))
-                lowsd = str(new_round(np.std(lowdata, ddof=1), 2))
-                lowcv = new_round(float(lowsd)/float(lowmean)*100, 1)
-            else:
-                lowmean = ''
-                lowcv = ""
+            # 中间精密度
+            middle_table_PJ = JMD.objects.filter(reportinfo_id=id, norm=i, namejmd="中间精密度")
+            if middle_table_PJ:
+                L_times = 0
+                M_times = 0
+                H_times = 0
 
-            if mediandata != []:
-                medianmean = str(new_round(np.mean(mediandata), 2))
-                mediansd = str(new_round(np.std(mediandata, ddof=1), 2))
-                mediancv = new_round(float(mediansd)/float(medianmean)*100, 1)
-            else:
-                medianmean = ''
-                mediancv = ""
+                # 中间精密度需重新计算均值，标准差和cv
+                lowdata = []
+                mediandata = []
+                highdata = []
+                for j in middle_table_PJ:
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.low != "":
+                        L_times += 1
+                        lowdata.append(float(j.low))
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.median != "":
+                        M_times += 1
+                        mediandata.append(float(j.median))
+                    if j.Experimentnum != "均值" and j.Experimentnum != "标准差" and j.Experimentnum != "CV(%)" and j.high != "":
+                        H_times += 1
+                        highdata.append(float(j.high))
+                middle_list.append(L_times)
+                middle_list.append(M_times)
+                middle_list.append(H_times)
 
-            if highdata != []:
-                highmean = str(new_round(np.mean(highdata), 2))
-                highsd = str(new_round(np.std(highdata, ddof=1), 2))
-                highcv = new_round(float(highsd)/float(highmean)*100, 1)
-            else:
-                highmean = ''
-                highcv = ""
+                if lowdata != []:
+                    lowmean = mean(lowdata)
+                    lowsd = sd(lowdata)
+                    lowcv = cv(lowdata)
+                else:
+                    lowmean = ''
+                    lowcv = ''
 
-            norm_list.append(lowmean)
-            norm_list.append(medianmean)
-            norm_list.append(highmean)
+                if mediandata != []:
+                    medianmean = mean(mediandata)
+                    mediansd = sd(mediandata)
+                    mediancv = cv(mediandata)
+                else:
+                    medianmean = ''
+                    mediancv = ''
 
-            norm_list.append(lowcv)
-            norm_list.append(mediancv)
-            norm_list.append(highcv)
+                if highdata != []:
+                    highmean = mean(highdata)
+                    highsd = sd(highdata)
+                    highcv = cv(highdata)
+                else:
+                    highmean = ''
+                    highcv = ''
 
-        JMD_CONCLUSION_table[i] = norm_list
+                middle_list.append(lowmean)
+                middle_list.append(medianmean)
+                middle_list.append(highmean)
 
-    JMD_CONCLUSION = "结果表明" + \
-        "、" .join(list(JMD_CONCLUSION_table.keys())) + \
-        "的重复性精密度与中间精密度的结果分析，CV均小于20%，满足检测要求。"
+                middle_list.append(lowcv)
+                middle_list.append(mediancv)
+                middle_list.append(highcv)
 
-    return {"JMD_CONCLUSION_table": JMD_CONCLUSION_table, "JMD_CONCLUSION": JMD_CONCLUSION}
+            JMD_dict[i] = middle_list
+
+        JMD_CONCLUSION = "结果表明" + "、" .join(list(JMD_dict.keys())) + "的重复性精密度与中间精密度的结果分析，CV均小于20%，满足检测要求。"
+
+    except:
+        pass
+    return {"JMD_dict": JMD_dict, "JMD_CONCLUSION": JMD_CONCLUSION}

@@ -204,7 +204,6 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                                     PT_dict[PTnorm[j]].append([content[i][nameindex],effectnum(content[i][conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
             
             elif manufacturers =="AB":
-                # norm_notdistinct=[] # 未去重的指标列表
                 file_data = Document(file)
                 paragraphs=[] #段落列表，需依此及母离子和子离子列表判断table索引
 
