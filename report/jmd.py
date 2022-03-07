@@ -548,7 +548,7 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
 
     return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 
-
+# 中间精密度数据读取
 def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV,化合物个数）
@@ -1046,7 +1046,7 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
 
     return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 
-
+# 重复性精密度数据抓取，关联到最终报告预览界面
 def related_PNjmd(id):
     # 第一步：后台描述性内容数据提取
     # 1 根据id找到项目
@@ -1240,6 +1240,7 @@ def related_PNjmd(id):
     except:
         pass
 
+# 中间精密度数据抓取，关联到最终报告预览界面
 def related_PJjmd(id):
     # 第一步：后台描述性内容数据提取
     # 1 根据id找到项目
@@ -1448,9 +1449,8 @@ def related_PJjmd(id):
 
     except:
         pass
-# 精密度最终结论表格数据提取
 
-
+# 精密度最终结论数据提取，关联到最终报告预览界面
 def related_jmdendconclusion(id):
     '''
     注释:需要生成一个字典JMD_CONCLUSION_table和结论JMD_CONCLUSION,数据格式如下：

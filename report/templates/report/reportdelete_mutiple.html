@@ -152,12 +152,12 @@
     /* 三 验证数据 */
 
     /* 每个验证指标外层容器td，设置padding25px */
-    .jmdtd,.stabilitytd,.reference_intervaltd{
+    .jmdtd,.zqdtd,.stabilitytd,.reference_intervaltd{
         padding: 0px 25px;
     }
 
     /* 每个验证指标一级标题 */
-    .JMD_title,.Stability_title,.ReferenceInterval_title{
+    .JMD_title,.ZQD_title,.Stability_title,.ReferenceInterval_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -166,7 +166,7 @@
     }
 
     /* 每个验证指标二级标题 */
-    .PNJMD_title,.PJJMD_title,.JMDconclusion_title{
+    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title{
         font-size: 16px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -175,7 +175,7 @@
     }
 
     /* 每个验证指标下的表格 */
-    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table{
+    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table{
         table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
         word-break: break-all;  
         border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
@@ -187,7 +187,7 @@
     }
 
     /* 每个验证指标下的表格的表头 */
-    .PNjmd_Tabletr th,.PJjmd_Tabletr th,.JMDconclusion_Tabletr th{
+    .PNjmd_Tabletr th,.PJjmd_Tabletr th,.JMDconclusion_Tabletr th,.PT_Tabletr th,.Recycle_Tabletr th{
         /* 字体加粗居中 */
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -204,6 +204,7 @@
         font-family: Times New Roman, 宋体;
         text-align: center;
     }
+
 
     /* ------------------------------------- */
     /*四号字体*/
@@ -535,7 +536,8 @@
                     </tr>
 
                     <!----------------------------------------------------- 二 验证数据 ------------------------------------------------------>
-                <!-------------------------------------------1 精密度------------------------------------------->
+
+                    <!-------------------------------------------1 精密度 ------------------------------------------->
                     {% if PNjmd_data.JMD_dict or PJjmd_data.JMD_dict %} 
                         <tr class="jmdtr">
                             <td class="jmdtd">
@@ -703,6 +705,133 @@
                                 {% endif %}
                             </td>
                         </tr>                                     
+                    {% endif %}
+
+                    <!-------------------------------------------2 正确度 ------------------------------------------->           
+                    {% if PT_data.PT_dict or resultrecycle.Recycle_endreport_dict %}
+                        <tr class="zqdtr">
+                            <td class="zqdtd">
+                                <div class="ZQD_title">{{ZQDindex}}. 准确度(Accuracy)</div>
+                                <!-- 2.1 PT实验数据 -->
+                                {% if PT_data.PT_dict %}
+                                <div class="PT_data">
+                                    <div class="PT_title"><input type="checkbox" name="quota" value="PT" unchecked>{{ZQDindex}}.{{PTindex}} 室间质量评价(Proficiency Testing, PT)</div>
+                                    {% for r in PT_data.textlist %}
+                                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+                                    <div class="maintext">{{PT_data.serial}}) 实验结果如表{{tablePTindex_start}}-{{tablePTindex_end}}所示,结果表明检测结果均在可接受范围内,说明该方法的正确度满足要求。</div>
+                                    {%for key,value in PT_data.PT_dict.items %}
+                                        <table class="PT_Table" cellpadding="4">
+                                            <caption>表{{forloop.counter|add:tablePTindex_start|add:"-1"}}. {{key}}室间质量评价实验数据</caption>
+                                            <tr class="PT_Tabletr">
+                                                <th width="20%">样本编号</th>
+                                                <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受标准</th>
+                                                <th width="20%">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                            </tr>
+                                            {%for r in value %}
+                                                <tr>
+                                                    {%for c in r %}
+                                                        <td class="tablemaintext">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                    <br>
+                                </div>
+                                {% endif %}
+
+                                <!-- 2.2 加标回收率实验数据 -->
+                                {% if resultrecycle.Recycle_endreport_dict %}
+                                <div class="Recycle_data">
+                                    <div class="Recycle_title">{{ZQDindex}}.{{RECYCLEindex}} 加标回收实验(Recovery)</div>
+                                    {% for r in resultrecycle.textlist %}
+                                        <div class="five"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+                                    <div class="picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px" /></div>
+                                    <div class="maintext">{{resultrecycle.serial}})
+                                        加标回收率实验结果表{{tableRECYCLEindex_start}}-{{tableRECYCLEindex_end}}所示,由结果可知,
+                                        方法的回收率:{{resultrecycle.Recycle_endconclusion}}满足检测要求。
+                                    </div>
+
+                                    {%for key,value in resultrecycle.Recycle_endreport_dict.items %}
+                                        <table class="Recycle_table" cellpadding="4">
+                                            <caption>表{{forloop.counter|add:tableRECYCLEindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
+                                            <tr class="Recycle_Tabletr">
+                                                <th colspan="3" width="43%">病人基质样本</th>
+                                                <th rowspan="2" width="17%">加标理论值({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th colspan="2" width="28%">加标后样本</th>
+                                                <th rowspan="2" width="12%">回收率(%)</th>
+                                            </tr>
+                                            <tr>
+                                                <th width="15%">样本编号</th>
+                                                <th width="15%">平行检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="15%">均值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="15%">样本编号</th>
+                                                <th width="15%">平行检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                            </tr>
+                                            {%for c,r in value.items %}
+                                            <tbody border="1">
+                                                <tr>
+                                                    <td rowspan="9">{{c}}</td>
+                                                    <td rowspan="3">{{r.0}}</td>
+                                                    <td rowspan="9">{{r.27}}</td>
+                                                    <td rowspan="3">{{r.1}}</td>
+                                                    <td rowspan="3">{{r.2}}</td>
+                                                    <td>{{r.3}}</td>
+                                                    <td>{{r.6}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.4}}</td>
+                                                    <td>{{r.7}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.5}}</td>
+                                                    <td>{{r.8}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td rowspan="3">{{r.9}}</td>
+                                                    <td rowspan="3">{{r.10}}</td>
+                                                    <td rowspan="3">{{r.11}}</td>
+                                                    <td>{{r.12}}</td>
+                                                    <td>{{r.15}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.13}}</td>
+                                                    <td>{{r.16}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.14}}</td>
+                                                    <td>{{r.17}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td rowspan="3">{{r.18}}</td>
+                                                    <td rowspan="3">{{r.19}}</td>
+                                                    <td rowspan="3">{{r.20}}</td>
+                                                    <td>{{r.21}}</td>
+                                                    <td>{{r.24}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.22}}</td>
+                                                    <td>{{r.25}}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{r.23}}</td>
+                                                    <td>{{r.26}}</td>
+                                                </tr>
+                                            </tbody>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                    <br>
+                                </div>                      
+                                {% endif %}
+                            </td>
+                        </tr>                     
                     {% endif %}
                 </tbody>
             </table>

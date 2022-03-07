@@ -1,4 +1,4 @@
-from re import S
+from re import *
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from numpy import number
@@ -138,13 +138,12 @@ def get_verification_page(request):
             elif request.POST["quota"] == "正确度":
                 if request.POST["zqd"] == "PT":
                     files = request.FILES.getlist('fileuploads')
-                    dicPT = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                     return render(request, 'report/project/PT.html', locals())
                 elif request.POST["zqd"] == "加标回收":
                     files = request.FILES.getlist('fileuploads')
-                    dicrecycle = zqd.recyclefileread(
-                        files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
-                    return render(request, 'report/project/recycle.html', locals())
+                    Result = zqd.recyclefileread(files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    return render(request, 'report/project/Recycle.html', locals())
                 elif request.POST["zqd"] == "仪器比对":
                     pass
 
@@ -514,7 +513,8 @@ def get_reportpreview_page(request, id):
         tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
         PNjmd_data = jmd.related_PNjmd(id)
-        if PNjmd_data:
+        if PNjmd_data["JMD_dict"]:
+            print("重复性精密度存在")
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
@@ -525,7 +525,8 @@ def get_reportpreview_page(request, id):
         tablePJindex_end = tableindex+Number_of_compounds-1
 
         PJjmd_data = jmd.related_PJjmd(id)
-        if PJjmd_data:
+        if PJjmd_data["JMD_dict"]:
+            print("中间精密度存在")
             PJjmdindex += 1  # 中间精密度副标题索引+1  -- 6.2
             tableindex += Number_of_compounds  # 总表格索引+n
 
@@ -533,7 +534,7 @@ def get_reportpreview_page(request, id):
         JMDconclusionindex = PJjmdindex
         tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
 
-        if PNjmd_data and PJjmd_data:
+        if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
             jmdconclusion_data = jmd.related_jmdendconclusion(id)
            
             if jmdconclusion_data:
@@ -544,16 +545,19 @@ def get_reportpreview_page(request, id):
             titleindex += 1 # -- 7
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
-        ZQDindex = titleindex # -- 7
-        PTindex = 0  # PT副标题索引
+
+        ZQDindex = titleindex # 正确度度主标题索引 
+
+        # 1  PT
+        PTindex = 0  # PT副标题索引  7.1
 
         tablePTindex_start = tableindex # 第一个化合物表格索引
         tablePTindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引
 
-        resultPT = zqd.related_PT(id)
-        if resultPT:
-            PTindex += 1 # -- 7.1
-            tableindex += Number_of_compounds
+        PT_data = zqd.related_PT(id)
+        if PT_data["PT_dict"]:
+            PTindex += 1 # # 正确度副标题索引+1  7.2
+            tableindex += Number_of_compounds # 总表格索引+n
 
         # 加标回收
         RECYCLEindex = PTindex # --7.1
@@ -566,7 +570,7 @@ def get_reportpreview_page(request, id):
             RECYCLEindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if resultPT or resultrecycle:
+        if PT_data or resultrecycle:
             titleindex += 1  # 8
 
         # AMR
@@ -845,6 +849,21 @@ def get_reportdelete_page(request, id):
         if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
+        # --------------------------------------- 2 正确度（每个化合物一个表格）---------------------------------------
+
+        ZQDindex = titleindex # 正确度度主标题索引 
+
+        # 1  PT
+        PTindex = 0  # PT副标题索引  7.1
+
+        tablePTindex_start = tableindex # 第一个化合物表格索引
+        tablePTindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引
+
+        PT_data = zqd.related_PT(id)
+        if PT_data["PT_dict"]:
+            PTindex += 1 # # 正确度副标题索引+1  7.2
+            tableindex += Number_of_compounds # 总表格索引+n
+
         
         # 仪器条件
         Test_method_data = testmethod.related_testmethod(id)
@@ -939,8 +958,10 @@ def get_verifyagain_page(request, id):
     verifyoccasion_verifyagain = "新项目开发"
     return render(request, 'report/verification.html', locals())
 
-# 接收验证界面PT指标传递过来的参数
+# PT数据保存
 def PTsave(request):
+
+    # 从数据库中抓取当前用户名传递到layout.html
     try:
         name = User.objects.get(username=request.user).first_name
     except:
@@ -949,12 +970,11 @@ def PTsave(request):
         User_class = 0
     else:
         User_class = 1
+    
+    # 提取PT.html中的数据，并存入数据库
     if request.method == 'POST':
-        print(request.POST)
-
         '''
-        print(request.POST)
-        <QueryDict: {'dicPT': ["{'25OHD2': [['PT561', 3.06, '± 25.0 %'], ['PT562', 1.13, '± 25.0 %'], ['PT563', 1.58, '± 25.0 %'], 
+        <QueryDict: {'Result': ["{'25OHD2': [['PT561', 3.06, '± 25.0 %'], ['PT562', 1.13, '± 25.0 %'], ['PT563', 1.58, '± 25.0 %'], 
         ['PT564', 1.15, '± 25.0 %'], ['PT565', 22.96, '± 25.0 %']], '25OHD3': [['PT561', 68.45, '± 25.0 %'], ['PT562', 46.59, '± 25.0 %'],
         ['PT563', 91.69, '± 25.0 %'], ['PT564', 43.03, '± 25.0 %'], ['PT565', 59.44, '± 25.0 %']]}"], 'instrument': ['123'], 
         'project': ['25OHD'], 'PT_num': ['5'], 'PTtarget1': ['3', '68'], 'bias1': ['2.00%', '0.66%'], 'pass1': ['通过', '通过'], 
@@ -963,7 +983,7 @@ def PTsave(request):
         'pass4': ['通过', '通过'], 'PTtarget5': ['23', '60'], 'bias5': ['0.17%', '0.93%'], 'pass5': ['通过', '通过']}>
         '''
 
-        # 仪器编号,strip()的作用是去除前后空格
+        # 1 基本信息提取
         instrument_num = request.POST["instrument_num"]
         Detectionplatform = request.POST["Detectionplatform"]  # 项目组
         project = request.POST["project"]  # 项目
@@ -971,16 +991,15 @@ def PTsave(request):
         manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
         verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
 
-        dic_PTsave = eval(str(request.POST.getlist("dicPT")[0]))
-        # dicPT的格式为一个列表，列表里只有一个字符串，字符串里又是一个字典，见上述注释，需要先把该字符串里的字典提取出来
+        # 2 提取html中的字典
+        PT_dict = eval(str(request.POST.getlist("Result")[0]))
 
         PTtarget = []  # 靶值列表
         PTbias = []  # 偏移或绝对差值列表
         PTpass = []  # 是否通过列表
-        PTsamplenum = int(request.POST.getlist("PT_num")[0])  # PT样本数
+        PT_num = int(request.POST.getlist("PT_num")[0])  # PT样本数
 
-        for i in range(1, PTsamplenum+1):
-            # "PTtarget1","PTtarget2","PTtarget3","PTtarget4"...
+        for i in range(1, PT_num+1):
             string_target = "PTtarget"+str(i)
             string_bias = "bias"+str(i)
             string_pass = "pass"+str(i)
@@ -988,28 +1007,27 @@ def PTsave(request):
             PTbias.append(request.POST.getlist(string_bias))
             PTpass.append(request.POST.getlist(string_pass))
 
-        PTsave_norm = []  # 待测物质列表
-        for i in dic_PTsave.keys():
-            PTsave_norm.append(i)
+        PT_norm = []  # 待测物质列表
+        for i in PT_dict.keys():
+            PT_norm.append(i)
 
         PT_judgenum = 0
-        for i in range(PTsamplenum):
-            for j in range(len(PTsave_norm)):
-                dic_PTsave[PTsave_norm[j]][i].append(PTtarget[i][j])
-                dic_PTsave[PTsave_norm[j]][i].append(PTbias[i][j])
-                dic_PTsave[PTsave_norm[j]][i].append(PTpass[i][j])
+        for i in range(PT_num):
+            for j in range(len(PT_norm)):
+                PT_dict[PT_norm[j]][i].append(PTtarget[i][j])
+                PT_dict[PT_norm[j]][i].append(PTbias[i][j])
+                PT_dict[PT_norm[j]][i].append(PTpass[i][j])
                 if PTpass[i][j] == "不通过":
                     PT_judgenum += 1
 
-        reportinfo = ReportInfo.objects.get(
-            number=request.POST["instrument_num"], project=request.POST["project"])
+        reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
 
         if PT_judgenum == 0:
             insert_list = []
-            for i in PTsave_norm:
-                for j in range(len(dic_PTsave[i])):
-                    insert_list.append(PT(reportinfo=reportinfo, norm=i, Experimentnum=dic_PTsave[i][j][0], value=dic_PTsave[i][j][1],
-                                          target=dic_PTsave[i][j][3], received=dic_PTsave[i][j][2], bias=dic_PTsave[i][j][4], PT_pass=dic_PTsave[i][j][5]))
+            for i in PT_norm:
+                for j in range(len(PT_dict[i])):
+                    insert_list.append(PT(reportinfo=reportinfo, norm=i, Experimentnum=PT_dict[i][j][0], value=PT_dict[i][j][1],
+                                          target=PT_dict[i][j][3], received=PT_dict[i][j][2], bias=PT_dict[i][j][4], PT_pass=PT_dict[i][j][5]))
 
             PT.objects.bulk_create(insert_list)
             HttpResponse = "PT数据保存成功!"
@@ -1017,10 +1035,10 @@ def PTsave(request):
 
         else:
             HttpResponse = "PT验证结果中含有不通过数据,请核对后重新提交!"
-            return render(request, 'report/HttpResponse-danger.html', locals())
+            return render(request, 'report/Warning.html', locals())
 
 
-def recyclesave(request):
+def Recyclesave(request):
     try:
         name = User.objects.get(username=request.user).first_name
     except:
@@ -1651,8 +1669,6 @@ def Sample_Stability_Save(request):
 
             HttpResponse = "样品处理后稳定性数据保存成功!"
             return render(request, 'report/Datasave.html', locals())
-
-
 
 def verifyagain(request):
     if request.method == 'POST':

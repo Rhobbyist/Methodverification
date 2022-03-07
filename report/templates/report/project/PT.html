@@ -30,37 +30,98 @@
         -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
         box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
     }
+
+    /* input框设置为number类型时,去除右侧的箭头 */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+
 </style>
 
     <body>
         <div class="container">   
-            {% if dicPT.PTrange1 %} 
-                <form action="{% url 'PTsave' %}" method="POST" >           
-                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
-                    <input hidden = "hidden" value="{{project}}" name="project">
-                    <input hidden = "hidden" value="{{platform}}" name="platform">
-                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
-                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
-                    <input hidden = "hidden" value="{{dicPT.PT_dict}}" name="dicPT">
-                    <input hidden = "hidden" value="{{dicPT.PT_num}}" name="PT_num">
-                    <h2>PT验证结果</h2>
-                        {%for key,value in dicPT.PT_dict.items %}        
+            {% if Result.PTrange1 %} 
+                <form action="{% url 'PTsave' %}" method="POST" >    
+                    <!-- 1 验证基本信息展示 -->
+                    <div class="basicinfo">
+                        <!-- 标题 -->
+                        <h2>验证基本信息</h2>
+                        <br>
+
+                        <!-- 仪器型号 -->
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器型号</label>
+                            <input class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                        </div> 
+
+                        <!-- 检测平台及检测项目 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测平台</label>
+                                    <input class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测项目</label>
+                                    <input class="form-control" value="{{project}}" name="project" readonly>
+                                </div> 
+                            </div>
+                        </div>
+                        
+                        <!-- 仪器平台及仪器厂家 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器平台</label>
+                                    <input class="form-control" value="{{platform}}" name="platform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器厂家</label>
+                                    <input class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
+                            </div>
+                        </div>
+                    </div>  
+
+                    <input hidden = "hidden" value="{{Result.PT_dict}}" name="Result">
+                    <input hidden = "hidden" value="{{Result.PT_num}}" name="PT_num">
+
+                    <!-- 2 分界线 -->
+                    <h1 class="page-header"></h1>
+
+                    <!-- 3 验证结果展示 -->
+                    <h2>验证指标:PT</h2>
+                        {%for key,value in Result.PT_dict.items %}        
                             <table border="1" cellpadding="8">
                                 <caption><h4>{{key}}验证结果</h4></caption>
                                 <tr>
                                     <th>样本编号</th>
-                                    <th>检测值({{dicPT.PTunit}})</th>
-                                    <th>靶值({{dicPT.PTunit}})</th>
+                                    <th>检测值({{Result.PTunit}})</th>
+                                    <th>靶值({{Result.PTunit}})</th>
                                     <th>可接受标准</th>
-                                    <th>偏倚(%)或<br/>绝对差值({{dicPT.PTunit}})</th>
+                                    <th>偏倚(%)或<br/>绝对差值({{Result.PTunit}})</th>
                                     <th>是否通过</th>
                                 </tr>
                                 {%for r in value %}
                                 <tr>
                                     <td>{{r.0}}</td> 
                                     <td><span class="conc">{{r.1}}</span></td>
-                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}"></td>
+                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
                                     <td><span class="rule">{{r.2}}</span></td>
                                     <td><input class="bias" type="text" style="border-style:none;text-align:center;" name="bias{{forloop.counter}}" readonly></td>
                                     <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
@@ -70,11 +131,11 @@
                             <br>
                         {% endfor %}            
                     <br>
-                    <div><input id="submit" type="submit" value="保存" hidden /></div>     
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
                 </form>
-                <div><button class="btn btn-primary" id="run" align="center" onclick="myFunction()" >运行</button></div>  
+                <!-- <div><button class="btn btn-primary" id="run" align="center">保存</button></div>   -->
             {% else %}
-                <h2 class="alert alert-danger">尚未在后台管理系统中设置PT的可接受标准，请设置后重新提交数据！</h2>
+                <h2 class="alert alert-danger">{{Result.error_message}}</h2>
                 <form action="{% url 'verifyagain' %}" method="POST" > 
                     <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
                     <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
@@ -97,23 +158,23 @@
     {% block scripts %}
     <script>
         // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色。
-        window.onload = function(){
-            var tr=document.getElementsByTagName("tr");
-            for(var i= 0;i<tr.length;i++)
-            {
-            bgcChange(tr[i]);
-            }
+        // window.onload = function(){
+        //     var tr=document.getElementsByTagName("tr");
+        //     for(var i= 0;i<tr.length;i++)
+        //     {
+        //     bgcChange(tr[i]);
+        //     }
             
-            }
-            function bgcChange(obj)
-            {
-            obj.onmouseover=function(){
-            obj.style.backgroundColor="#D8D8D8";
-            }
-            obj.onmouseout=function(){
-            obj.style.backgroundColor="#fff";
-            }
-        }
+        //     }
+        //     function bgcChange(obj)
+        //     {
+        //     obj.onmouseover=function(){
+        //     obj.style.backgroundColor="#D8D8D8";
+        //     }
+        //     obj.onmouseout=function(){
+        //     obj.style.backgroundColor="#fff";
+        //     }
+        // }
 
         function myFunction() {
             conc = document.getElementsByClassName("conc")
@@ -125,30 +186,34 @@
             {   
                 if (rule[i].innerText.includes("%"))
                 {
-                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(1))+"%"
-                    if ((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(1) <= parseFloat(rule[i].innerText.split(" ")[1]))
+                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2))+"%"
+                    if ((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
                     {
                         pass[i].value = "通过"
+                        pass[i].style.color="green"
+                        pass[i].style.fontWeight=700
                     }
                     else
                     {
                         pass[i].value = "不通过"
                         pass[i].style.color="red"
-                        bias[i].style.color="red"
+                        pass[i].style.fontWeight=700
                     }
                 }
                 else
                 {
-                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)).toFixed(1))+"{{dicPT.PTunit}}"
-                    if (Math.abs(parseFloat(conc[i].innerHTML)-target[i].value).toFixed(1) <= parseFloat(rule[i].innerText.split(" ")[1]))
+                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)).toFixed(2))+"{{Result.PTunit}}"
+                    if (Math.abs(parseFloat(conc[i].innerHTML)-target[i].value).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
                     {
                         pass[i].value = "通过"
+                        pass[i].style.color="green"
+                        pass[i].style.fontWeight=700
                     }
                     else
                     {
                         pass[i].value = "不通过!" 
-                        pass[i].style.color="red" 
-                        bias[i].style.color="red"                    
+                        pass[i].style.color="red"
+                        pass[i].style.fontWeight=700                    
                     }
                 }
             }
@@ -156,8 +221,8 @@
             // submit = document.getElementById("submit");
             // submit.removeAttribute("hidden");
             // submit.addClass("btn btn-danger");
-            $("#submit").removeAttr("hidden").addClass("btn btn-danger");
-            $("#run").attr("hidden","hidden").removeClass("btn btn-primary");
+            // $("#submit").removeAttr("hidden").addClass("btn btn-danger");
+            // $("#run").attr("hidden","hidden").removeClass("btn btn-primary");
 
             // run = document.getElementById("run"); 
             // run.removeClass("btn btn-danger");      

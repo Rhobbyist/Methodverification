@@ -60,7 +60,7 @@
             <br>
             <div class="row">
                 <div class="col-md-6">
-                    <!-- 仪器编号 -->
+                <!-- 仪器编号 -->
                     {% if instrument_num_verifyagain %}
                         <div>仪器编号：<input type="text" name="instrument_num" class="verifyinput" value={{instrument_num_verifyagain}} readonly></div>
                     {% else %}
@@ -68,7 +68,7 @@
                     {% endif %}
                     <br>
 
-                    <!-- 技术平台及厂家 -->
+                <!-- 技术平台及厂家 -->
                     {% if platform_verifyagain %}
                         <div>技术平台及厂家:
                             <input type="text" name="platform" class="verifyinput" value={{platform_verifyagain}} readonly>
@@ -78,7 +78,7 @@
                         <div>技术平台及厂家:
                             <select name="platform" id="platform" onchange="platformChange()" class="verifyinput" required>
                                 <option value="">请选择技术平台...</option>
-                                <!-- <option selected="selected">请选择技术平台...</option> -->
+                            <!-- <option selected="selected">请选择技术平台...</option> -->
                                 <option>液质</option>
                                 <option>ICP-MS</option>
                                 <option>液相</option>
@@ -142,7 +142,7 @@
                     {% endif %}
                     <br>
                     
-                    {% comment %} 验证时机 {% endcomment %}
+                    <!-- 验证时机  -->
                     {% if verifyoccasion_verifyagain %}
                         <div>验证时机:
                             <input type="text" name="verifyoccasion" class="verifyinput" value={{verifyoccasion_verifyagain}} readonly>
@@ -179,9 +179,9 @@
                 <br>
                 <div class="row">
 
-                    {% comment %} 第一列：精密度，正确度，分析灵敏度与分析测量范围，最终结论 {% endcomment %}
+                    <!-- 第一列：精密度，正确度，分析灵敏度与分析测量范围，最终结论  -->
                     <div class="col-md-4">
-                        {% comment %} 精密度 {% endcomment %}
+                        <!-- 精密度  -->
                         <div>
                             <input type="radio" name="quota" value="精密度" unchecked onclick="jmd.style.display=(this.checked)?'':'none'"> 精密度
                             <select size="1" name="jmd" style="DISPLAY: none; width: 130px;height: 22px">
@@ -192,7 +192,7 @@
                         <div><input type="file" name="fileuploads" multiple="multiple"/></div>
                         <br>
 
-                        {% comment %} 正确度 {% endcomment %}
+                        <!-- 正确度  -->
                         <div>
                             <input type="radio" name="quota" value="正确度" unchecked onclick="zqd.style.display=(this.checked)?'':'none'" /> 正确度
                             <select size="1" name="zqd" style="DISPLAY: none; width: 130px;height: 22px">
@@ -201,10 +201,10 @@
                                 <option value="仪器比对">仪器比对</option>
                             </select>
                         </div>
-                        <div><input type="file" name="fileuploads"></div>
+                        <div><input type="file" name="fileuploads" multiple="multiple"/></div>
                         <br>
 
-                        {% comment %} 分析灵敏度与分析测量范围 {% endcomment %}
+                        <!-- 分析灵敏度与分析测量范围  -->
                         <div>
                             <input type="radio" name="quota" value="分析灵敏度与分析测量范围" unchecked onclick="amr.style.display=(this.checked)?'':'none'"> 分析灵敏度与分析测量范围
                             <select size="1" name="amr" style="DISPLAY: none; width: 168px;height: 22px">
@@ -216,7 +216,7 @@
                         <div><input type="file" name="fileuploads" multiple="multiple" /></div>
                         <br>
 
-                        {% comment %} 最终结论 {% endcomment %}
+                        <!-- 最终结论  -->
                         <div>
                             <input type="radio" name="quota" value="最终结论" unchecked onclick="End_conclusion.style.display=(this.checked)?'':'none'"> 最终结论
                         </div>
@@ -226,9 +226,9 @@
 
                     </div>
 
-                    {% comment %} 第二列：临床可报告范围，基质特异性，基质效应，激素11项质控工具 {% endcomment %}
+                    <!-- 第二列：临床可报告范围，基质特异性，基质效应，激素11项质控工具  -->
                     <div class="col-md-4">
-                        {% comment %} 临床可报告范围 {% endcomment %}
+                        <!-- 临床可报告范围  -->
                         <div>
                             <input type="radio" name="quota" value="临床可报告范围" unchecked onclick="crr.style.display=(this.checked)?'':'none'" /> 临床可报告范围
                             <select size="1" name="crr" style="DISPLAY: none; width: 168px;height: 22px">
@@ -239,12 +239,12 @@
                         <div><input type="file" name="fileuploads"></div>
                         <br>
 
-                        {% comment %} 基质特异性 {% endcomment %}
+                        <!-- 基质特异性  -->
                         <div><input type="radio" name="quota" value="基质特异性" /> 基质特异性</div>
                         <div><input type="file" name="fileuploads" multiple="multiple"></div>
                         <br>
 
-                        {% comment %} 基质效应 {% endcomment %}
+                        <!-- 基质效应  -->
                         <div>
                             <input type="radio" name="quota" value="基质效应" unchecked onclick="Me.style.display=(this.checked)?'':'none'"> 基质效应
                             <select size="1" name="Me" style="DISPLAY: none; width: 130px;height: 22px">
@@ -255,14 +255,14 @@
                         <div><input type="file" name="fileuploads"></div>
                         <br>
 
-                        {% comment %} 激素11项质控工具，默认隐藏的 {% endcomment %}
+                        <!-- 激素11项质控工具，默认隐藏的  -->
                         <div id="id1" hidden="hidden"><input type="radio" name="quota" value="激素11项专用" /> 激素11项专用</div>
                         <div id="id2" hidden="hidden"><input type="file" name="fileuploads" multiple="multiple"></div>
                     </div>
 
-                    {% comment %} 第三列：携带效应，样品稳定性，参考区间 {% endcomment %}
+                    <!-- 第三列：携带效应，样品稳定性，参考区间  -->
                     <div class="col-md-4">
-                        {% comment %} 携带效应 {% endcomment %}
+                        <!-- 携带效应  -->
                         <div>
                             <input type="radio" name="quota" value="携带效应" unchecked onclick="carryover.style.display=(this.checked)?'':'none'" /> 携带效应
                             <select size="1" name="carryover" style="DISPLAY: none; width: 130px;height: 22px">
@@ -273,7 +273,7 @@
                         <div><input type="file" name="fileuploads"></div>
                         <br>
                         
-                        {% comment %} 样品稳定性 {% endcomment %}
+                        <!-- 样品稳定性  -->
                         <div>
                             <input type="radio" name="quota" value="样品稳定性" unchecked onclick="stability.style.display=(this.checked)?'':'none'"> 样品稳定性
                             <select size="1" name="stability" style="DISPLAY: none; width: 130px;height: 22px">
@@ -284,7 +284,7 @@
                         <div><input type="file" name="fileuploads" multiple="multiple" /></div>
                         <br>
 
-                        <!-- 参考区间 -->
+                    <!-- 参考区间 -->
                         <div>
                             <input type="radio" name="quota" value="参考区间" unchecked onclick="referenceinterval.style.display=(this.checked)?'':'none'"/> 参考区间
                             <select size="1" name="referenceinterval" style="DISPLAY: none; width: 130px;height: 22px">
@@ -325,7 +325,7 @@
         }
     }
 
-    {% comment %} 技术平台及厂家二级联动 {% endcomment %}
+    //  技术平台及厂家二级联动 
     function platformChange() {
         var platform = document.getElementById("platform");
         var manufacturers = document.getElementById("manufacturers");

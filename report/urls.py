@@ -34,13 +34,14 @@ urlpatterns=[
     # 在报告生成界面点击继续验证时跳转的界面
     path('verifyagain/<int:id>', report.views.get_verifyagain_page, name="verifyagain"),
 
+    # PT数据保存
+    path('PTsave', report.views.PTsave, name="PTsave"),
 
+    # 加标回收率数据保存
+    path('Recyclesave', report.views.Recyclesave, name="Recyclesave"),
 
 
     
-
-    path('ptsave', report.views.PTsave, name="PTsave"),
-    path('recyclesave', report.views.recyclesave, name="recyclesave"),
     path('mssave', report.views.MSsave, name="MSsave"),
     path('lodsave', report.views.LODsave, name="LODsave"),
     path('amrsave', report.views.AMRsave, name="AMRsave"),

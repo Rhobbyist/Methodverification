@@ -24,11 +24,26 @@ def AMRfileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_M
         cv=AMRspecialmethod.objects.get(aMRspecial=id2).cv #最大允许CV
         
     else:
-        general = General.objects.get(name="通用性项目")
-        amrgeneral = AMRgeneral.objects.get(general=general)
-        lowvalue=AMRgeneralmethod.objects.get(aMRgeneral=amrgeneral).lowvalue #回收率下限
-        upvalue=AMRgeneralmethod.objects.get(aMRgeneral=amrgeneral).upvalue #回收率上限
-        cv=AMRgeneralmethod.objects.get(aMRgeneral=amrgeneral).cv #最大允许CV
+        general_1 = General.objects.get(name="通用性项目")
+        amr_general = AMRgeneral.objects.get(general=general_1)
+        lowvalue=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).lowvalue #回收率下限
+        upvalue=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).upvalue #回收率上限
+        cv=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).cv #最大允许CV
+
+    # 后台管理系统-各项目参数设置-PT指标设置里找到是否设置了每个化合物的单位
+    special = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=special)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+
+    # 后台管理系统中设置的本项目化合物名称
+    PTnorm = []  
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+
+    # 后台管理系统中设置的本项目每个化合物单位
+    Unitlist = []
+    for i in pt_accept:
+        Unitlist.append(i.unit)
 
     #  第二步:开始文件读取
     '''
@@ -64,7 +79,6 @@ def AMRfileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_M
                     for i in range(len(lines)): 
                         if len(lines[i])!=0:
                             lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])  # 以逗号分隔字符串,但忽略双引号内的逗号
-                            # lines[i]=lines[i].split(',') # 按逗号分隔后把每一行都变成一个列表
                         else:
                             lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])
                             del lines[i] #最后一行如为空行，则删除该元素

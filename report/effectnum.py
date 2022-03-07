@@ -362,3 +362,7 @@ def cv(lst):
     return new_round(cvresult)
 
 
+data=[None]
+
+if not any(data):
+    print("not any data")

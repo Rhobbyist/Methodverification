@@ -69,14 +69,14 @@
                         </div>
                     </div>
 
-                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <!-- <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
                     <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
                     <input hidden = "hidden" value="{{project}}" name="project">
                     <input hidden = "hidden" value="{{platform}}" name="platform">
                     <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
-                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion"> -->
 
-                    {% comment %} cv上限 {% endcomment %}
+                    <!-- cv上限  -->
                     <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV">
 
                     <!-- 2 分界线 -->
@@ -84,7 +84,7 @@
 
                     <!-- 3 验证结果展示 -->
                     <h2>验证指标：{{Result.namejmd}}</h2>
-                    <h2>验证结果：<span id="verifyresult">tongguo</span></h2>
+                    <h2>验证结果：<span id="verifyresult"></span></h2>
                     <br>
                     <div class="row">
                         {%for key,value in Result.jmd_dict.items %}
@@ -197,12 +197,12 @@
             if(falsecounter>0){
                 verifyresult.innerHTML="不通过!";
                 verifyresult.style.color= "red";
+                verifyresult.style.fontWeight=700
             }else{
                 verifyresult.innerHTML="通过!";
                 verifyresult.style.color= "green";
+                verifyresult.style.fontWeight=700
             }
-
-            
 
         }
     </script>
