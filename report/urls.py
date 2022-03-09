@@ -40,11 +40,12 @@ urlpatterns=[
     # 加标回收率数据保存
     path('Recyclesave', report.views.Recyclesave, name="Recyclesave"),
 
-
+    # 方法定量限与线性范围(LOQ)数据保存
+    path('LOQsave', report.views.LOQsave, name="LOQsave"),
     
     path('mssave', report.views.MSsave, name="MSsave"),
     path('lodsave', report.views.LODsave, name="LODsave"),
-    path('amrsave', report.views.AMRsave, name="AMRsave"),
+    
     path('amr2save', report.views.AMR2save, name="AMR2save"),
     path('amr_conclusionsave', report.views.AMR_conclusionsave, name="AMR_conclusionsave"),
     path('crrsave', report.views.CRRsave, name="CRRsave"),

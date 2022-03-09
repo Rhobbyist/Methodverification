@@ -56,7 +56,7 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
         if platform=="液质":
             if manufacturers =="Agilent":
                 # 1 读取csv文件
-                csv_file = file.seek(0)  # https://www.jianshu.com/p/0d15ed85df2b
+                file.seek(0)  # https://www.jianshu.com/p/0d15ed85df2b
                 file_data = file.read().decode('utf-8')
                 lines = file_data.split('\r\n')
                 for i in range(len(lines)): 
@@ -344,7 +344,7 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
 
         return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"PTrange1":len(PTrange1)}
 
-def recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
 
     # 第一步:后台数据抓取（回收率上下限，最大允许CV）
     id1 = Special.objects.get(project=project).id  
@@ -384,7 +384,7 @@ def recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
         print(file.name)
         if file.name=="加标回收率-加标数据.csv":
             # 读取csv文件
-            csv_file = file.seek(0)  # 此网址查找到的答案:https://www.jianshu.com/p/0d15ed85df2b
+            file.seek(0)  # 此网址查找到的答案:https://www.jianshu.com/p/0d15ed85df2b
             file_data = file.read().decode('gbk')
             lines = file_data.split('\r\n')
             for i in range(len(lines)): 

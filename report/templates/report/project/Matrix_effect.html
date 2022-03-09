@@ -16,23 +16,76 @@
         text-align: center;
     }
 
-    p {
-        text-align: center;
+    /* 验证结果样式 */
+    #verifyresult{
+        font-weight: 700;
+        color:green;
     }
 </style>
 
 <body>
     <div class="container">
         <form action="{% url 'verifyagain' %}" method="POST">
-            <input hidden="hidden" value="{{instrument_num}}" name="instrument_num">
-            <input hidden="hidden" value="{{Detectionplatform}}" name="Detectionplatform">
-            <input hidden="hidden" value="{{group}}" name="group">
-            <input hidden="hidden" value="{{project}}" name="project">
-            <input hidden="hidden" value="{{platform}}" name="platform">
-            <input hidden="hidden" value="{{manufacturers}}" name="manufacturers">
-            <input hidden="hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+            <!-- 1 验证基本信息展示 -->
+            <div class="basicinfo">
+                <!-- 标题 -->
+                <h2>验证基本信息</h2>
+                <br>
+
+                <!-- 仪器型号及验证时机 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器型号</label>
+                            <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">验证时机</label>
+                            <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                        </div> 
+                    </div>
+                </div>
+
+                <!-- 检测平台及检测项目 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测平台</label>
+                            <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测项目</label>
+                            <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                        </div> 
+                    </div>
+                </div>
+                
+                <!-- 仪器平台及仪器厂家 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器平台</label>
+                            <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器厂家</label>
+                            <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2 分界线 -->
+            <h1 class="page-header"></h1>
+
             <h2>基质效应验证结果</h2>
-            {%for key,value in dicMatrix_effect.Matrix_effect_dict.items %}
+            {%for key,value in Result.Matrix_effect_dict.items %}
             <table border="1" cellpadding="13" align="center">
                 <caption>
                     <h4>{{key}}验证结果</h4>

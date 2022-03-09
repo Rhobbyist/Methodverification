@@ -3,6 +3,7 @@
 {% block content %} 
 
 <style>
+
     /*table表格宽度固定，同时td内容过长也不会被撑开*/
     table{
         table-layout:fixed;
@@ -18,6 +19,13 @@
         text-align: center;
         font-size: 14px;
     }
+
+    /* 验证结果样式 */
+    #verifyresult{
+        font-weight: 700;
+        color:green;
+    }
+
 </style>
 
     <body>
@@ -69,13 +77,6 @@
                         </div>
                     </div>
 
-                    <!-- <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
-                    <input hidden = "hidden" value="{{project}}" name="project">
-                    <input hidden = "hidden" value="{{platform}}" name="platform">
-                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
-                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion"> -->
-
                     <!-- cv上限  -->
                     <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV">
 
@@ -84,7 +85,7 @@
 
                     <!-- 3 验证结果展示 -->
                     <h2>验证指标：{{Result.namejmd}}</h2>
-                    <h2>验证结果：<span id="verifyresult"></span></h2>
+                    <h2>验证结果：<span id="verifyresult">通过!</span></h2>
                     <br>
                     <div class="row">
                         {%for key,value in Result.jmd_dict.items %}
@@ -177,9 +178,6 @@
             // 验证结果
             var verifyresult = document.getElementById("verifyresult")
 
-            // 验证结果判断计数器
-            var falsecounter = 0
-
             // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
             for(let i=0; i<CVlist.length; i++){
                 if (CVlist[i].innerText=="CV(%)"){
@@ -188,22 +186,12 @@
                     if(parseFloat(CVlist[i].innerText) > parseFloat(maxCV.value)){
                         CVlist[i].style.color="red"
                         CVlist[i].style.fontWeight=700
-                        falsecounter+=1
+                        verifyresult.innerHTML="不通过!";
+                        verifyresult.style.color= "red";
+                        verifyresult.style.fontWeight=700
                     } 
                 }          
             }
-
-            // 不通过时显示红色的“不通过!”,通过时显示绿色的“通过!”
-            if(falsecounter>0){
-                verifyresult.innerHTML="不通过!";
-                verifyresult.style.color= "red";
-                verifyresult.style.fontWeight=700
-            }else{
-                verifyresult.innerHTML="通过!";
-                verifyresult.style.color= "green";
-                verifyresult.style.fontWeight=700
-            }
-
         }
     </script>
 {% endblock %}

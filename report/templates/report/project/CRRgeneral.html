@@ -1,0 +1,190 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        text-align: center;
+    }
+
+    th{
+        text-align: center;
+        width: 20%;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    /* 验证结果样式 */
+    #verifyresult{
+        font-weight: 700;
+        color:green;
+    }
+</style>
+
+    <body>
+        <div class="container">  
+            <form action="{% url 'verifyagain' %}" method="POST" >
+                <!-- 1 验证基本信息展示 -->
+                <div class="basicinfo">
+                    <!-- 标题 -->
+                    <h2>验证基本信息</h2>
+                    <br>
+
+                    <!-- 仪器型号及验证时机 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器型号</label>
+                                <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">验证时机</label>
+                                <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                            </div> 
+                        </div>
+                    </div>
+
+                    <!-- 检测平台及检测项目 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测平台</label>
+                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测项目</label>
+                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                            </div> 
+                        </div>
+                    </div>
+                    
+                    <!-- 仪器平台及仪器厂家 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器平台</label>
+                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器厂家</label>
+                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 回收率下限 -->
+                <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue" id="lowvalue">
+
+                <!-- 回收率上限 -->
+                <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue" id="upvalue">
+
+                <!-- 2 分界线 -->
+                <h1 class="page-header"></h1>
+
+                <!-- 3 验证结果展示 -->
+                <h2>验证指标：稀释倍数</h2>
+                <h2>验证结果：<span id="verifyresult">通过!</span></h2>
+                <br>
+                {% for key,value in Result.CRR_dict.items %}
+                    <table border="1" cellpadding="8" align="center">
+                        <caption><h3>{{key}}验证结果</h3></caption>
+                            <tr>
+                                <th>稀释倍数</th>
+                                <th>检测浓度({{Result.Unit}})</th>
+                                <th>检测浓度平均值({{Result.Unit}})</th>
+                                <th>检测浓度CV(%)</th>
+                                <th>回收率(%)</th>
+                            </tr>
+                            {%for r in value %}
+                            <tr>
+                                <td rowspan="5">{{r.0}}</td>
+                                <td>{{r.1}}</td>
+                                <td rowspan="5">{{r.6}}</td>
+                                <td class="CV" rowspan="5">{{r.7}}</td>
+                                <td class="recycle">{{r.8}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.2}}</td>
+                                <td class="recycle">{{r.9}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.3}}</td>
+                                <td class="recycle">{{r.10}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.4}}</td>
+                                <td class="recycle">{{r.11}}</td>
+                            </tr>
+                            <tr>
+                                <td>{{r.5}}</td>
+                                <td class="recycle">{{r.12}}</td>
+                            </tr>
+                            {% endfor %}
+                    </table>
+                {% endfor %}
+                <br>     
+            <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+            </form>
+            <br>
+            <form action="{% url 'returnback' %}" method="POST">
+                <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+            </form>   
+        </div>
+    </body>
+
+    <script type="text/javascript">
+
+        window.onload = function(){
+
+            // 回收率下限
+            var lowvalue = document.getElementById("lowvalue");
+
+            // 回收率上限
+            var upvalue = document.getElementById("upvalue");
+
+            // 回收率
+            var recyclelist = document.getElementsByClassName("recycle");
+
+            // CV
+            var CVlist = document.getElementsByClassName("CV");
+
+            // 验证结果
+            var verifyresult = document.getElementById("verifyresult");
+
+            // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
+            for(let i=0; i<recyclelist.length; i++){
+                if(parseFloat(recyclelist[i].innerText) < parseFloat(lowvalue.value) || parseFloat(recyclelist[i].innerText) > parseFloat(upvalue.value)){
+                    recyclelist[i].style.color="red";
+                    recyclelist[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                }    
+            }
+
+            for(let i=0; i<CVlist.length; i++){
+                if(parseFloat(CVlist[i].innerText) > parseFloat(maxCV.value)){
+                    CVlist[i].style.color="red";
+                    CVlist[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                }    
+            }
+
+        }
+
+    </script>
+    {% endblock %}
+

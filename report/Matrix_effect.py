@@ -8,20 +8,35 @@ from report.effectnum import *
 from datetime import datetime
 import re
 
-def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Matrix_effect_twolevel_fileread(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
 
     # 第一步:后台数据抓取（回收率上下限）
     id1 = Special.objects.get(project=project).id  
-    id2 = Recyclespecial.objects.get(special_id=id1).id
+    id2 = Matrixeffectspecial.objects.get(special_id=id1).id
 
     # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
     if Matrixeffectspecialmethod.objects.filter(matrixeffectspecial=id2): 
-        me_bias=Matrixeffectspecialmethod.objects.get(matrixeffectspecial=id2).bias
+        maxBias=Matrixeffectspecialmethod.objects.get(matrixeffectspecial=id2).bias #最大允许偏差
    
     else:
-        general = General.objects.get(name="通用性项目")
-        matrixeffect_general = Matrixeffectgeneral.objects.get(general=general)
-        me_bias=Matrixeffectgeneralmethod.objects.get(matrixeffectgeneral=matrixeffect_general).bias
+        general_1 = General.objects.get(name="通用性项目")
+        matrixeffect_general = Matrixeffectgeneral.objects.get(general=general_1)
+        maxBias=Matrixeffectgeneralmethod.objects.get(matrixeffectgeneral=matrixeffect_general).bias
+
+    # 后台管理系统-各项目参数设置-PT指标设置里找到是否设置了每个化合物的单位
+    special = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=special)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+
+    # 后台管理系统中设置的本项目化合物名称
+    PTnorm = []  
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+
+    # 后台管理系统中设置的本项目每个化合物单位
+    Unitlist = []
+    for i in pt_accept:
+        Unitlist.append(i.unit)
 
     #  第二步:开始文件读取
 
@@ -37,7 +52,7 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
     }
     '''
 
-    # 头部定义相关需要提取生成的结果
+    # 创建第二步需要生成的结果容器
     Matrix_effect_dict={} # 定义需要生成的字典
     
     for file in files:
@@ -49,7 +64,6 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
                 for i in range(len(lines)): 
                     if len(lines[i])!=0:
                         lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])  # 以逗号分隔字符串,但忽略双引号内的逗号
-                        # lines[i]=lines[i].split(',') # 按逗号分隔后把每一行都变成一个列表
                     else:
                         lines[i]=re.split(r',\s*(?![^"]*\"\,)', lines[i])
                         del lines[i] #最后一行如为空行，则删除该元素
@@ -78,132 +92,140 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
                     elif lines[1][j]  == "Area Ratio" :
                         AreaRatioindex.append(j)
 
-                for j in range(len(norm)):                       
-                    A=[]
-                    B=[]
-                    C=[]
-                    D=[]
-                    E=[]
-                    F=[]
-                    L=[]
-                    H=[]
-                    AL=[]
-                    AH=[]
-                    BL=[]
-                    BH=[]
-                    CL=[]
-                    CH=[]
-                    DL=[]
-                    DH=[]
-                    EL=[]
-                    EH=[]
-                    FL=[]
-                    FH=[]
-                    group_dict={} #每个化合物的字典
+                for j in range(len(norm)):    
+
+                    # 病人样本    
+                    PS_A=[]
+                    PS_B=[]
+                    PS_C=[]
+                    PS_D=[]
+                    PS_E=[]
+                    PS_F=[]
+
+                    # 标准溶液
+                    STD_L=[]
+                    STD_H=[]
+
+                    # 混合样本
+                    MIX_AL=[]
+                    MIX_AH=[]
+                    MIX_BL=[]
+                    MIX_BH=[]
+                    MIX_CL=[]
+                    MIX_CH=[]
+                    MIX_DL=[]
+                    MIX_DH=[]
+                    MIX_EL=[]
+                    MIX_EH=[]
+                    MIX_FL=[]
+                    MIX_FH=[]
+                    
+                    #每个化合物的字典
+                    normdict={} 
                     for i in range(len(lines)): 
-                        if lines[i][nameindex]=="A":
-                            A.append(effectnum(lines[i][Areaindex[j]],digits))
-                            A.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            A.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="B":                 
-                            B.append(effectnum(lines[i][Areaindex[j]],digits))
-                            B.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            B.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="C":                 
-                            C.append(effectnum(lines[i][Areaindex[j]],digits))
-                            C.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            C.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="D":                 
-                            D.append(effectnum(lines[i][Areaindex[j]],digits))
-                            D.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            D.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="E":                 
-                            E.append(effectnum(lines[i][Areaindex[j]],digits))
-                            E.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            E.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="F":                 
-                            F.append(effectnum(lines[i][Areaindex[j]],digits))
-                            F.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            F.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="L":                 
-                            L.append(effectnum(lines[i][Areaindex[j]],digits))
-                            L.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            L.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="H":                 
-                            H.append(effectnum(lines[i][Areaindex[j]],digits))
-                            H.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            H.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="AL":                 
-                            AL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            AL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            AL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="AH":                 
-                            AH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            AH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            AH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="BL":                 
-                            BL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            BL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            BL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="BH":                 
-                            BH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            BH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            BH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="CL":                 
-                            CL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            CL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            CL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="CH":                 
-                            CH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            CH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            CH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="DL":                 
-                            DL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            DL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            DL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="DH":                 
-                            DH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            DH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            DH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="EL":                 
-                            EL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            EL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            EL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="EH":                 
-                            EH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            EH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            EH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="FL":                 
-                            FL.append(effectnum(lines[i][Areaindex[j]],digits))
-                            FL.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            FL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
-                        elif lines[i][nameindex]=="FH":                 
-                            FH.append(effectnum(lines[i][Areaindex[j]],digits))
-                            FH.append(effectnum(lines[i][ISAreaindex[j]],digits))
-                            FH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        if "PS-A" in lines[i][nameindex]:
+                            PS_A.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_A.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_A.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "PS-B" in lines[i][nameindex]:                 
+                            PS_B.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_B.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_B.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "PS-C" in lines[i][nameindex]:                 
+                            PS_C.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_C.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_C.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "PS-D" in lines[i][nameindex]:                 
+                            PS_D.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_D.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_D.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "PS-E" in lines[i][nameindex]:                 
+                            PS_E.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_E.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_E.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "PS-F" in lines[i][nameindex]:                 
+                            PS_F.append(effectnum(lines[i][Areaindex[j]],digits))
+                            PS_F.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            PS_F.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "STD-L" in lines[i][nameindex]:                 
+                            STD_L.append(effectnum(lines[i][Areaindex[j]],digits))
+                            STD_L.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            STD_L.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "STD-H" in lines[i][nameindex]:                 
+                            STD_H.append(effectnum(lines[i][Areaindex[j]],digits))
+                            STD_H.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            STD_H.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-AL" in lines[i][nameindex]:                 
+                            MIX_AL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_AL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_AL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-AH" in lines[i][nameindex]:                 
+                            MIX_AH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_AH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_AH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-BL" in lines[i][nameindex]:                 
+                            MIX_BL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_BL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_BL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-BH" in lines[i][nameindex]:                 
+                            MIX_BH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_BH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_BH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-CL" in lines[i][nameindex]:                 
+                            MIX_CL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_CL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_CL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-CH" in lines[i][nameindex]:                 
+                            MIX_CH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_CH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_CH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-DL" in lines[i][nameindex]:                 
+                            MIX_DL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_DL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_DL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-DH" in lines[i][nameindex]:                 
+                            MIX_DH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_DH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_DH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-EL" in lines[i][nameindex]:                 
+                            MIX_EL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_EL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_EL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-EH" in lines[i][nameindex]:                 
+                            MIX_EH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_EH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_EH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-FL" in lines[i][nameindex]:                 
+                            MIX_FL.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_FL.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_FL.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
+                        elif "MIX-FH" in lines[i][nameindex]:                 
+                            MIX_FH.append(effectnum(lines[i][Areaindex[j]],digits))
+                            MIX_FH.append(effectnum(lines[i][ISAreaindex[j]],digits))
+                            MIX_FH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
 
-                    group_dict["A"]=A
-                    group_dict["B"]=B
-                    group_dict["C"]=C
-                    group_dict["D"]=D
-                    group_dict["E"]=E
-                    group_dict["F"]=F
-                    group_dict["L"]=L
-                    group_dict["H"]=H
-                    group_dict["AL"]=AL
-                    group_dict["AH"]=AH
-                    group_dict["BL"]=BL
-                    group_dict["BH"]=BH
-                    group_dict["CL"]=CL
-                    group_dict["CH"]=CH
-                    group_dict["DL"]=DL
-                    group_dict["DH"]=DH
-                    group_dict["EL"]=EL
-                    group_dict["EH"]=EH
-                    group_dict["FL"]=FL
-                    group_dict["FH"]=FH
+                    normdict["PS-A"]=PS_A
+                    normdict["PS-B"]=PS_B
+                    normdict["PS-C"]=PS_C
+                    normdict["PS-D"]=PS_D
+                    normdict["PS-E"]=PS_E
+                    normdict["PS-F"]=PS_F
+                    normdict["STD-L"]=STD_L
+                    normdict["STD-H"]=STD_H
+                    normdict["MIX-AL"]=MIX_AL
+                    normdict["MIX-AH"]=MIX_AH
+                    normdict["MIX-BL"]=MIX_BL
+                    normdict["MIX-BH"]=MIX_BH
+                    normdict["MIX-CL"]=MIX_CL
+                    normdict["MIX-CH"]=MIX_CH
+                    normdict["MIX-DL"]=MIX_DL
+                    normdict["MIX-DH"]=MIX_DH
+                    normdict["MIX-EL"]=MIX_EL
+                    normdict["MIX-EH"]=MIX_EH
+                    normdict["MIX-FL"]=MIX_FL
+                    normdict["MIX-FH"]=MIX_FH
 
-                    Matrix_effect_dict[norm[j]]=group_dict
+                    Matrix_effect_dict[norm[j]]=normdict
 
             elif manufacturers =="Waters":
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
@@ -898,7 +920,7 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
                     EH=[]
                     FL=[]
                     FH=[]
-                    group_dict={} #每个化合物的字典
+                    normdict={} #每个化合物的字典
 
                     # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
                     cells=tableMatrix_effect._cells
@@ -1108,28 +1130,28 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
 
                             FH.append(new_round(divisor/dividend,3))
 
-                    group_dict["A"]=A
-                    group_dict["B"]=B
-                    group_dict["C"]=C
-                    group_dict["D"]=D
-                    group_dict["E"]=E
-                    group_dict["F"]=F
-                    group_dict["L"]=L
-                    group_dict["H"]=H
-                    group_dict["AL"]=AL
-                    group_dict["AH"]=AH
-                    group_dict["BL"]=BL
-                    group_dict["BH"]=BH
-                    group_dict["CL"]=CL
-                    group_dict["CH"]=CH
-                    group_dict["DL"]=DL
-                    group_dict["DH"]=DH
-                    group_dict["EL"]=EL
-                    group_dict["EH"]=EH
-                    group_dict["FL"]=FL
-                    group_dict["FH"]=FH
+                    normdict["A"]=A
+                    normdict["B"]=B
+                    normdict["C"]=C
+                    normdict["D"]=D
+                    normdict["E"]=E
+                    normdict["F"]=F
+                    normdict["L"]=L
+                    normdict["H"]=H
+                    normdict["AL"]=AL
+                    normdict["AH"]=AH
+                    normdict["BL"]=BL
+                    normdict["BH"]=BH
+                    normdict["CL"]=CL
+                    normdict["CH"]=CH
+                    normdict["DL"]=DL
+                    normdict["DH"]=DH
+                    normdict["EL"]=EL
+                    normdict["EH"]=EH
+                    normdict["FL"]=FL
+                    normdict["FH"]=FH
 
-                    Matrix_effect_dict[norm[k]]=group_dict
+                    Matrix_effect_dict[norm[k]]=normdict
                 print(Matrix_effect_dict)
 
         elif platform=="液相":
@@ -1542,9 +1564,9 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
      "化合物2":...
     }
     '''
+    print(Matrix_effect_dict)
 
     # 添加Area/IS Area的平均值
-    print(Matrix_effect_dict)
     for key,value in Matrix_effect_dict.items():
         for r,c in value.items():
             mean_Area_ISArea=new_round((float(c[2])+float(c[5])+float(c[8]))/3,3) #Area/IS Area的平均值
@@ -1553,19 +1575,18 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
     # 添加混合样本Area/IS Area的理论值
     for key,value in Matrix_effect_dict.items():
         for r,c in value.items():
-            if r=="A" or r=="B" or r=="C" or r=="D" or r=="E" or r=="F" or r=="L" or r=="H":  # 判断是否是混合样本
+            if "PS-" in r or "STD-" in r:  # 判断是否是混合样本
                 value[r].append("/") #不是混合样本添加反斜杠
-            else: # 混合样本AL,AH...,提取第一个A和第二个L,找到对应字典中的值
-                mean1=float(value[r[0]][9]) #提取第一个A,找到A字典中的Area/IS Area的平均值,即为第9个值
-                mean2=float(value[r[1]][9]) #提取第二个L,找到L字典中的Area/IS Area的平均值,即为第9个值
+            else: # 混合样本MIX-AL,MIX-AH...,提取PS-A和STD-L,找到对应字典中的值
+                mean1=float(value["PS-"+r[4]][9]) #提取第一个A,找到A字典中的Area/IS Area的平均值,即为第9个值
+                mean2=float(value["STD-"+r[5]][9]) #提取第二个L,找到L字典中的Area/IS Area的平均值,即为第9个值
                 value[r].append(new_round((mean1+mean2)/2,3)) #是混合样本添加mean1和mean2的均值
 
     # 添加偏差(%)
     Matrix_effect_judgenum=0
-    print(Matrix_effect_dict)
     for key,value in Matrix_effect_dict.items():
         for r,c in value.items():
-            if r=="A" or r=="B" or r=="C" or r=="D" or r=="E" or r=="F" or r=="L" or r=="H":  # 判断是否是混合样本
+            if "PS-" in r or "STD-" in r:  # 判断是否是混合样本
                 for i in [2,5,8]:
                     value[r].append("/") #不是混合样本添加反斜杠
             else: # 混合样本AL,AH...,提取第一个A和第二个L,找到对应字典中的值
@@ -1573,9 +1594,9 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
                     num1=float(value[r][i]) #提取Area/IS Area
                     num2=float(value[r][10]) #提取混合样本Area/IS Area的理论值,索引为10
                     bias=new_round(abs(num1-num2)/num2*100,2)
-                    if float(bias)>me_bias:
+                    if float(bias)>maxBias:
                         Matrix_effect_judgenum+=1
-                        bias=bias+" (不通过!)"
+                        bias=bias
                     else:
                         bias=bias
                     value[r].append(bias) #是混合样本添加mean1和mean2的均值
@@ -1583,18 +1604,26 @@ def Matrix_effectfileread2(files,reportinfo,project,platform,manufacturers,digit
     #  第四步:数据存入数据库
 
     # 如果Matrix_effect_judgenum的值等于0才将数据存入数据库中
-    # if Matrix_effect_judgenum==0:
-    insert_list =[]
-    for key,value in Matrix_effect_dict.items():
-        for r,c in value.items():
-            insert_list.append(Matrixeffect(reportinfo=reportinfo,norm=key,samplename=r,Area_1=c[0],IS_Area_1=c[1],
-            Area_IS_Area_1=c[2],Area_2=c[3],IS_Area_2=c[4],Area_IS_Area_2=c[5],Area_3=c[6],IS_Area_3=c[7],Area_IS_Area_3=c[8],
-            singlemean=c[9],complexmean=c[10],bias1=c[11],bias2=c[12],bias3=c[13]))    
-    Matrixeffect.objects.bulk_create(insert_list)
+    if Matrix_effect_judgenum==0:
+        insert_list =[]
+        for key,value in Matrix_effect_dict.items():
+            for r,c in value.items():
+                insert_list.append(Matrixeffect(reportinfo=reportinfo,norm=key,samplename=r,Area_1=c[0],IS_Area_1=c[1],
+                Area_IS_Area_1=c[2],Area_2=c[3],IS_Area_2=c[4],Area_IS_Area_2=c[5],Area_3=c[6],IS_Area_3=c[7],Area_IS_Area_3=c[8],
+                singlemean=c[9],complexmean=c[10],bias1=c[11],bias2=c[12],bias3=c[13]))    
+        Matrixeffect.objects.bulk_create(insert_list)
+    else:
+        insert_list =[]
+        for key,value in Matrix_effect_dict.items():
+            for r,c in value.items():
+                insert_list.append(Matrixeffect(reportinfo=reportinfo,norm=key,samplename=r,Area_1=c[0],IS_Area_1=c[1],
+                Area_IS_Area_1=c[2],Area_2=c[3],IS_Area_2=c[4],Area_IS_Area_2=c[5],Area_3=c[6],IS_Area_3=c[7],Area_IS_Area_3=c[8],
+                singlemean=c[9],complexmean=c[10],bias1=c[11],bias2=c[12],bias3=c[13]))    
+        Matrixeffect.objects.bulk_create(insert_list)
 
     return {"Matrix_effect_dict":Matrix_effect_dict}
 
-def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Matrix_effect_threelevel_fileread(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
 
     # 第一步:后台数据抓取（回收率上下限）
     id1 = Special.objects.get(project=project).id  
@@ -1611,12 +1640,12 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
 
     # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
     if Matrixeffectspecialmethod.objects.filter(matrixeffectspecial=id2): 
-        me_bias=Matrixeffectspecialmethod.objects.get(matrixeffectspecial=id2).bias
+        bias=Matrixeffectspecialmethod.objects.get(matrixeffectspecial=id2).bias
    
     else:
         general = General.objects.get(name="通用性项目")
         matrixeffect_general = Matrixeffectgeneral.objects.get(general=general)
-        me_bias=Matrixeffectgeneralmethod.objects.get(matrixeffectgeneral=matrixeffect_general).bias
+        bias=Matrixeffectgeneralmethod.objects.get(matrixeffectgeneral=matrixeffect_general).bias
 
     #  第二步:开始文件读取
 
@@ -1694,7 +1723,7 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
                     EH=[]
                     FL=[]
                     FH=[]
-                    group_dict={} #每个化合物的字典
+                    normdict={} #每个化合物的字典
                     for i in range(len(lines)): 
                         if lines[i][nameindex]=="A":
                             A.append(effectnum(lines[i][Areaindex[j]],digits))
@@ -1777,28 +1806,28 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
                             FH.append(effectnum(lines[i][ISAreaindex[j]],digits))
                             FH.append(new_round(float(lines[i][AreaRatioindex[j]]),3))
 
-                    group_dict["A"]=A
-                    group_dict["B"]=B
-                    group_dict["C"]=C
-                    group_dict["D"]=D
-                    group_dict["E"]=E
-                    group_dict["F"]=F
-                    group_dict["L"]=L
-                    group_dict["H"]=H
-                    group_dict["AL"]=AL
-                    group_dict["AH"]=AH
-                    group_dict["BL"]=BL
-                    group_dict["BH"]=BH
-                    group_dict["CL"]=CL
-                    group_dict["CH"]=CH
-                    group_dict["DL"]=DL
-                    group_dict["DH"]=DH
-                    group_dict["EL"]=EL
-                    group_dict["EH"]=EH
-                    group_dict["FL"]=FL
-                    group_dict["FH"]=FH
+                    normdict["A"]=A
+                    normdict["B"]=B
+                    normdict["C"]=C
+                    normdict["D"]=D
+                    normdict["E"]=E
+                    normdict["F"]=F
+                    normdict["L"]=L
+                    normdict["H"]=H
+                    normdict["AL"]=AL
+                    normdict["AH"]=AH
+                    normdict["BL"]=BL
+                    normdict["BH"]=BH
+                    normdict["CL"]=CL
+                    normdict["CH"]=CH
+                    normdict["DL"]=DL
+                    normdict["DH"]=DH
+                    normdict["EL"]=EL
+                    normdict["EH"]=EH
+                    normdict["FL"]=FL
+                    normdict["FH"]=FH
 
-                    Matrix_effect_dict[norm[j]]=group_dict
+                    Matrix_effect_dict[norm[j]]=normdict
 
             elif manufacturers =="Waters":
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
@@ -2562,7 +2591,7 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
                     FL=[]
                     FM=[]
                     FH=[]
-                    group_dict={} #每个化合物的字典
+                    normdict={} #每个化合物的字典
 
                     # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
                     cells=tableMatrix_effect._cells
@@ -2835,35 +2864,35 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
 
                             FH.append(new_round(divisor/dividend,3))
 
-                    group_dict["A"]=A
-                    group_dict["B"]=B
-                    group_dict["C"]=C
-                    group_dict["D"]=D
-                    group_dict["E"]=E
-                    group_dict["F"]=F
-                    group_dict["L"]=L
-                    group_dict["M"]=M
-                    group_dict["H"]=H
-                    group_dict["AL"]=AL
-                    group_dict["AM"]=AM
-                    group_dict["AH"]=AH
-                    group_dict["BL"]=BL
-                    group_dict["BM"]=BM
-                    group_dict["BH"]=BH
-                    group_dict["CL"]=CL
-                    group_dict["CM"]=CM
-                    group_dict["CH"]=CH
-                    group_dict["DL"]=DL
-                    group_dict["DM"]=DM
-                    group_dict["DH"]=DH
-                    group_dict["EL"]=EL
-                    group_dict["EM"]=EM
-                    group_dict["EH"]=EH
-                    group_dict["FL"]=FL
-                    group_dict["FM"]=FM
-                    group_dict["FH"]=FH
+                    normdict["A"]=A
+                    normdict["B"]=B
+                    normdict["C"]=C
+                    normdict["D"]=D
+                    normdict["E"]=E
+                    normdict["F"]=F
+                    normdict["L"]=L
+                    normdict["M"]=M
+                    normdict["H"]=H
+                    normdict["AL"]=AL
+                    normdict["AM"]=AM
+                    normdict["AH"]=AH
+                    normdict["BL"]=BL
+                    normdict["BM"]=BM
+                    normdict["BH"]=BH
+                    normdict["CL"]=CL
+                    normdict["CM"]=CM
+                    normdict["CH"]=CH
+                    normdict["DL"]=DL
+                    normdict["DM"]=DM
+                    normdict["DH"]=DH
+                    normdict["EL"]=EL
+                    normdict["EM"]=EM
+                    normdict["EH"]=EH
+                    normdict["FL"]=FL
+                    normdict["FM"]=FM
+                    normdict["FH"]=FH
 
-                    Matrix_effect_dict[norm[k]]=group_dict
+                    Matrix_effect_dict[norm[k]]=normdict
                 print(Matrix_effect_dict)
 
         elif platform=="液相":
@@ -3307,7 +3336,7 @@ def Matrix_effectfileread3(files,reportinfo,project,platform,manufacturers,digit
                     num1=float(value[r][i]) #提取Area/IS Area
                     num2=float(value[r][10]) #提取混合样本Area/IS Area的理论值,索引为10
                     bias=new_round(abs(num1-num2)/num2*100,1)
-                    if float(bias)>me_bias:
+                    if float(bias)>bias:
                         Matrix_effect_judgenum+=1
                         bias=bias+" (不通过!)"
                     else:

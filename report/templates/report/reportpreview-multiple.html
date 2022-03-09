@@ -154,7 +154,7 @@
     }
 
     /* 每个验证指标一级标题 */
-    .JMD_title,.ZQD_title,.Stability_title,.ReferenceInterval_title{
+    .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Stability_title,.ReferenceInterval_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -163,7 +163,7 @@
     }
 
     /* 每个验证指标二级标题 */
-    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title{
+    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title,.LOQ_title,.Dilution_title{
         font-size: 16px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -172,7 +172,7 @@
     }
 
     /* 每个验证指标下的表格 */
-    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table{
+    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table,.LOQ_Table,.Dilution_Table{
         table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
         word-break: break-all;  
         border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
@@ -184,7 +184,8 @@
     }
 
     /* 每个验证指标下的表格的表头 */
-    .PNjmd_Tabletr th,.PJjmd_Tabletr th,.JMDconclusion_Tabletr th,.PT_Tabletr th,.Recycle_Tabletr th{
+    .PNjmd_Tabletr th,.PJjmd_Tabletr th,.JMDconclusion_Tabletr th,.PT_Tabletr th,.Recycle_Tabletr th,.LOQ_Tabletr th,
+    .Dilution_Tabletr th{
         /* 字体加粗居中 */
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -197,7 +198,7 @@
         font-weight: bold;
     }
 
-    .JMDconclusion_Tabletr td{
+    .JMDconclusion_Tabletr td,.LOQ_Tabletr td,.Dilution_Tabletr td{
         font-family: Times New Roman, 宋体;
         text-align: center;
     }
@@ -674,7 +675,7 @@
                 {% endif %}
                          
                 <!-------------------------------------------2 正确度 ------------------------------------------->           
-                {% if PT_data.PT_dict or resultrecycle.Recycle_endreport_dict %}
+                {% if PT_data.PT_dict or Recycle_data.Recycle_endreport_dict %}
                     <tr class="zqdtr">
                         <td class="zqdtd">
                             <div class="ZQD_title">{{ZQDindex}}. 准确度(Accuracy)</div>
@@ -711,21 +712,21 @@
                             {% endif %}
 
                              <!-- 2.2 加标回收率实验数据 -->
-                            {% if resultrecycle.Recycle_endreport_dict %}
+                            {% if Recycle_data.Recycle_endreport_dict %}
                             <div class="Recycle_data">
-                                <div class="Recycle_title">{{ZQDindex}}.{{RECYCLEindex}} 加标回收实验(Recovery)</div>
-                                {% for r in resultrecycle.textlist %}
+                                <div class="Recycle_title">{{ZQDindex}}.{{Recycleindex}} 加标回收实验(Recovery)</div>
+                                {% for r in Recycle_data.textlist %}
                                     <div class="five"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
                                 <div class="picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px" /></div>
-                                <div class="maintext">{{resultrecycle.serial}})
-                                    加标回收率实验结果表{{tableRECYCLEindex_start}}-{{tableRECYCLEindex_end}}所示,由结果可知,
-                                    方法的回收率:{{resultrecycle.Recycle_endconclusion}}满足检测要求。
+                                <div class="maintext">{{Recycle_data.serial}})
+                                    加标回收率实验结果表{{tableRecycleindex_start}}-{{tableRecycleindex_end}}所示,由结果可知,
+                                    方法的回收率:{{Recycle_data.Recycle_endconclusion}}满足检测要求。
                                 </div>
 
-                                {%for key,value in resultrecycle.Recycle_endreport_dict.items %}
+                                {%for key,value in Recycle_data.Recycle_endreport_dict.items %}
                                     <table class="Recycle_table" cellpadding="4">
-                                        <caption>表{{forloop.counter|add:tableRECYCLEindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
+                                        <caption>表{{forloop.counter|add:tableRecycleindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
                                         <tr class="Recycle_Tabletr">
                                             <th colspan="3" width="43%">病人基质样本</th>
                                             <th rowspan="2" width="17%">加标理论值({{Unitdict|get_item:key|default:unit}})</th>
@@ -802,23 +803,24 @@
 
                         
                 <!-------------------------------------------3 AMR(分析灵敏度与分析测量范围) --------------------------------------------->
-                {% if resultAMR.AMR_dict_report or resultLOD.objs or resultAMRconclusion%}
+                {% if LOQ_data.AMR_dict or resultLOD.objs or resultAMRconclusion %}
                     <tr class="amrtr">
                         <td class="amrtd">
-                            <div class="AMR_title">{{AS_AMRindex}}. 分析灵敏度与分析测量范围(Analytical Sensitivity and Analytical Measurement Range)</div>
+                            <div class="AMR_title">{{AMRindex}}. 分析灵敏度与分析测量范围(Analytical Sensitivity and Analytical Measurement Range)</div>
                             <!-- 3.1 LOQ实验数据 -->
                             <div class="LOQ_data">
-                                <div class="LOQ_title">{{AS_AMRindex}}.{{AMRindex}} 方法定量限与线性范围(Limit of Quantitation and Linearity)</div>
-                                {% for r in resultAMR.textlist %}
+                                <div class="LOQ_title">{{AMRindex}}.{{LOQindex}} 方法定量限与线性范围(Limit of Quantitation and Linearity)</div>
+                                {% for r in LOQ_data.textlist %}
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="maintext"> {{resultAMR.serial}})
-                                    结果数据如表{{tableAMRindex_start}}-{{tableAMRindex_end}}和图{{pictureAMRindex_start}}-{{pictureAMRindex_end}},
-                                    {{resultAMR.AMR_textlist_end}}</div>
+                                <div class="maintext"> {{LOQ_data.serial}})
+                                    结果数据如表{{tableLOQindex_start}}-{{tableLOQindex_end}}和图{{pictureLOQindex_start}}-{{pictureLOQindex_end}},
+                                    {{LOQ_data.AMR_textlist_end}}
+                                </div>
 
-                                {%for key,value in resultAMR.AMR_dict_report.items %}
-                                    <table class="LOQ_table" cellpadding="4">
-                                        <caption>表{{forloop.counter|add:tableAMRindex_start|add:-1}}.{{key}}线性范围实验数据</caption>
+                                {%for key,value in LOQ_data.AMR_dict.items %}
+                                    <table class="LOQ_Table" cellpadding="4">
+                                        <caption>表{{forloop.counter|add:tableLOQindex_start|add:-1}}.{{key}}线性范围实验数据</caption>
                                         <tr class="LOQ_Tabletr">
                                             <th width="16.67%">浓度序号</th>
                                             <th width="16.67%">理论浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
@@ -828,7 +830,7 @@
                                             <th width="16.67%">检测值CV<br />(%)</th>
                                         </tr>
                                         {%for r in value %}
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td rowspan="6">{{r.0}}</td>
                                             <td rowspan="6">{{r.1}}</td>
                                             <td>{{r.2}}</td>
@@ -836,30 +838,30 @@
                                             <td rowspan="6">{{r.14}}</td>
                                             <td rowspan="6">{{r.15}}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td>{{r.4}}</td>
                                             <td>{{r.5}}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td>{{r.6}}</td>
                                             <td>{{r.7}}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td>{{r.8}}</td>
                                             <td>{{r.9}}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td>{{r.10}}</td>
                                             <td>{{r.11}}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="LOQ_Tabletr">
                                             <td>{{r.12}}</td>
                                             <td>{{r.13}}</td>
                                         </tr>
                                         {% endfor %}
                                     </table>
 
-                                    {% for obj in resultAMR.objs %}
+                                    {% for obj in LOQ_data.objs %}
                                         {% if key in obj.name %}
                                             <div class="LOQ_picture"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
                                             <div class="LOQ_picture_title">图{{forloop.parentloop.counter|add:pictureAMRindex_start|add:-1}}.{{obj.name}}</div>
@@ -871,6 +873,7 @@
                             </div>
                        
                             <!-- 3.2 LOD实验数据 -->
+                            {% if resultLOD.objs %}
                             <div class="LOD_data">
                                 <div class="LOD_title">{{AMRindex}}.{{LODindex}} 方法检出限(Limit of Detection)</div>
                                 {% for r in resultLOD.textlist %}
@@ -1056,8 +1059,10 @@
                                     <br>
                                 {% endif %}
                             </div>
+                            {% endif %}
 
                             <!-- 3.3 AMR最终结论 -->
+                            {% if resultAMRconclusion %}
                             <div class="AMRconclusion">
                                 <div class="AMRconclusion_title">{{AMRindex}}.{{AMRconclusionindex}} 结论(Summary of the AMR, LOQ and LOD study)</div>
                                 <table class="AMRconclusion_Table" cellpadding="4">
@@ -1078,33 +1083,34 @@
                                     {% endfor %}
                                 </table>
                                 <br>
-                            </div>                   
+                            </div> 
+                            {% endif %}                  
                         </td>                        
                     </tr>              
                 {% endif %}
 
                 
                 <!-------------------------------------------4 CRR(临床可报告范围) --------------------------------------------->             
-                {% if resultCRR%}
+                {% if Dilution_data.CRR_dict %}
                     <tr class="crrtr">
                         <td class="crrtd">
                             <div class="CRR_title">{{CRRindex}}. 临床可报告范围(Clinical Reportable Range)</div>
                             <div class="CRR_data">
                                 <!-- 4.1 进行稀释倍数验证 -->
                                 {% if CRR2_True %}
-                                    <div class="Dilution_title">{{CRRindex}}.{{crrindex}} 稀释倍数验证(Dilution)</div>
-                                    {% for r in resultCRR.textlist %}
+                                    <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex}} 稀释倍数验证(Dilution)</div>
+                                    {% for r in Dilution_data.textlist %}
                                         <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                     {% endfor %}
-                                    <div class="maintext"> {{resultCRR.serial}})
-                                        实验结果如表{{tableCRRindex_start}}-{{tableCRRindex_end}}所示，对高浓度样本按照
-                                        {{resultCRR.CRR_conclusion1}}倍稀释后得到的检测结果满足要求。
-                                        因此，当遇到超出标准曲线最高浓度点的样本时，可对其稀释 {{resultCRR.CRR_conclusion1}}倍后进行检测。
+                                    <div class="maintext"> {{Dilution_data.serial}})
+                                        实验结果如表{{tableDilutionindex_start}}-{{tableDilutionindex_end}}所示，对高浓度样本按照
+                                        {{Dilution_data.CRR_conclusion1}}倍稀释后得到的检测结果满足要求。
+                                        因此，当遇到超出标准曲线最高浓度点的样本时，可对其稀释 {{Dilution_data.CRR_conclusion1}}倍后进行检测。
                                     </div>
                                     
-                                    {%for key,value in resultCRR.CRR_endreport_dict.items %}
+                                    {%for key,value in Dilution_data.CRR_dict.items %}
                                         <table class="Dilution_Table" cellpadding="4">
-                                            <caption>表{{forloop.counter|add:tableCRRindex_start|add:-1}}.{{key}}稀释倍数实验数据</caption>
+                                            <caption>表{{forloop.counter|add:tableDilutionindex_start|add:-1}}.{{key}}稀释倍数实验数据</caption>
                                             <tr class="Dilution_Tabletr">
                                                 <th width="16%">稀释倍数</th>
                                                 <th width="20%">检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
@@ -1113,26 +1119,26 @@
                                                 <th width="18%">回收率(%)</th>
                                             </tr>
                                             {%for r in value%}
-                                            <tr>
+                                            <tr class="Dilution_Tabletr">
                                                 <td rowspan="5">{{r.0}}</td>
                                                 <td>{{r.1}}</td>
                                                 <td rowspan="5">{{r.11}}</td>
                                                 <td rowspan="5">{{r.12}}</td>
                                                 <td>{{r.6}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Dilution_Tabletr">
                                                 <td>{{r.2}}</td>
                                                 <td>{{r.7}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Dilution_Tabletr">
                                                 <td>{{r.3}}</td>
                                                 <td>{{r.8}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Dilution_Tabletr">
                                                 <td>{{r.4}}</td>
                                                 <td>{{r.9}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Dilution_Tabletr">
                                                 <td>{{r.5}}</td>
                                                 <td>{{r.10}}</td>
                                             </tr>
@@ -1140,9 +1146,9 @@
                                         </table>
                                         <br>
                                     {% endfor %}
-                                    <div class="Dilution_title">{{CRRindex}}.{{crrindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
+                                    <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
                                     <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
-                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{resultCRR.CRR_conclusion2}}。
+                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
                                     </div>
                                     <br>
 
@@ -1157,7 +1163,7 @@
                                         <th width="30%">化合物</th>
                                         <th width="70%">临床可报告范围(CRR)</th>
                                     </tr>
-                                    {% for key,value in resultCRR.CRR_endreport_dict.items %}
+                                    {% for key,value in Dilution_data.CRR_dict.items %}
                                     <tr>
                                         <td>{{key}}</td>
                                         <td>{{value}}</td>
@@ -1196,20 +1202,20 @@
                 {% endif %}
 
                 <!-------------------------------------------6 基质效应 -----------------------------------------------------> 
-                {% if resultMatrix_effect%}
+                {% if Matrix_effect_data%}
                     <tr class="matrix_effecttr">
                         <td class="matrix_effecttd">
                             <div class="Matrix_effect_title">{{Matrix_effectindex}}. 基质效应(Matrix effect)</div>
                             <div class="Matrix_effect_data">
-                                {% for r in resultMatrix_effect.textlist %}
+                                {% for r in Matrix_effect_data.textlist %}
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="maintext"> {{resultMatrix_effect.serial}})
+                                <div class="maintext"> {{Matrix_effect_data.serial}})
                                     结果如表{{tableMatrix_effectindex_start}}-{{tableMatrix_effectindex_end}}所示，
-                                    {{resultMatrix_effect.Matrixeffect_endreport_conclusion}}
+                                    {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
                                 </div>
 
-                                {%for key,value in resultMatrix_effect.Matrixeffect_endreport_dict.items %}
+                                {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
                                     <table class="Matrix_effect_Table" cellpadding="4">
                                         <caption>表{{forloop.counter|add:tableMatrix_effectindex_start|add:-1}}.{{key}}基质效应实验数据</caption>
                                         <tr class="Matrix_effect_Tabletr">

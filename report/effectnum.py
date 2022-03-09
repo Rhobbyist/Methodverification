@@ -362,7 +362,7 @@ def cv(lst):
     return new_round(cvresult)
 
 
-data=[None]
+data=[8.58, 8.23, 7.95, 7.96, 8.22, 8.33]
 
-if not any(data):
-    print("not any data")
+
+print(cv(data))

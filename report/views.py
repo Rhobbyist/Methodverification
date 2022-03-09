@@ -125,69 +125,76 @@ def get_verification_page(request):
             # 六 9个验证指标数据提取
             # 1 精密度
             if request.POST["quota"] == "精密度":
+
+                # 1.1 重复性精密度
                 if request.POST["jmd"] == "重复性精密度":
                     namejmd = "重复性精密度"
                     files = request.FILES.getlist('fileuploads')
                     Result = jmd.IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+
+                # 1.2 中间精密度
                 elif request.POST["jmd"] == "中间精密度":
                     namejmd = "中间精密度"
                     files = request.FILES.getlist('fileuploads')
                     Result = jmd.InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 return render(request, 'report/project/Jmd.html', locals())
 
+            # 2 正确度
             elif request.POST["quota"] == "正确度":
+
+                # 2.1 PT
                 if request.POST["zqd"] == "PT":
                     files = request.FILES.getlist('fileuploads')
                     Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                     return render(request, 'report/project/PT.html', locals())
+
+                # 2.2 加标回收率
                 elif request.POST["zqd"] == "加标回收":
                     files = request.FILES.getlist('fileuploads')
-                    Result = zqd.recyclefileread(files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = zqd.Recyclefileread(files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                     return render(request, 'report/project/Recycle.html', locals())
+
+                # 2.3 仪器比对
                 elif request.POST["zqd"] == "仪器比对":
                     pass
-
-            # ICP-MS平台AMR可能需要上传多个数据文件
+            
+            # 3 分析灵敏度与分析测量范围(Analytical Sensitivity and Analytical Measurement Range)
+            
             elif request.POST["quota"] == "分析灵敏度与分析测量范围":
+
+                # 3.1 方法定量限与线性范围(Limit of Quantitation and Linearity,LOQ)
                 if request.POST["amr"] == "方法定量限与线性范围":
                     files = request.FILES.getlist('fileuploads')
-                    if platform != "ICP-MS":  # 不是ICP-MS，上传单个文件
-                        dicAMR = amr.AMRfileread(files, reportinfo, project, platform, manufacturers, Unit,
-                                                 digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
-                        if platform == "液质":
-                            # if dicAMR["error"]:
-                            #     error=dicAMR["error"]
-                            #     return render(request,'report/error.html',locals())
-                            pass
 
-                            return render(request, 'report/project/AMR.html', locals())
-                        else:
-                            return render(request, 'report/project/AMR2.html', locals())
+                    # 3.1.1 液质平台(上传单个文件,理论浓度从原始文件中读取)
+                    if platform == "液质": 
+                        Result = amr.LOQgeneral_fileread(files, reportinfo, project, platform, manufacturers, Unit,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)        
+                        return render(request, 'report/project/LOQgeneral.html', locals())
+                    
+                    # 3.1.2 非液质平台(上传多个数据文件,且理论浓度需由用户自行输入) 
                     else:
-                        dicAMR = amr.AMRmutiplefileread(
-                            files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
-                        return render(request, 'report/project/AMR2.html', locals())
+                        Result = amr.LOQspecial_fileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
+                        return render(request, 'report/project/LOQspecial.html', locals())
 
+                # 3.2 方法检出限(Limit of Detection,LOD)
                 elif request.POST["amr"] == "方法检出限":
                     files = request.FILES.getlist('fileuploads')
                     dicLOD = amr.LODfileread(files, reportinfo, project, platform, manufacturers,
-                                             Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
+                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
                     return render(request, 'report/project/LOD.html', locals())
                 elif request.POST["amr"] == "结论":
-                    AMRid = ReportInfo.objects.get(
-                        number=instrument_num, project=project).id
+                    AMRid = ReportInfo.objects.get(number=instrument_num, project=project).id
                     return render(request, 'report/project/AMR_conclusion.html', locals())
 
             elif request.POST["quota"] == "临床可报告范围":
                 if request.POST["crr"] == "不做验证":
-                    CRRid = ReportInfo.objects.get(
-                        number=instrument_num, project=project).id
-                    return render(request, 'report/project/CRR2.html', locals())
+                    CRRid = ReportInfo.objects.get(number=instrument_num, project=project).id
+                    return render(request, 'report/project/CRRspecial.html', locals())
                 else:
                     files = request.FILES.getlist('fileuploads')
-                    dicCRR = crr.CRRfileread(files, reportinfo, project, platform, manufacturers,
-                                             Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
-                    return render(request, 'report/project/CRR.html', locals())
+                    Result = crr.CRRfileread(files, reportinfo, project, platform, manufacturers,
+                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    return render(request, 'report/project/CRRgeneral.html', locals())
 
             elif request.POST["quota"] == "基质特异性":
                 files = request.FILES.getlist('fileuploads')
@@ -197,10 +204,10 @@ def get_verification_page(request):
             elif request.POST["quota"] == "基质效应":
                 if request.POST["Me"] == "2个浓度水平":
                     files = request.FILES.getlist('fileuploads')
-                    dicMatrix_effect = Matrix_effect.Matrix_effectfileread2(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = Matrix_effect.Matrix_effect_twolevel_fileread(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 elif request.POST["Me"] == "3个浓度水平":
                     files = request.FILES.getlist('fileuploads')
-                    dicMatrix_effect = Matrix_effect.Matrix_effectfileread3(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = Matrix_effect.Matrix_effect_threelevel_fileread(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 return render(request, 'report/project/Matrix_effect.html', locals())
 
             elif request.POST["quota"] == "携带效应":
@@ -546,7 +553,7 @@ def get_reportpreview_page(request, id):
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
 
-        ZQDindex = titleindex # 正确度度主标题索引 
+        ZQDindex = titleindex # 正确度主标题索引 
 
         # 1  PT
         PTindex = 0  # PT副标题索引  7.1
@@ -559,37 +566,39 @@ def get_reportpreview_page(request, id):
             PTindex += 1 # # 正确度副标题索引+1  7.2
             tableindex += Number_of_compounds # 总表格索引+n
 
-        # 加标回收
-        RECYCLEindex = PTindex # --7.1
+        # 2 加标回收率
+        Recycleindex = PTindex # --7.1
 
-        tableRECYCLEindex_start = tableindex
-        tableRECYCLEindex_end = tableindex+Number_of_compounds-1
+        tableRecycleindex_start = tableindex
+        tableRecycleindex_end = tableindex+Number_of_compounds-1
 
-        resultrecycle = zqd.related_recycle(id)
-        if resultrecycle:
-            RECYCLEindex += 1 # --7.2
+        Recycle_data = zqd.related_recycle(id)
+        if Recycle_data:
+            Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if PT_data or resultrecycle:
+        if PT_data or Recycle_data:
             titleindex += 1  # 8
 
-        # AMR
-        AS_AMRindex = titleindex  # 8 (分析灵敏度和分析测量范围大标题索引)
+        # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
+        
+        AMRindex = titleindex  # AMR主标题索引
 
-        AMRindex = 0
+        # 1 LOQ
+        LOQindex = 0
         pictureindex = 1  # 总图片索引
-        tableAMRindex_start = tableindex
-        tableAMRindex_end = tableindex+Number_of_compounds-1
-        pictureAMRindex_start = pictureindex
-        pictureAMRindex_end = pictureindex+Number_of_compounds*2-1
+        tableLOQindex_start = tableindex
+        tableLOQindex_end = tableindex+Number_of_compounds-1
+        pictureLOQindex_start = pictureindex
+        pictureLOQindex_end = pictureindex+Number_of_compounds*2-1
 
-        resultAMR = amr.related_AMR(id, unit)
-        if resultAMR:
-            AMRindex += 1
+        LOQ_data = amr.related_AMR(id, unit)
+        if LOQ_data:
+            LOQindex += 1
             pictureindex += Number_of_compounds*2  # 总图片索引
             tableindex += Number_of_compounds
 
-        # LOD
+        # 2 LOD
         LODindex = AMRindex
         tableLODindex = tableindex
         pictureLODindex_start = pictureindex
@@ -604,7 +613,7 @@ def get_reportpreview_page(request, id):
                 LODindex += 1
                 tableindex += 1
 
-        # AMRconclusion
+        # 3 AMRconclusion
         AMRconclusionindex = LODindex
         tableAMRconclusionindex = tableindex
         resultAMRconclusion = amr.related_AMRconclusion(id)
@@ -612,37 +621,27 @@ def get_reportpreview_page(request, id):
             AMRconclusionindex += 1
             tableindex += 1
 
-        if resultAMR or resultLOD:
+        if LOQ_data or resultLOD:
             titleindex += 1
+            
 
-        # CRR(稀释倍数)
-        CRR2_True = 1  # 判断是用通用性模板还是特殊模板(元素组)
-        if Detectionplatform == "元素":
-            CRR2_True -= 1
+        # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
+        CRRindex = titleindex # CRR主标题索引
+    
+        # 1 进行稀释倍数验证      
+        CRR2_True = 1
+        Dilutionindex = 0
 
-            CRRindex = titleindex
-            crrindex = 0
-            tableCRRindex = tableindex
+        tableDilutionindex_start = tableindex
+        tableDilutionindex_end = tableindex+Number_of_compounds-1
 
-            resultCRR = crr.related_CRR(id)
-            if resultCRR:
-                crrindex += 1
-                titleindex += 1
-                tableindex += 1
+        Dilution_data = crr.related_CRR(id)
+        if Dilution_data:
+            Dilutionindex += 1
+            titleindex += 1
+            tableindex += Number_of_compounds
 
-        else:
-            CRRindex = titleindex
-            crrindex = 0
-            tableCRRindex_start = tableindex
-            tableCRRindex_end = tableindex+Number_of_compounds-1
-
-            resultCRR = crr.related_CRR(id)
-            if resultCRR:
-                crrindex += 1
-                titleindex += 1
-                tableindex += Number_of_compounds
-
-        # 基质特异性
+        # ---------------------------------------------- 基质特异性 --------------------------------------------------
         MSindex = titleindex
         pictureMSindex_start = pictureindex
         pictureMSindex_end = pictureindex+2  # 固定三种图(标准品，血清样本，空白基质)
@@ -650,12 +649,14 @@ def get_reportpreview_page(request, id):
         if resultMS:
             titleindex += 1
 
-        # 基质效应
-        Matrix_effectindex = titleindex
+        # --------------------------------------- 基质效应（每个化合物一个表格）---------------------------------------
+        Matrix_effectindex = titleindex # 基质效应主标题索引
+
         tableMatrix_effectindex_start = tableindex
         tableMatrix_effectindex_end = tableindex+Number_of_compounds-1
-        resultMatrix_effect = Matrix_effect.related_Matrix_effect(id)
-        if resultMatrix_effect:
+
+        Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
+        if Matrix_effect_data:
             titleindex += 1
             tableindex += Number_of_compounds
 
@@ -851,7 +852,7 @@ def get_reportdelete_page(request, id):
 
         # --------------------------------------- 2 正确度（每个化合物一个表格）---------------------------------------
 
-        ZQDindex = titleindex # 正确度度主标题索引 
+        ZQDindex = titleindex # 正确度主标题索引 
 
         # 1  PT
         PTindex = 0  # PT副标题索引  7.1
@@ -863,6 +864,81 @@ def get_reportdelete_page(request, id):
         if PT_data["PT_dict"]:
             PTindex += 1 # # 正确度副标题索引+1  7.2
             tableindex += Number_of_compounds # 总表格索引+n
+
+        # 2 加标回收率
+        Recycleindex = PTindex # --7.1
+
+        tableRecycleindex_start = tableindex
+        tableRecycleindex_end = tableindex+Number_of_compounds-1
+
+        Recycle_data = zqd.related_recycle(id)
+        if Recycle_data:
+            Recycleindex += 1 # --7.2
+            tableindex += Number_of_compounds
+
+        if PT_data or Recycle_data:
+            titleindex += 1  # 8
+
+        # --------------------------------------- 3 AMR（每个化合物一个表格）---------------------------------------
+        
+        AMRindex = titleindex  # AMR主标题索引
+
+        # 1 LOQ
+        LOQindex = 0
+        pictureindex = 1  # 总图片索引
+        tableLOQindex_start = tableindex
+        tableLOQindex_end = tableindex+Number_of_compounds-1
+        pictureLOQindex_start = pictureindex
+        pictureLOQindex_end = pictureindex+Number_of_compounds*2-1
+
+        LOQ_data = amr.related_AMR(id, unit)
+        if LOQ_data:
+            LOQindex += 1
+            pictureindex += Number_of_compounds*2  # 总图片索引
+            tableindex += Number_of_compounds
+
+        # 2 LOD
+        LODindex = AMRindex
+        tableLODindex = tableindex
+        pictureLODindex_start = pictureindex
+        pictureLODindex_end = pictureindex+Number_of_compounds-1
+
+        resultLOD = amr.related_LOD(id)
+        if resultLOD:
+            if group != "元素":
+                LODindex += 1
+                pictureindex += Number_of_compounds
+            else:
+                LODindex += 1
+                tableindex += 1
+
+        # 3 AMRconclusion
+        AMRconclusionindex = LODindex
+        tableAMRconclusionindex = tableindex
+        resultAMRconclusion = amr.related_AMRconclusion(id)
+        if resultAMRconclusion:
+            AMRconclusionindex += 1
+            tableindex += 1
+
+        if LOQ_data or resultLOD:
+            titleindex += 1
+
+
+        # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
+        CRRindex = titleindex # CRR主标题索引
+    
+        # 1 进行稀释倍数验证      
+        CRR2_True = 1
+        Dilutionindex = 0
+
+        tableDilutionindex_start = tableindex
+        tableDilutionindex_end = tableindex+Number_of_compounds-1
+
+        Dilution_data = crr.related_CRR(id)
+        if Dilution_data:
+            Dilutionindex += 1
+            titleindex += 1
+            tableindex += Number_of_compounds
 
         
         # 仪器条件
@@ -1169,7 +1245,7 @@ def Recyclesave(request):
 
 
 # 接收验证界面LOQ指标传递过来的参数(图片名称)
-def AMRsave(request):
+def LOQsave(request):
     try:
         name = User.objects.get(username=request.user).first_name
     except:
@@ -1179,8 +1255,7 @@ def AMRsave(request):
     else:
         User_class = 1
     if request.method == 'POST':
-        print(request.POST)
-        # 仪器编号,strip()的作用是去除前后空格
+        # 接收验证基本信息，点击继续验证按钮时需用到
         instrument_num = request.POST["instrument_num"]
         Detectionplatform = request.POST["Detectionplatform"]  # 项目组
         project = request.POST["project"]  # 项目
@@ -1195,21 +1270,14 @@ def AMRsave(request):
 
         if judgenum == 0:
             for index, i in enumerate(objs):
-                AMRpicture.objects.filter(img=i.img).update(
-                    name=picturename[index])  # 更新数据库中的图片名称
+                AMRpicture.objects.filter(img=i.img).update(name=picturename[index])  # 更新数据库中的图片名称
             HttpResponse = "方法定量限与线性范围数据保存成功!"
             return render(request, 'report/Datasave.html', locals())
         else:
-            # for index,i in enumerate(objs):
-            #     AMRpicture.objects.filter(img=i.img).update(name=picturename[index]) #更新数据库中的图片名称
-            # HttpResponse="方法定量限与线性范围数据保存成功!"
-            # for index,i in enumerate(objs):
-            #     AMRpicture.objects.filter(img=i.img).delete() #删除对应对应报告的图片
             for index, i in enumerate(objs):
-                AMRpicture.objects.filter(img=i.img).update(
-                    name=picturename[index])  # 更新数据库中的图片名称
+                AMRpicture.objects.filter(img=i.img).delete()  # 删除数据库中的图片
             HttpResponse = "方法定量限与线性范围验证结果中含有不通过数据,请核对后重新提交!"
-            return render(request, 'report/HttpResponse-danger.html', locals())
+            return render(request, 'report/Warning.html', locals())
 
 
 def AMR2save(request):
