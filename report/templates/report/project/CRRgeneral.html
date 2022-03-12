@@ -11,11 +11,14 @@
 
     th{
         text-align: center;
-        width: 20%;
     }
 
     td{
         text-align: center;
+    }
+
+    .CRR_Tabletr th{
+        width: 20%;
     }
 
     /* 验证结果样式 */
@@ -99,7 +102,7 @@
                 {% for key,value in Result.CRR_dict.items %}
                     <table border="1" cellpadding="8" align="center">
                         <caption><h3>{{key}}验证结果</h3></caption>
-                            <tr>
+                            <tr class="CRR_Tabletr">
                                 <th>稀释倍数</th>
                                 <th>检测浓度({{Result.Unit}})</th>
                                 <th>检测浓度平均值({{Result.Unit}})</th>

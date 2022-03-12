@@ -1,0 +1,225 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+        font-size: 14px;
+    }
+
+    td{
+        text-align: center;
+        font-size: 14px;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <h2>携带效应验证结果</h2>
+        <div class="row"> 
+            <table border="1" cellpadding="8" width="700"  align="center">                                  
+                <tr>
+                    <th class="text-center" rowspan="2">样本编号</th>
+                    <th class="text-center" colspan="7">检测结果({{dicCarryover.Unit}})<br/>或偏差（%）</th>
+                </tr> 
+                <tr>
+                    {%for key in dicCarryover.Carryover_dict.keys %}
+                        <th class="text-center">{{key}}</td>
+                    {% endfor %}
+                </tr>                              
+                <tr>
+                    <td class="text-center">L01</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.0}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L02</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.1}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L03</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.2}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H04</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.3}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H05</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.4}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L06</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.5}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H07</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.6}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H08</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.7}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L09</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.8}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L10</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.9}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L11</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.10}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L12</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.11}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H13</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.12}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H14</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.13}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L15</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.14}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H16</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.15}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H17</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.16}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L18</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.17}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H19</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.18}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">H20</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.19}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">L21</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.20}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">X1</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.21}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">X2</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                    <td class="text-center">{{value.22}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">X2-X1</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.23}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">SD1</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.24}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">3SD1</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.25}}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-center">是否通过</td>
+                    {%for value in dicCarryover.Carryover_dict.values %}
+                        <td class="text-center">{{value.26}}</td>
+                    {% endfor %}
+                </tr>                                       
+            </table>                   
+        </div>
+    </div>
+
+</body>
+
+<script type="text/javascript">
+    // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
+    window.onload = function(){
+        var tr=document.getElementsByTagName("tr");
+        for(var i= 0;i<tr.length;i++)
+        {
+        bgcChange(tr[i]);
+        }
+        
+        }
+        function bgcChange(obj)
+        {
+        obj.onmouseover=function(){
+        obj.style.backgroundColor="#D8D8D8";
+        }
+        obj.onmouseout=function(){
+        obj.style.backgroundColor="#fff";
+        }
+    }
+</script>
+{% endblock %}
+

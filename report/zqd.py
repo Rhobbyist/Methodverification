@@ -257,7 +257,7 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                             concindex = i
                 
                     for i in range(len(rowdatagatherlist)): 
-                        if "PT-" in rowdatagatherlist[i][nameindex]:                       
+                        if "PT" in rowdatagatherlist[i][nameindex]:                       
                             if float(rowdatagatherlist[i][concindex])<PTrange1[k]:
                                 PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
                             elif float(rowdatagatherlist[i][concindex])>=PTrange2[k]:
@@ -882,7 +882,7 @@ def related_PT(id):
     textlist_special = []
     try:
         special_1 = Special.objects.get(project=project) 
-        special_2 = PTspecial.objects.get(special=zqd_special)           
+        special_2 = PTspecial.objects.get(special=special_1)           
         if PTspecialtexts.objects.filter(pTspecial=special_2).count()>0:
             text_special = PTspecialtexts.objects.filter(pTspecial=special_2)  
             for i in text_special:

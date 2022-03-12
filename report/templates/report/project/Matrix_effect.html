@@ -16,6 +16,10 @@
         text-align: center;
     }
 
+    .Matrix_effect_Tabletr th{
+        width: 14.28%;
+    }
+
     /* 验证结果样式 */
     #verifyresult{
         font-weight: 700;
@@ -81,16 +85,21 @@
                 </div>
             </div>
 
+            <!-- 最大允许偏差 -->
+            <input hidden="hidden" value="{{Result.maxBias}}" name="maxBias" id="maxBias">
+
             <!-- 2 分界线 -->
             <h1 class="page-header"></h1>
 
-            <h2>基质效应验证结果</h2>
+            <!-- 3 验证结果展示 -->
+            <h2>验证指标：基质效应</h2>
+            <h2>验证结果：<span id="verifyresult">通过!</span></h2>
             {%for key,value in Result.Matrix_effect_dict.items %}
-            <table border="1" cellpadding="13" align="center">
+            <table border="1" cellpadding="8" align="center">
                 <caption>
-                    <h4>{{key}}验证结果</h4>
+                    <h3>{{key}}验证结果</h3>
                 </caption>
-                <tr>
+                <tr class="Matrix_effect_Tabletr">
                     <th>样本编号</th>
                     <th>Area</th>
                     <th>IS Area</th>
@@ -108,19 +117,19 @@
                     <td>{{j.2}}</td>
                     <td rowspan="3">{{j.9}}</td>
                     <td rowspan="3">{{j.10}}</td>
-                    <td>{{j.11}}</td>
+                    <td class="bias">{{j.11}}</td>
                 </tr>
                 <tr>
                     <td>{{j.3}}</td>
                     <td>{{j.4}}</td>
                     <td>{{j.5}}</td>
-                    <td>{{j.12}}</td>
+                    <td class="bias">{{j.12}}</td>
                 </tr>
                 <tr>
                     <td>{{j.6}}</td>
                     <td>{{j.7}}</td>
                     <td>{{j.8}}</td>
-                    <td>{{j.13}}</td>
+                    <td class="bias">{{j.13}}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -137,31 +146,25 @@
 </body>
 
 <script type="text/javascript">
-    // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
     window.onload = function () {
-        // var tr=document.getElementsByTagName("tr");
-        // for(var i= 0;i<tr.length;i++)
-        // {
-        // bgcChange(tr[i]);
-        // }
+        // 最大允许偏差
+        var maxBias = document.getElementById("maxBias");
 
-        // }
-        // function bgcChange(obj)
-        // {
-        // obj.onmouseover=function(){
-        // obj.style.backgroundColor="#D8D8D8";
-        // }
-        // obj.onmouseout=function(){
-        // obj.style.backgroundColor="#fff";
-        // }
+        // 偏差
+        var biaslist = document.getElementsByClassName("bias");
 
-        // 将不通过的结果标红，并去除“不通过三个字”
-        var td = document.getElementsByTagName("td");
-        for (var i = 0; i < td.length; i++) {
-            if (td[i].innerHTML.search("(不通过!)") != -1) {
-                td[i].innerHTML = td[i].innerHTML.split("(不通过!)")[0]
-                td[i].style.color = "red"
-            }
+        // 验证结果
+        var verifyresult = document.getElementById("verifyresult");
+
+        // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
+        for(let i=0; i<biasist.length; i++){
+            if(parseFloat(biasist[i].innerText) > parseFloat(maxBias.value)){
+                biasist[i].style.color="red";
+                biasist[i].style.fontWeight=700;
+                verifyresult.innerHTML="不通过!";
+                verifyresult.style.color= "red";
+                verifyresult.style.fontWeight=700
+            }    
         }
     }
 </script>

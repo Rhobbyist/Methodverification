@@ -15,6 +15,7 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 
+
 # 登陆界面
 def get_login_page(request):
 
@@ -118,9 +119,15 @@ def get_verification_page(request):
                     ZP_Method_precursor_ion.append(i.precursor_ion)
                     ZP_Method_product_ion.append(i.product_ion)
                     normAB.append(i.norm.split("定量")[0])
-            
+
             except:
                 pass
+            
+            print("normAB:%s" % (normAB))
+            if normAB==[]:
+                HttpResponse="尚未在后台管理系统中正确设置定量表格标识(如忘记添加“定量”关键词),请设置后重新提交数据!"
+                return render(request, 'report/Warning.html', locals())
+
             
             # 六 9个验证指标数据提取
             # 1 精密度
@@ -210,14 +217,12 @@ def get_verification_page(request):
                     Result = Matrix_effect.Matrix_effect_threelevel_fileread(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
                 return render(request, 'report/project/Matrix_effect.html', locals())
 
-            elif request.POST["quota"] == "携带效应":
-                files = request.FILES.getlist('fileuploads')
-                Carryover2_True = 0  # 判断验证界面是用通用性模板还是特殊模板(元素组)
-                if request.POST["carryover"] == "携带效应2":
-                    Carryover2_True += 1
-                dicCarryover = Carry_over.Carryoverfileread(files, Detectionplatform, reportinfo, project, platform,
-                                                            manufacturers, Carryover2_True, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
-                return render(request, 'report/project/Carryover.html', locals())
+            elif request.POST["quota"] == "携带效应":        
+                if request.POST["carryover"] == "9个样本":
+                    files = request.FILES.getlist('fileuploads')
+                    Result = Carry_over.Carryover_9sample_fileread(files, Detectionplatform, reportinfo, project, platform,
+                    manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    return render(request, 'report/project/Carryovergeneral.html', locals())
 
             elif request.POST["quota"] == "样品稳定性":
                 if request.POST["stability"] == "样品储存稳定性":     
@@ -357,101 +362,112 @@ def get_reportpreview_page(request, id):
 
         # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
         JMDindex = titleindex  # 精密度主标题索引 6
+
+        # 1 重复性精密度数据
         PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
         tablePNindex = tableindex # 重复性精密度表格索引  表3
 
-        # 重复性精密度数据
         PNjmd_data = jmd.related_PNjmd(id)
-        if PNjmd_data:
+        if PNjmd_data["JMD_dict"]:
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
-        # 中间精密度
-        resultPJ = jmd.related_PJjmd(id)
+        # 2 中间精密度数据
         PJjmdindex = PNjmdindex  # 重复性精密度副标题索引赋值给中间精密度副标题索引
+
         tablePJindex = tableindex
 
-        if resultPJ:
+        PJjmd_data = jmd.related_PJjmd(id)   
+        if PJjmd_data["JMD_dict"]:
             PJjmdindex += 1  # 中间精密度副标题索引+1
-            tableindex += 1  # 总表格索引+n
+            tableindex += Number_of_compounds 
 
-        # 精密度结论
-        if PNjmd_data and resultPJ:
-            resultjmdendconclusion = jmd.related_jmdendconclusion(id)
-            JMDendconclusionindex = PJjmdindex
-            tablejmdendconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
-            if resultjmdendconclusion:
-                JMDendconclusionindex += 1  # 精密度结论副标题索引+1
+        # 3 精密度结论
+        JMDconclusionindex = PJjmdindex
+        tableJMDconclusionindex = tableindex
+
+        if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
+            jmdconclusion_data = jmd.related_jmdendconclusion(id)
+           
+            if jmdconclusion_data:
+                JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
 
-        if PNjmd_data or resultPJ:  # 如果有重复性精密度和中间精密度,总标题索引+1
-            titleindex += 1
+        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+            titleindex += 1 # -- 7
 
-        # 正确度
-        ZQDindex = titleindex
-        PTindex = 0  # PT副标题索引
+        # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
+
+        ZQDindex = titleindex # 正确度主标题索引 
+
+        # 1  PT
+        PTindex = 0  # PT副标题索引  7.1
+
         tablePTindex = tableindex
 
-        resultPT = zqd.related_PT(id)
-        if resultPT:
-            PTindex += 1
-            tableindex += 1
+        PT_data = zqd.related_PT(id)
+        if PT_data["PT_dict"]:
+            PTindex += 1 # # 正确度副标题索引+1  7.2
+            tableindex += Number_of_compounds
 
-        # 加标回收
-        RECYCLEindex = PTindex
-        tableRECYCLEindex = tableindex
+        # 2 加标回收率
+        Recycleindex = PTindex # --7.1
 
-        resultrecycle = zqd.related_recycle(id)
-        if resultrecycle:
-            RECYCLEindex += 1
-            tableindex += 1
+        tableRecycleindex_start = tableindex
+        tableRecycleindex_end = tableindex+Number_of_compounds-1
 
-        if resultPT or resultrecycle:
-            titleindex += 1  # 7
+        Recycle_data = zqd.related_recycle(id)
+        if Recycle_data:
+            Recycleindex += 1 # --7.2
+            tableindex += Number_of_compounds
 
-        # AMR
-        AMRindex = titleindex  # 7
-        amrindex = 0
+        if PT_data or Recycle_data:
+            titleindex += 1  # 8
+
+        # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
+        
+        AMRindex = titleindex  # AMR主标题索引
+
+        # 1 LOQ
+        LOQindex = 0
         pictureindex = 1  # 总图片索引
-        tableAMRindex = tableindex
-        pictureAMRindex_start = pictureindex
-        pictureAMRindex_end = pictureindex+Number_of_compounds*2-1
+        tableLOQindex = tableindex
+        pictureLOQindex_start = pictureindex
+        pictureLOQindex_end = pictureindex+Number_of_compounds-1
 
-        resultAMR = amr.related_AMR(id, unit)
-        if resultAMR:
-            amrindex += 1
+        LOQ_data = amr.related_AMR(id, unit)
+        if LOQ_data:
+            LOQindex += 1
             pictureindex += Number_of_compounds*2  # 总图片索引
-            tableindex += 1
+            tableindex += Number_of_compounds
 
-        # LOD
-        LODindex = amrindex
+        # 2 LOD
+        LODindex = AMRindex
         tableLODindex = tableindex
         pictureLODindex_start = pictureindex
         pictureLODindex_end = pictureindex+Number_of_compounds-1
 
-        resultLOD = amr.related_LOD(id)
-        if resultLOD:
-            if group != "元素":
-                LODindex += 1
-                pictureindex += Number_of_compounds
-            else:
-                LODindex += 1
-                tableindex += 1
+        LOD_data = amr.related_LOD(id)
+        if LOD_data:
+            LODindex += 1
+            pictureindex += Number_of_compounds
 
-        # AMRconclusion
+        # 3 AMRconclusion
         AMRconclusionindex = LODindex
         tableAMRconclusionindex = tableindex
-        resultAMRconclusion = amr.related_AMRconclusion(id)
-        if resultAMRconclusion:
+
+        AMRconclusion_data = amr.related_AMRconclusion(id)
+        if AMRconclusion_data:
             AMRconclusionindex += 1
             tableindex += 1
 
-        if resultAMR or resultLOD:
+        if LOQ_data or LOD_data:
             titleindex += 1
 
-        # CRR(稀释倍数)
-        CRRindex = titleindex
+        # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
+        CRRindex = titleindex # CRR主标题索引
+
         crrindex = 0
         tableCRRindex = tableindex
 
@@ -590,13 +606,22 @@ def get_reportpreview_page(request, id):
         tableLOQindex_start = tableindex
         tableLOQindex_end = tableindex+Number_of_compounds-1
         pictureLOQindex_start = pictureindex
-        pictureLOQindex_end = pictureindex+Number_of_compounds*2-1
+        pictureLOQindex_end = pictureindex+Number_of_compounds-1
 
         LOQ_data = amr.related_AMR(id, unit)
-        if LOQ_data:
+        # 有数据和图片,同时增加表格和图片索引
+        if LOQ_data["AMR_dict"] and LOQ_data["objs"]:
             LOQindex += 1
-            pictureindex += Number_of_compounds*2  # 总图片索引
+            pictureindex += Number_of_compounds  # 总图片索引
             tableindex += Number_of_compounds
+
+        # 没有图片,不增加图片索引
+        elif LOQ_data["AMR_dict"]:
+            LOQindex += 1
+            tableindex += Number_of_compounds
+        
+        else:
+            pass
 
         # 2 LOD
         LODindex = AMRindex
@@ -604,27 +629,23 @@ def get_reportpreview_page(request, id):
         pictureLODindex_start = pictureindex
         pictureLODindex_end = pictureindex+Number_of_compounds-1
 
-        resultLOD = amr.related_LOD(id)
-        if resultLOD:
-            if group != "元素":
-                LODindex += 1
-                pictureindex += Number_of_compounds
-            else:
-                LODindex += 1
-                tableindex += 1
+        LOD_data = amr.related_LOD(id)
+        if LOD_data:
+            LODindex += 1
+            pictureindex += Number_of_compounds
 
         # 3 AMRconclusion
         AMRconclusionindex = LODindex
         tableAMRconclusionindex = tableindex
-        resultAMRconclusion = amr.related_AMRconclusion(id)
-        if resultAMRconclusion:
+
+        AMRconclusion_data = amr.related_AMRconclusion(id)
+        if AMRconclusion_data:
             AMRconclusionindex += 1
             tableindex += 1
 
-        if LOQ_data or resultLOD:
+        if LOQ_data or LOD_data:
             titleindex += 1
             
-
         # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
         CRRindex = titleindex # CRR主标题索引
     
@@ -660,17 +681,14 @@ def get_reportpreview_page(request, id):
             titleindex += 1
             tableindex += Number_of_compounds
 
-        # 携带效应
-        Carryover2_True = 0  # 判断是用通用性模板还是特殊模板(元素组)
-        if Detectionplatform == "元素":
-            Carryover2_True += 1
+        # --------------------------------------- 携带效应 ---------------------------------------
+        Carryoverindex = titleindex # 携带效应主标题索引
 
-        Carryoverindex = titleindex
-        tableCarryoverindex_start = tableindex
-        tableCarryoverindex_end = tableindex+Number_of_compounds//7
+        tableCarryoverindex = tableindex
 
-        resultCarryover = Carry_over.related_Carryover(id)
-        if resultCarryover:
+
+        Carryover_data = Carry_over.related_Carryover(id)
+        if Carryover_data:
             titleindex += 1
             tableindex += 1
 
@@ -940,7 +958,36 @@ def get_reportdelete_page(request, id):
             titleindex += 1
             tableindex += Number_of_compounds
 
-        
+         # ---------------------------------------------- 基质特异性 --------------------------------------------------
+        MSindex = titleindex
+        pictureMSindex_start = pictureindex
+        pictureMSindex_end = pictureindex+2  # 固定三种图(标准品，血清样本，空白基质)
+        resultMS = ms.related_MS(id)
+        if resultMS:
+            titleindex += 1
+
+        # --------------------------------------- 基质效应（每个化合物一个表格）---------------------------------------
+        Matrix_effectindex = titleindex # 基质效应主标题索引
+
+        tableMatrix_effectindex_start = tableindex
+        tableMatrix_effectindex_end = tableindex+Number_of_compounds-1
+
+        Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
+        if Matrix_effect_data:
+            titleindex += 1
+            tableindex += Number_of_compounds
+
+        # ---------------------------------------------携带效应---------------------------------------------------------
+        Carryoverindex = titleindex # 基质效应主标题索引
+
+        tableCarryoverindex_start = tableindex
+        tableCarryoverindex_end = tableindex+Number_of_compounds//7
+
+        Carryover_data = Carry_over.related_Carryover(id)
+        if Carryover_data:
+            titleindex += 1
+            tableindex += 1
+
         # 仪器条件
         Test_method_data = testmethod.related_testmethod(id)
 

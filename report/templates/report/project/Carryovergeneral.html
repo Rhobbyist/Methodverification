@@ -1,0 +1,213 @@
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+        text-align: center;
+    }
+
+    th{
+        text-align: center;
+    }
+
+    td{
+        text-align: center;
+    }
+
+    /* 验证结果样式 */
+    #verifyresult{
+        font-weight: 700;
+        color:green;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="row"> 
+            <form action="{% url 'verifyagain' %}" method="POST" > 
+                <!-- 1 验证基本信息展示 -->
+                <div class="basicinfo">
+                    <!-- 标题 -->
+                    <h2>验证基本信息</h2>
+                    <br>
+
+                    <!-- 仪器型号及验证时机 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器型号</label>
+                                <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">验证时机</label>
+                                <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                            </div> 
+                        </div>
+                    </div>
+
+                    <!-- 检测平台及检测项目 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测平台</label>
+                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测项目</label>
+                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                            </div> 
+                        </div>
+                    </div>
+                    
+                    <!-- 仪器平台及仪器厂家 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器平台</label>
+                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器厂家</label>
+                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- cv上限  -->
+                <input hidden = "hidden" value="{{Result.maxaccept}}" name="maxaccept" id="maxaccept">
+
+                <!-- 2 分界线 -->
+                <h1 class="page-header"></h1>
+
+                <!-- 3 验证结果展示 -->
+                <h2>验证指标:携带效应</h2>
+                <h2>验证结果:<span id="verifyresult">通过!</span></h2>
+                <br>
+                <div class="row">
+                    {%for key,value in Result.Carryover_dict.items %}
+                        <div class="col-md-4">          
+                            <table border="1" cellpadding="8" class="Carryover_Table">
+                            <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th width="45%">样本</th>
+                                    <th>检测结果({{Result.Unit}})<br/>或偏差(%)</th>
+                                </tr>
+                                <tr> 
+                                    <td>C1</td>
+                                    <td>{{value.0}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    <td>{{value.1}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    <td>{{value.2}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C1</td>
+                                    <td>{{value.3}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    <td>{{value.4}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    <td>{{value.5}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C1</td>
+                                    <td>{{value.6}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    <td>{{value.7}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    <td>{{value.8}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C1mean</td>
+                                    <td>{{value.9}}</td>
+                                </tr>
+                                <tr>
+                                    <td>C3mean</td>
+                                    <td>{{value.10}}</td>
+                                </tr>
+                                <tr>
+                                    <td>(C3mean-C1mean)<br>/C1mean</td>
+                                    <td class="accept">{{value.11}}</td>
+                                </tr>
+                                <br>
+                            </table>
+                        </div> 
+                    {% endfor %}
+                </div>
+                <br>                    
+                <input class="btn btn-primary" id="submit" type="submit" value="继续验证" />
+            </form >
+            <br>
+            <form action="{% url 'returnback' %}" method="POST">
+                <input class="btn btn-danger" id="submit" type="submit" value="返回" />
+            </form>                  
+        </div>
+    </div>
+
+</body>
+
+<script type="text/javascript">
+    // 鼠标移动改变背景,可以通过给每行绑定鼠标移上事件和鼠标移除事件来改变所在行背景色
+    window.onload = function(){
+        var tr=document.getElementsByTagName("tr");
+        for(var i= 0;i<tr.length;i++)
+        {
+        bgcChange(tr[i]);
+        }
+        
+        }
+        function bgcChange(obj)
+        {
+        obj.onmouseover=function(){
+        obj.style.backgroundColor="#D8D8D8";
+        }
+        obj.onmouseout=function(){
+        obj.style.backgroundColor="#fff";
+        }
+
+        // 最大允许偏差
+        var maxaccept = document.getElementById("maxaccept");
+
+        // 偏差
+        var acceptlist = document.getElementsByClassName("accept");
+
+        // 验证结果
+        var verifyresult = document.getElementById("verifyresult");
+
+        // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
+        for(let i=0; i<acceptlist.length; i++){
+            if(parseFloat(acceptlist[i].innerText) > parseFloat(maxaccept.value)){
+                acceptlist[i].style.color="red";
+                acceptlist[i].style.fontWeight=700;
+                verifyresult.innerHTML="不通过!";
+                verifyresult.style.color= "red";
+                verifyresult.style.fontWeight=700
+            }    
+        }
+    
+    }
+</script>
+{% endblock %}
+
+  

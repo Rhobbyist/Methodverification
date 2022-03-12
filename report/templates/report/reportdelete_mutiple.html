@@ -152,12 +152,12 @@
     /* 三 验证数据 */
 
     /* 每个验证指标外层容器td，设置padding25px */
-    .jmdtd,.zqdtd,.stabilitytd,.reference_intervaltd{
+    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.stabilitytd,.reference_intervaltd{
         padding: 0px 25px;
     }
 
     /* 每个验证指标一级标题 */
-    .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Stability_title,.ReferenceInterval_title{
+    .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Matrix_effect_title,.Stability_title,.ReferenceInterval_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -175,7 +175,8 @@
     }
 
     /* 每个验证指标下的表格 */
-    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table,.LOQ_Table,.Dilution_Table{
+    .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table,.LOQ_Table,.Dilution_Table,
+    .Matrix_effect_Table{
         table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
         word-break: break-all;  
         border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
@@ -188,7 +189,7 @@
 
     /* 每个验证指标下的表格的表头 */
     .PNjmd_Tabletr th,.PJjmd_Tabletr th,.JMDconclusion_Tabletr th,.PT_Tabletr th,.Recycle_Tabletr th,.LOQ_Tabletr th,
-    .Dilution_Tabletr th{
+    .Dilution_Tabletr th,.Matrix_effect_Tabletr th{
         /* 字体加粗居中 */
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -201,9 +202,13 @@
         font-weight: bold;
     }
 
-    .JMDconclusion_Tabletr td,.LOQ_Tabletr td,.Dilution_Tabletr td{
+    .JMDconclusion_Tabletr td,.LOQ_Tabletr td,.Dilution_Tabletr td,.Matrix_effect_Tabletr td{
         font-family: Times New Roman, 宋体;
         text-align: center;
+    }
+
+    .Matrix_effect_Tabletr th{
+        width: 14.28%;
     }
 
     /*页眉页脚格式*/
@@ -1178,6 +1183,89 @@
                             </td>                        
                         </tr>  
                     {% endif %} 
+
+                    <!-------------------------------------------5 基质特异性 -----------------------------------------------------> 
+                    {% if resultMS%}
+                        <tr class="mstr">
+                            <td class="mstd">
+                                <div class="MS_title">{{MSindex}}. 基质特异性(Matrix Specificity)</div>
+                                <div class="MS_data">
+                                    {% for r in resultMS.MS_textlist_general %}
+                                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+
+                                    <div class="maintext"> {{resultMS.serial}}) 如图{{pictureMSindex_start}}-{{pictureMSindex_end}}所示，
+                                        {{resultMS.conclusion}}
+                                    </div>
+
+                                    {% for obj in resultMS.dataMS %}
+                                        <div class="MS_picture"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
+                                        <div class="MS_picture_title"> 图{{forloop.counter|add:pictureMSindex_start|add:-1}}. {{obj.name}}</div>
+                                        <br>
+                                    {% endfor %}
+                                </div>                     
+                            </td>
+                        </tr>          
+                    {% endif %}
+
+                    <!-------------------------------------------6 基质效应 -----------------------------------------------------> 
+                    {% if Matrix_effect_data%}
+                        <tr class="matrix_effecttr">
+                            <td class="matrix_effecttd">
+                                <div class="Matrix_effect_title"><input type="checkbox" name="quota" value="基质效应" unchecked>{{Matrix_effectindex}}. 基质效应(Matrix effect)</div>
+                                <div class="Matrix_effect_data">
+                                    {% for r in Matrix_effect_data.textlist %}
+                                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+                                    <div class="maintext"> {{Matrix_effect_data.serial}})
+                                        结果如表{{tableMatrix_effectindex_start}}-{{tableMatrix_effectindex_end}}所示，
+                                        {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
+                                    </div>
+
+                                    {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
+                                        <table class="Matrix_effect_Table" cellpadding="4">
+                                            <caption>表{{forloop.counter|add:tableMatrix_effectindex_start|add:-1}}.{{key}}基质效应实验数据</caption>
+                                            <tr class="Matrix_effect_Tabletr">
+                                                <th>样本编号</th>
+                                                <th>Area</th>
+                                                <th>IS Area</th>
+                                                <th>Area/<br>IS Area</th>
+                                                <th>Area/<br>IS Area<br>的平均值</th>
+                                                <th>混合样本<br>Area/<br>IS Area<br>的理论值</th>
+                                                <th>偏差(%)</th>
+                                            </tr>
+
+                                            {%for i,j in value.items %}
+                                            <tr class="Matrix_effect_Tabletr">
+                                                <td rowspan="3">{{i}}</td>
+                                                <td>{{j.0}}</td>
+                                                <td>{{j.1}}</td>
+                                                <td>{{j.2}}</td>
+                                                <td rowspan="3">{{j.9}}</td>
+                                                <td rowspan="3">{{j.10}}</td>
+                                                <td>{{j.11}}</td>
+                                            </tr>
+                                            <tr class="Matrix_effect_Tabletr">
+                                                <td>{{j.3}}</td>
+                                                <td>{{j.4}}</td>
+                                                <td>{{j.5}}</td>
+                                                <td>{{j.12}}</td>
+                                            </tr>
+                                            <tr class="Matrix_effect_Tabletr">
+                                                <td>{{j.6}}</td>
+                                                <td>{{j.7}}</td>
+                                                <td>{{j.8}}</td>
+                                                <td>{{j.13}}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                    <br>
+                                </div>               
+                            </td>
+                        </tr>       
+                    {% endif %}
                 </tbody>
             </table>
         </div>

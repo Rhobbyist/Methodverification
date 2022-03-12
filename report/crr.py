@@ -96,7 +96,7 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
                     elif lines[1][j] == "Final Conc.":
                         concindex.append(j)
 
-                # 匹配原始数据中与稀释倍数相关(实验号后含有"CRR")的行
+                # 匹配原始数据中与稀释倍数相关(实验号前含有"CRR")的行
                 for j in range(len(norm)):
                     norm_samplenamelist = []  # 一个化合物的稀释倍数Sample Name列表
                     norm_conclist = []  # 一个化合物的检测浓度列表
@@ -242,69 +242,73 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
                     CRRconc.append(group_CRR)
 
             elif manufacturers == "AB":
+                # 定义化合物列表，列表统一命名为norm
                 norm = normAB
-                # norm_notdistinct=[] # 未去重的指标列表
-                file_data = Document(file)
-                paragraphs = []  # 段落列表，需依此及母离子和子离子列表判断table索引
 
-                # 将待测物质添加进入norm列表中
+                # 获取上传的文件
+                file_data = Document(file)
+
+                # 每个表格最上方的标题内容列表，含有母离子和子离子的信息。需依此及母离子和子离子列表判断table索引
+                paragraphs = []
+
+                # 若标题长度为0或为换行等，不添加进入标题内容列表
                 for p in file_data.paragraphs:
                     if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
                         paragraphs.append(p.text.strip())
 
-                # 确定table索引
-                tableindex = []
+                # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格
+                tableindex=[]
                 for i in range(len(paragraphs)):
                     for j in range(len(ZP_Method_precursor_ion)):
                         if ZP_Method_precursor_ion[j] in paragraphs[i] and ZP_Method_product_ion[j] in paragraphs[i]:
                             tableindex.append(2*i+1)
 
-                # norm = []
-                # for i in norm_notdistinct:
-                #     if i not in norm:
-                #         norm.append(i)
-
-                tables = file_data.tables  # 获取文件中的表格集
-
+                tables = file_data.tables #获取文件中的表格集
+                
+                # 循环定量表格的索引
                 for k in range(len(tableindex)):
-                    tableCRR = tables[tableindex[k]]  # 获取文件中的相关表格
+
+                    # 获取文件中的定量表格
+                    tablequantify = tables[tableindex[k]] 
+
+                    # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
+                    cells=tablequantify._cells
+                    ROWS=len(tablequantify.rows)
+                    COLUMNS=len(tablequantify.columns)
+                    rowdatalist=[] #每一行的数据
+                    rowdatagatherlist=[] #大列表，包含每一行的数据
+
+                    for i in range(ROWS*COLUMNS):
+                        text=cells[i].text.replace("\n","")
+                        text=text.strip() #去除空白符
+                        if i % COLUMNS != 0 or i == 0: 
+                            rowdatalist.append(text)
+                        else:
+                            rowdatagatherlist.append(rowdatalist)
+                            rowdatalist=[]
+                            rowdatalist.append(text)
+                    rowdatagatherlist.append(rowdatalist)
+
                     nameindex = 0
                     concindex = 0
 
-                    # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
-                    cells = tableCRR._cells
-                    ROWS = len(tableCRR.rows)
-                    COLUMNS = len(tableCRR.columns)
-                    data = []  # 每一行的数据
-                    datas = []  # 大列表，包含每一行的数据
-                    for i in range(ROWS*COLUMNS):
-                        text = cells[i].text.replace("\n", "")
-                        text = text.strip()  # 去除空白符
-                        if i % 12 != 0 or i == 0:  # docx文件固定为12列
-                            data.append(text)
-                        else:
-                            datas.append(data)
-                            data = []
-                            data.append(text)
-                    datas.append(data)
-
                     # 读取表格的第一行的单元格,判断实验号和浓度索引
-                    for i in range(len(datas[0])):
-                        if datas[0][i] == "Sample Name":
+                    for i in range(len(rowdatagatherlist[0])):
+                        if rowdatagatherlist[0][i] == "Sample Name":
                             nameindex = i
-                        elif "Calculated Conc" in datas[0][i]:
+                        elif "Calculated Conc" in rowdatagatherlist[0][i]:
                             concindex = i
 
-                    # 匹配原始数据中与稀释倍数相关(实验号后含有"times")的行
-                    group = []  # 一个化合物的稀释倍数Sample Name列表
-                    conc = []  # 一个化合物的检测浓度列表
-                    for i in range(len(datas)):
-                        if "times" in datas[i][nameindex]:
-                            group.append(datas[i][nameindex])
-                            conc.append(datas[i][concindex])
+                    # 匹配原始数据中与稀释倍数相关(实验号前含有"CRR")的行
+                    norm_samplenamelist = []  # 一个化合物的稀释倍数Sample Name列表
+                    norm_conclist = []  # 一个化合物的检测浓度列表
+                    for i in range(len(rowdatagatherlist)):
+                        if "CRR" in rowdatagatherlist[i][nameindex]:
+                            norm_samplenamelist.append(rowdatagatherlist[i][nameindex][0:10]) # CRR实验号命名:"CRR-1times-1",[0:10]取出"CRR-1times"
+                            norm_conclist.append(rowdatagatherlist[i][concindex])
 
-                    CRRsamplename.append(group)
-                    CRRconc.append(conc)
+                    CRRsamplename.append(norm_samplenamelist)
+                    CRRconc.append(norm_conclist)
 
         elif platform == "液相":
             if manufacturers == "Agilent":

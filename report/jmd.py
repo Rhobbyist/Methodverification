@@ -1562,7 +1562,7 @@ def related_jmdendconclusion(id):
 
             JMD_dict[i] = middle_list
 
-        JMD_CONCLUSION = "结果表明" + "、" .join(list(JMD_dict.keys())) + "的重复性精密度与中间精密度的结果分析，CV均小于20%，满足检测要求。"
+        JMD_CONCLUSION = "、" .join(list(JMD_dict.keys())) + "的重复性精密度与中间精密度的结果分析，CV均小于20%，满足检测要求。"
 
     except:
         pass
