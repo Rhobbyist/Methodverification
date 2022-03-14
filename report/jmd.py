@@ -275,6 +275,9 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
             # AB厂家需先在后台设置化合物和相应离子对数值，以便判断需要读取的表格（定量表格）和不需要读取的表格(定性表格)
             # 后台管理系统中进行设置时，化合物的设置顺序需与文件中的化合物排列顺序一致，即从上向下进行设置
             elif manufacturers == "AB":
+                if normAB==[]:
+                    error_message="尚未在后台管理系统中正确设置定量表格标识(如忘记添加“定量”关键词),请设置后重新提交数据!"
+                    return {"error_message":error_message}
 
                 # 测试文件中的三个化合物（1  Clozapine定性 (327.2 / 192.2)，Clozapine定量 (327.2 / 270.2);
                 #                     2  Sertraline定性 (306.1 / 275.1)，Sertraline定量 (306.1 / 159.1)）
@@ -305,7 +308,7 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
 
                 # 循环定量表格的索引
                 for k in range(len(tableindex)):
-                     # 获取文件中的定量表格
+                    # 获取文件中的定量表格
                     tablequantify = tables[tableindex[k]] 
 
                     # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多

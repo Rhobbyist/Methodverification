@@ -40,8 +40,9 @@
 </style>
 
     <body>
-        <div class="container">   
-            {% if Result.PTrange1 %} 
+        <div class="container">  
+            <!-- 未返回报错信息  -->
+            {% if not Result.error_message %} 
                 <form action="{% url 'PTsave' %}" method="POST" >    
                     <!-- 1 验证基本信息展示 -->
                     <div class="basicinfo">

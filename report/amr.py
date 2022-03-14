@@ -13,8 +13,10 @@ import re
 
 # LOQ数据抓取
 
-# 1 液质平台(上传单个文件,理论浓度从原始文件中读取)
-def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
+# 一 液质平台(理论浓度从原始文件中读取)
+
+# 1 上传单个数据文件
+def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
     # 第一步:后台数据抓取（回收率上下限，最大允许CV）
     id1 = Special.objects.get(project=project).id  
@@ -149,25 +151,23 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                     for k in range(len(norm)): # 循环化合物列表
                         normdict={} #每个化合物数据字典
                         for j in range(len(AMR_STD)): 
-                            STDconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
+                            calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                             theoryconc=[] # 每个化合物内各曲线点的理论值列表,会有重复                    
                             Accuracy=[] # 回收率列表
                                         
                             for i in range(len(lines)): # 循环原始数据中的每一行
                                 if lines[i][nameindex][0:6] == AMR_STD[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
-                                    STDconc.append(effectnum(lines[i][concindex[k]],digits)) #添加实际浓度              
+                                    calconc.append(effectnum(lines[i][concindex[k]],digits)) #添加实际浓度              
                                     theoryconc.append(effectnum(lines[i][theoryconindex[k]],digits)) # 添加理论浓度
                                     Accuracy.append(new_round(lines[i][accuracyindex[k]],2)) #添加回收率
 
-                            # # 第一个化合物的第一个曲线点列表STDconc循环完成，放入normdict中，开始循环该化合物的下一个曲线点
                             normdict[AMR_STD[j]]=[]
                             normdict[AMR_STD[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
-                            for i in STDconc:
-                                normdict[AMR_STD[j]].append(i)
-                            for i in Accuracy:
-                                normdict[AMR_STD[j]].append(i)
+                            for i in len(calconc):
+                                normdict[AMR_STD[j]].append(calconc[i])
+                                normdict[AMR_STD[j]].append(Accuracy[i])
 
-                        AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
+                        AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
                     print(AMR_dict)
                     
                 elif manufacturers =="Waters":
@@ -211,7 +211,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                     if i not in AMR_STD_distict: # AMR_STD列表去重
                                         AMR_STD_distict.append(i)
 
-                                group_AMR={} #每个化合物数据字典
+                                norm_dict={} #每个化合物数据字典
                                 for j in range(len(AMR_STD_distict)): 
                                     calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                     theoryconc=[]                 
@@ -223,15 +223,15 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                             theoryconc.append(effectnum(file_data.row_values(i)[theoryconindex],digits)) # 添加理论浓度
                                             Accuracy.append(new_round(file_data.row_values(i)[accuracyindex],1)) #添加回收率
 
-                                    # # 第一个化合物的第一个曲线点列表calconc循环完成，放入group_AMR中，开始循环该化合物的下一个曲线点
-                                    group_AMR[AMR_STD_distict[j]]=[]
-                                    group_AMR[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
+                                    # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
+                                    norm_dict[AMR_STD_distict[j]]=[]
+                                    norm_dict[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
                                     for i in calconc:
-                                        group_AMR[AMR_STD_distict[j]].append(i)
+                                        norm_dict[AMR_STD_distict[j]].append(i)
                                     for i in Accuracy:
-                                        group_AMR[AMR_STD_distict[j]].append(i)
+                                        norm_dict[AMR_STD_distict[j]].append(i)
 
-                                AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
+                                AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
                             
                             else:
                                 for i in range(norm_row[k],nrows):  
@@ -242,7 +242,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                     if i not in AMR_STD_distict: # AMR_STD列表去重
                                         AMR_STD_distict.append(i)
 
-                                group_AMR={} #每个化合物数据字典
+                                norm_dict={} #每个化合物数据字典
                                 for j in range(len(AMR_STD_distict)): 
                                     calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                     theoryconc=[]                 
@@ -254,15 +254,15 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                             theoryconc.append(effectnum(file_data.row_values(i)[theoryconindex],digits)) # 添加理论浓度
                                             Accuracy.append(new_round(file_data.row_values(i)[accuracyindex],1)) #添加回收率
 
-                                    # # 第一个化合物的第一个曲线点列表calconc循环完成，放入group_AMR中，开始循环该化合物的下一个曲线点
-                                    group_AMR[AMR_STD_distict[j]]=[]
-                                    group_AMR[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
+                                    # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
+                                    norm_dict[AMR_STD_distict[j]]=[]
+                                    norm_dict[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
                                     for i in calconc:
-                                        group_AMR[AMR_STD_distict[j]].append(i)
+                                        norm_dict[AMR_STD_distict[j]].append(i)
                                     for i in Accuracy:
-                                        group_AMR[AMR_STD_distict[j]].append(i)
+                                        norm_dict[AMR_STD_distict[j]].append(i)
 
-                                AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
+                                AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
 
                 elif manufacturers =="Thermo":
                     if '.png' not in file.name and ".JPG" not in file.name: 
@@ -311,7 +311,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                 if i not in AMR_STD_distict: # AMR_STD列表去重
                                     AMR_STD_distict.append(i)
 
-                            group_AMR={} #每个化合物数据字典
+                            norm_dict={} #每个化合物数据字典
                             for j in range(len(AMR_STD_distict)): 
                                 calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                 theoryconc=[]                 
@@ -325,15 +325,15 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                         accuracyconvert = float(file_data.row_values(i)[accuracyindex])+100 # Thermo数据需对回收率进行换算
                                         Accuracy.append(new_round(accuracyconvert,1)) #添加回收率
 
-                                # # 第一个化合物的第一个曲线点列表calconc循环完成，放入group_AMR中，开始循环该化合物的下一个曲线点
-                                group_AMR[AMR_STD_distict[j]]=[]
-                                group_AMR[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
+                                # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
+                                norm_dict[AMR_STD_distict[j]]=[]
+                                norm_dict[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
                                 for i in calconc:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
                                 for i in Accuracy:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
 
-                            AMR_dict[norm[index]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
+                            AMR_dict[norm[index]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
 
                 elif manufacturers =="岛津":
                     if '.png' not in file.name and ".JPG" not in file.name: 
@@ -382,7 +382,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                         # print(AMR_STD_distict) : ['AMR-STD-1', 'AMR-STD-2', 'AMR-STD-3', 'AMR-STD-4', 'AMR-STD-5',...]
 
                         for k in range(len(norm)): # 循环化合物列表
-                            group_AMR={} # 每个化合物数据字典
+                            norm_dict={} # 每个化合物数据字典
                             for j in range(len(AMR_STD_distict)): 
                                 calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                 theoryconc=[] # 每个化合物内各曲线点的理论值列表,会有重复                    
@@ -401,14 +401,14 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                             theoryconc.append(effectnum(content[i][theoryconindex],digits)) # 添加理论值
                                             Accuracy.append(new_round(content[i][accuracyindex],1)) #添加回收率
 
-                                group_AMR[AMR_STD_distict[j]]=[]
-                                group_AMR[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
+                                norm_dict[AMR_STD_distict[j]]=[]
+                                norm_dict[AMR_STD_distict[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
                                 for i in calconc:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
                                 for i in Accuracy:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
 
-                            AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
+                            AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
 
                 elif manufacturers =="AB":           
                     # 定义化合物列表，列表统一命名为norm
@@ -506,10 +506,9 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
 
                             normdict[AMR_STD_sort[j]]=[]
                             normdict[AMR_STD_sort[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
-                            for i in calconc:
-                                normdict[AMR_STD_sort[j]].append(i)
-                            for i in Accuracy:
-                                normdict[AMR_STD_sort[j]].append(i)
+                            for i in len(calconc):
+                                normdict[AMR_STD[j]].append(calconc[i])
+                                normdict[AMR_STD[j]].append(Accuracy[i])
 
                         AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表normdict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
 
@@ -548,7 +547,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                 if i not in AMR_STD_distict: # AMR_STD列表去重
                                     AMR_STD_distict.append(i)
 
-                            group_AMR={} #每个化合物数据字典
+                            norm_dict={} #每个化合物数据字典
                             for j in range(len(AMR_STD_distict)): 
                                 calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                 # theoryconc=[] # 液相平台没有理论浓度                    
@@ -558,11 +557,11 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                     if file_data.row_values(i)[nameindex] == AMR_STD_distict[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
                                         calconc.append(effectnum(file_data.row_values(i)[conindex],digits)) #添加实际浓度              
 
-                                group_AMR[AMR_STD_distict[j]]=[]
+                                norm_dict[AMR_STD_distict[j]]=[]
                                 for i in calconc:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
 
-                            AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
+                            AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物        
                         
                         else:
                             for i in range(norm_row[k],nrows):  
@@ -573,7 +572,7 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                 if i not in AMR_STD_distict: # AMR_STD列表去重
                                     AMR_STD_distict.append(i)
 
-                            group_AMR={} #每个化合物数据字典
+                            norm_dict={} #每个化合物数据字典
                             for j in range(len(AMR_STD_distict)): 
                                 calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
                                   
@@ -581,11 +580,11 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
                                     if file_data.row_values(i)[nameindex] == AMR_STD_distict[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
                                         calconc.append(effectnum(file_data.row_values(i)[conindex],digits)) #添加实际浓度              
 
-                                group_AMR[AMR_STD_distict[j]]=[]
+                                norm_dict[AMR_STD_distict[j]]=[]
                                 for i in calconc:
-                                    group_AMR[AMR_STD_distict[j]].append(i)
+                                    norm_dict[AMR_STD_distict[j]].append(i)
 
-                            AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
+                            AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
 
                     print(AMR_dict)
 
@@ -606,14 +605,14 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
             for r in value.keys():   
                 sumcalconc=[] ##检测值列表，方便计算检测值CV(固定六个点)
                 sumcalconc.append(float(value[r][1]))
-                sumcalconc.append(float(value[r][2]))
                 sumcalconc.append(float(value[r][3]))
-                sumcalconc.append(float(value[r][4]))
                 sumcalconc.append(float(value[r][5]))
-                sumcalconc.append(float(value[r][6])) 
+                sumcalconc.append(float(value[r][7]))
+                sumcalconc.append(float(value[r][9]))
+                sumcalconc.append(float(value[r][11])) 
                 cvcalconc=new_round(np.std(sumcalconc,ddof=1)/np.mean(sumcalconc)*100,2) #检测值CV
 
-                sumrecycle=float(value[r][7])+float(value[r][8])+float(value[r][9])+float(value[r][10])+float(value[r][11])+float(value[r][12])   #回收率总和，方便计算平均回收率
+                sumrecycle=float(value[r][2])+float(value[r][4])+float(value[r][6])+float(value[r][8])+float(value[r][10])+float(value[r][12])   #回收率总和，方便计算平均回收率
                 meanrecycle=new_round(sumrecycle/6,2) #平均回收率
 
                 value[r].append(meanrecycle) #添加平均回收率
@@ -623,10 +622,13 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
 
         # judgenum(回收率及检测值CV超过范围的个数,此数字为0才将数据存入数据库)
         judgenum=0 #每个化合物超过CV范围的个数
+
+        # 需要进行判断的数据索引
+        indexlist=[2,4,6,8,10,12,13,14]
         for key,value in AMR_dict.items():     
             for i in value.values():
-                for j in range(7,15): #7-13为回收率及平均回收率,14为检测值CV
-                    if j>=7 and j<14:
+                for j in range(len(indexlist)): # 前7个值为回收率和平均回收率,最后一个为检测值cv
+                    if j<7:
                         if float(i[j])<lowvalue or float(i[j])>upvalue: # 如回收率不通过，添加不通过提示
                             judgenum+=1
                     else:
@@ -668,7 +670,312 @@ def LOQgeneral_fileread(files,reportinfo,project,platform,manufacturers,Unit,dig
         else:
             return {"AMR_dict":AMR_dict,"AMRpicture_table":AMRpicture_table,"id":id[0],"Unit":Unit,"picturelist":picturelist,"picturenum":picturenum,"lowvalue":lowvalue,"upvalue":upvalue,"cv":cv}
 
-## 适用于ICP-MS平台，AMR可能需要上传多个文件的情况
+# 2 上传多个数据文件
+def LOQgeneral_multiplefileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
+
+    # 第一步:后台数据抓取（最小样本数，最大允许CV,化合物个数）
+    norm_num = Special.objects.get(project=project).Number_of_compounds
+    id1 = Special.objects.get(project=project).id  
+    id2 = AMRspecial.objects.get(special_id=id1).id
+
+    # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
+    if AMRspecialmethod.objects.filter(aMRspecial=id2): 
+        lowvalue=AMRspecialmethod.objects.get(aMRspecial=id2).lowvalue #回收率下限
+        upvalue=AMRspecialmethod.objects.get(aMRspecial=id2).upvalue #回收率上限
+        maxCV=AMRspecialmethod.objects.get(aMRspecial=id2).cv #最大允许CV
+        
+    else:
+        general_1 = General.objects.get(name="通用性项目")
+        amr_general = AMRgeneral.objects.get(general=general_1)
+        lowvalue=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).lowvalue #回收率下限
+        upvalue=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).upvalue #回收率上限
+        maxCV=AMRgeneralmethod.objects.get(aMRgeneral=amr_general).cv #最大允许CV
+
+    # 后台管理系统-各项目参数设置-PT指标设置里找到是否设置了每个化合物的单位
+    special = Special.objects.get(project=project)
+    pt_special = PTspecial.objects.get(special=special)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+
+    # 后台管理系统中设置的本项目化合物名称
+    PTnorm = []  
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+
+    # 后台管理系统中设置的本项目每个化合物单位
+    Unitlist = []
+    for i in pt_accept:
+        Unitlist.append(i.unit)
+
+    # 未在后台管理系统里准确设置离子对数值,直接返回并提示
+    if len(normAB)!=Number_of_compounds:
+        error_message="未在后台管理系统里准确设置离子对数值!"  
+        return {"error_message":error_message}
+
+    #  第二步:开始文件读取
+
+    '''
+    注释1:csv,txt,xlsx,docx 4种格式数据读取完毕后,需要生成一个字典AMR_dict,数据格式如下：
+    print(AMR_dict):
+    {"化合物1":{'S1':['S1理论浓度','S1检测值1','S1检测值2',...'S1回收率1','S1回收率2',...,]},
+    {'S2':['S2理论浓度','S2检测值1','S2检测值2',...'S2回收率1','S2回收率2',...,]},
+    "化合物2":{'S1':['S1理论浓度','S1检测值1','S1检测值2',...'S1回收率1','S1回收率2',...,]},
+    {'S2':['S2理论浓度','S2检测值1','S2检测值2',...'S2回收率1','S2回收率2',...,]}
+    '''
+
+    #  1 定义最终需要的列表和字典
+    AMR_dict={} #最终需要生成的字典
+    Accuracyjudge=[] #每个化合物超过回收率范围的个数列表
+    CVjudge=[] #每个化合物超过CV范围的个数列表
+    norm=[] #指标列表
+    S=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10"] # 预定义浓度序号列表
+
+    picturelist=[] # 图片文件列表
+    picturenum=0 # 上传文件中的图片个数
+
+    for k in range(norm_num):  #多个文件上传时，先循环化合物，在循环文件
+        normdict={} #每个化合物数据字典
+        for index,file in enumerate(files):
+            # 文件为图片(.png或.JPG)
+            if '.png' in file.name or ".JPG" in file.name:    
+                picturenum+=1
+                picturelist.append(file)
+                if AMRpicture.objects.filter(reportinfo = reportinfo,img = "img/"+file.name):
+                    pass
+                else:
+                    AMRpicture.objects.create(reportinfo = reportinfo,img = file,name="")
+
+                AMRpicture_table = AMRpicture.objects.filter(reportinfo = reportinfo)
+                id=[]
+                for item in AMRpicture_table:
+                    id.append(item.reportinfo_id)
+
+            else:
+                if manufacturers =="Agilent": 
+                    data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
+                    file.seek(0,0)  #循环读取同一个文件两遍，需加此句代码移动文件读取指针到开头，否则会报错
+                    file_data = data.sheets()[0]
+                    nrows=file_data.nrows
+                    ncols=file_data.ncols
+
+                    # 从第一行确定化合物名称
+                    for j in range(ncols):
+                        for i in PTnorm:             
+                            if i in file_data.row_values(0)[j] and i not in norm:
+                                norm.append(i) 
+
+                    # 从第二行确定实验号和化合物浓度索引
+                    nameindex=0  #实验号索引
+                    conindex=[] #浓度索引
+                    for j in range(ncols):       
+                        if file_data.row_values(1)[j] == "样品名称":
+                            nameindex = j
+                        elif file_data.row_values(1)[j] == "浓度 [ ppm ]" or file_data.row_values(1)[j] == "浓度 [ ppb ]":
+                            conindex.append(j)
+
+                    # 确认原始数据中与AMR相关(实验号前含有"AMR-")的sample name名，放进一个列表
+                    AMR_STD=[] 
+                    for i in range(nrows):
+                        if "AMR-" in file_data.row_values(i)[nameindex]:
+                            AMR_STD.append(file_data.row_values(i)[nameindex])
+                
+
+                    for j in range(len(AMR_STD)): 
+                        calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
+                         
+                        for i in range(nrows): # 循环原始数据中的每一行
+                            if file_data.row_values(i)[nameindex] == AMR_STD[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
+                                calconc.append(effectnum(file_data.row_values(i)[conindex[k]],digits)) #添加实际浓度       
+
+                        # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
+
+                        # 第一个文件才将norm_dict[AMR_STD[j]]设为空，否则只能显示最后一个文件的数据
+                        if index==0:
+                            norm_dict[AMR_STD[j]]=[]
+                        for i in calconc:
+                            norm_dict[AMR_STD[j]].append(i)
+
+                elif manufacturers =="AB":
+
+                    # 定义化合物列表，列表统一命名为norm(第一个化合物才需要设置)
+                    if index==0:
+                        norm = normAB
+
+                    # 获取上传的文件
+                    file_data = Document(file)
+
+                    # 每个表格最上方的标题内容列表，含有母离子和子离子的信息。需依此及母离子和子离子列表判断table索引
+                    paragraphs = [] 
+
+                    # 若标题长度为0或为换行等，不添加进入标题内容列表
+                    for p in file_data.paragraphs:
+                        if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
+                            paragraphs.append(p.text.strip())
+
+                    # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格(第一个化合物才需要设置)
+                    if index==0:
+                        tableindex=[]
+
+                        # 1 每个化合物都含有定性和定量表格的计算方式
+                        for i in range(len(paragraphs)):
+                            for j in range(len(ZP_Method_precursor_ion)):
+                                if ZP_Method_precursor_ion[j] in paragraphs[i] and ZP_Method_product_ion[j] in paragraphs[i]:
+                                    tableindex.append(2*i+1) 
+
+                    tables = file_data.tables #获取文件中的表格集
+
+                    # 无需再循环定量表格的索引，依据最外层for循环确定循环中的文件中的定量表格
+                    # 获取文件中的定量表格
+                    tablequantify = tables[tableindex[k]] 
+
+                    # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
+                    cells=tablequantify._cells
+                    ROWS=len(tablequantify.rows)
+                    COLUMNS=len(tablequantify.columns)
+                    rowdatalist=[] #每一行的数据
+                    rowdatagatherlist=[] #大列表，包含每一行的数据
+
+                    for i in range(ROWS*COLUMNS):
+                        text=cells[i].text.replace("\n","")
+                        text=text.strip() #去除空白符
+                        if i % COLUMNS != 0 or i == 0:
+                            rowdatalist.append(text)
+                        else:
+                            rowdatagatherlist.append(rowdatalist)
+                            rowdatalist=[]
+                            rowdatalist.append(text)
+                    rowdatagatherlist.append(rowdatalist)
+
+                    nameindex=0  #实验号索引
+                    theoryconindex=0   #理论浓度索引列表（可能不止一个化合物，因此需要把索引放在一个列表里，下同）
+                    concindex=0  #实际浓度索引列表
+                    accuracyindex=0    #回收率索引列表
+
+                    # 读取表格的第一行的单元格,判断实验号和浓度索引
+                    for i in range(len(rowdatagatherlist[0])):
+                        if rowdatagatherlist[0][i] == "Sample Name" :
+                            nameindex=i
+                        elif "Target" in rowdatagatherlist[0][i]:
+                            theoryconindex=i
+                        elif "Calculated Conc" in rowdatagatherlist[0][i]:
+                            concindex=i
+                        elif "Accuracy" in rowdatagatherlist[0][i]:
+                            accuracyindex=i
+        
+                    # 未准确设置表头列名,直接返回并提示!
+                    if theoryconindex==0 or concindex==0 or accuracyindex==0:
+                        error_message="未准确设置表头列名!"
+                        return {"error_message":error_message}
+
+                    # 确认原始数据中与AMR相关(实验号前含有"AMR-")的sample name名，放进一个列表(第一个化合物才需要设置)
+                    if index==0:
+                        AMR_STD=[] 
+                        for i in range(len(rowdatagatherlist)): 
+                            if "AMR-" in rowdatagatherlist[i][nameindex] and rowdatagatherlist[i][nameindex][0:6] not in AMR_STD:
+                                AMR_STD.append(rowdatagatherlist[i][nameindex][0:6])
+                        
+                        # 按顺序重新排列AMR_STD
+                        AMR_STD_sort=[]
+                        for i in S:
+                            for j in AMR_STD:
+                                if i in j:
+                                    AMR_STD_sort.append(j)
+
+                    for j in range(len(AMR_STD_sort)): 
+                        # 第一个化合物才需要设置
+                        if index==0:
+                            normdict[AMR_STD_sort[j]]=[]
+
+                        for i in range(len(rowdatagatherlist)): # 循环原始数据中的每一行       
+                            if rowdatagatherlist[i][nameindex][0:6] == AMR_STD_sort[j]: # 如果实验号命名方式匹配上，则在相应列表中添加数据 
+                                # 添加理论浓度(需避免重复添加)
+                                if effectnum(rowdatagatherlist[i][theoryconindex],digits) not in normdict[AMR_STD_sort[j]]:
+                                    normdict[AMR_STD_sort[j]].append(effectnum(rowdatagatherlist[i][theoryconindex],digits))
+
+                                # 添加检测值
+                                normdict[AMR_STD_sort[j]].append(effectnum(rowdatagatherlist[i][concindex],digits))
+
+                                # 添加回收率
+                                normdict[AMR_STD_sort[j]].append(new_round(rowdatagatherlist[i][accuracyindex],2))
+
+
+        AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
+    
+
+    #  第三步:文件读取完毕后的操作(添加平均回收率和检测值CV)
+
+    if platform=="液质":
+        '''
+        注释2:最终需要生成一个字典AMR_dict,数据格式如下：
+        print(AMR_dict):
+        {"化合物1":{'S1':['S1理论浓度','S1检测值1','S1检测值2',...'S1回收率1','S1回收率2',...,'平均回收率','检测值CV']},
+        {'S2':['S2理论浓度','S2检测值1','S2检测值2',...'S2回收率1','S2回收率2',...,'平均回收率','检测值CV']},
+        "化合物2":{'S1':['S1理论浓度','S1检测值1','S1检测值2',...'S1回收率1','S1回收率2',...,'平均回收率','检测值CV']},
+        {'S2':['S2理论浓度','S2检测值1','S2检测值2',...'S2回收率1','S2回收率2',...,'平均回收率','检测值CV']}
+        ''' 
+        for key,value in AMR_dict.items():
+            for r in value.keys():   
+                sumcalconc=[] ##检测值列表，方便计算检测值CV(固定六个点)
+                sumcalconc.append(float(value[r][1]))
+                sumcalconc.append(float(value[r][3]))
+                sumcalconc.append(float(value[r][5]))
+                sumcalconc.append(float(value[r][7]))
+                sumcalconc.append(float(value[r][9]))
+                sumcalconc.append(float(value[r][11])) 
+                cvcalconc=new_round(np.std(sumcalconc,ddof=1)/np.mean(sumcalconc)*100,2) #检测值CV
+
+                sumrecycle=float(value[r][2])+float(value[r][4])+float(value[r][6])+float(value[r][8])+float(value[r][10])+float(value[r][12])   #回收率总和，方便计算平均回收率
+                meanrecycle=new_round(sumrecycle/6,2) #平均回收率
+
+                value[r].append(meanrecycle) #添加平均回收率
+                value[r].append(cvcalconc) #添加检测值CV
+
+        #  第四步:数据存入数据库
+
+        # judgenum(回收率及检测值CV超过范围的个数,此数字为0才将数据存入数据库)
+        judgenum=0 #每个化合物超过CV范围的个数
+
+        # 需要进行判断的数据索引
+        indexlist=[2,4,6,8,10,12,13,14]
+        for key,value in AMR_dict.items():     
+            for i in value.values():
+                for j in range(len(indexlist)): # 前7个值为回收率和平均回收率,最后一个为检测值cv
+                    if j<7:
+                        if float(i[j])<lowvalue or float(i[j])>upvalue: # 如回收率不通过，添加不通过提示
+                            judgenum+=1
+                    else:
+                        if float(i[j])>maxCV: 
+                            judgenum+=1
+
+        # 判断judgenum是否为0,为0才能将数据存入数据库              
+        if judgenum==0:
+            insert_list =[]
+            for key,value in AMR_dict.items():
+                for r,c in value.items():
+                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
+                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
+                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+
+            AMR.objects.bulk_create(insert_list)
+
+        else: 
+            insert_list =[]
+            for key,value in AMR_dict.items():
+                for r,c in value.items():
+                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
+                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
+                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+
+            AMR.objects.bulk_create(insert_list)
+
+        print(AMR_dict)
+        if picturenum==0:
+            return {"AMR_dict":AMR_dict,"Unit":Unit,"judgenum":judgenum,"picturenum":picturenum,"lowvalue":lowvalue,
+            "upvalue":upvalue,"maxCV":maxCV}      
+        else:  
+            return {"AMR_dict":AMR_dict,"AMRpicture_table":AMRpicture_table,"id":id[0],"Unit":Unit,"judgenum":judgenum,
+            "picturenum":picturenum,"lowvalue":lowvalue,"upvalue":upvalue,"maxCV":maxCV}
+
+# 二 非液质平台(理论浓度需由用户自行输入)
 def LOQspecial_fileread(files, reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion):
     # 第一步:后台数据抓取（最小样本数，最大允许CV,化合物个数）
     norm_num = Special.objects.get(project=project).Number_of_compounds
@@ -700,7 +1007,7 @@ def LOQspecial_fileread(files, reportinfo,project,platform,manufacturers,Unit,di
         PTnorm.append(i.norm)
 
     for k in range(norm_num):  #中间精密度需先循环化合物个数，在循环文件
-        group_AMR={} #每个化合物数据字典
+        norm_dict={} #每个化合物数据字典
         for fileindex in range(len(files)):
             file=files[fileindex]
             if manufacturers =="Agilent": 
@@ -732,12 +1039,6 @@ def LOQspecial_fileread(files, reportinfo,project,platform,manufacturers,Unit,di
                         if "AMR-" in file_data.row_values(i)[nameindex]:
                             AMR_STD.append(file_data.row_values(i)[nameindex])
                 
-                    # AMR_STD_distict=[] 
-                    # for i in AMR_STD:
-                    #     if i not in AMR_STD_distict: # AMR_STD列表去重
-                    #         AMR_STD_distict.append(i)
-                    
-                    # print(AMR_STD_distict) : ['AMR-STD-1', 'AMR-STD-2', 'AMR-STD-3', 'AMR-STD-4', 'AMR-STD-5',...]
 
                     for j in range(len(AMR_STD)): 
                         calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
@@ -746,14 +1047,13 @@ def LOQspecial_fileread(files, reportinfo,project,platform,manufacturers,Unit,di
                             if file_data.row_values(i)[nameindex] == AMR_STD[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
                                 calconc.append(effectnum(file_data.row_values(i)[conindex[k]],digits)) #添加实际浓度       
 
-                        # # 第一个化合物的第一个曲线点列表calconc循环完成，放入group_AMR中，开始循环该化合物的下一个曲线点
-                        # group_AMR.append(calconc)
+                        # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
 
-                        # 第一个文件才将group_AMR[AMR_STD[j]]设为空，否则只能显示最后一个文件的数据
+                        # 第一个文件才将norm_dict[AMR_STD[j]]设为空，否则只能显示最后一个文件的数据
                         if fileindex==0:
-                            group_AMR[AMR_STD[j]]=[]
+                            norm_dict[AMR_STD[j]]=[]
                         for i in calconc:
-                            group_AMR[AMR_STD[j]].append(i)
+                            norm_dict[AMR_STD[j]].append(i)
 
                 else:
                     if k==0:
@@ -766,7 +1066,7 @@ def LOQspecial_fileread(files, reportinfo,project,platform,manufacturers,Unit,di
                         id=[]
                         for item in objs_verify:
                             id.append(item.reportinfo_id)
-        AMR_dict[norm[k]]=group_AMR # 第一个化合物的数据列表group_AMR循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
+        AMR_dict[norm[k]]=norm_dict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
     print(AMR_dict)
     
     return {"AMR_dict":AMR_dict,"objs_verify":objs_verify,"id":id[0],"Unit":Unit}

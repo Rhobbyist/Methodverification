@@ -37,149 +37,168 @@
 
     <body>
         <div class="container">
-            <form action="{% url 'LOQsave' %}" method="POST" >
-                <!-- 1 验证基本信息展示 -->
-                <div class="basicinfo">
-                    <!-- 标题 -->
-                    <h2>验证基本信息</h2>
-                    <br>
+            {% if not Result.error_message %}
+                <form action="{% url 'LOQsave' %}" method="POST" >
+                    <!-- 1 验证基本信息展示 -->
+                    <div class="basicinfo">
+                        <!-- 标题 -->
+                        <h2>验证基本信息</h2>
+                        <br>
 
-                    <!-- 仪器型号及验证时机 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">仪器型号</label>
-                                <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
-                            </div> 
+                        <!-- 仪器型号及验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器型号</label>
+                                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">验证时机</label>
-                                <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
-                            </div> 
-                        </div>
-                    </div>
- 
+    
 
-                    <!-- 检测平台及检测项目 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">检测平台</label>
-                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
-                            </div> 
+                        <!-- 检测平台及检测项目 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测平台</label>
+                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测项目</label>
+                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                                </div> 
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">检测项目</label>
-                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
-                            </div> 
-                        </div>
-                    </div>
-                    
-                    <!-- 仪器平台及仪器厂家 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">仪器平台</label>
-                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
-                            </div> 
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">仪器厂家</label>
-                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                        
+                        <!-- 仪器平台及仪器厂家 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器平台</label>
+                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器厂家</label>
+                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <input hidden = "hidden" value="{{Result.judgenum}}" name="judgenum">
-                <input hidden = "hidden" value="{{Result.id}}" name="id">  
+                    <input hidden = "hidden" value="{{Result.judgenum}}" name="judgenum">
+                    <input hidden = "hidden" value="{{Result.id}}" name="id">  
 
-                <!-- 回收率下限 -->
-                <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue" id="lowvalue">
+                    <!-- 回收率下限 -->
+                    <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue" id="lowvalue">
 
-                <!-- 回收率上限 -->
-                <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue" id="upvalue">
+                    <!-- 回收率上限 -->
+                    <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue" id="upvalue">
 
-                <!-- 最大允许CV -->
-                <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV"> 
-                
-                <!-- 2 分界线 -->
-                <h1 class="page-header"></h1>
+                    <!-- 最大允许CV -->
+                    <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV"> 
+                    
+                    <!-- 2 分界线 -->
+                    <h1 class="page-header"></h1>
 
-                <!-- 3 验证结果展示 -->
-                <h2>验证指标：方法定量限与线性范围(LOQ)</h2>
-                <h2>验证结果：<span id="verifyresult">通过!</span></h2>
-                <br>
-                <div class="row">
-                    {%for key,value in Result.AMR_dict.items %}               
-                        <table border="1" cellpadding="8" align="center">
-                            <caption><h4>{{key}}验证结果</h4></caption>
-                            <tr class="LOQ_Tabletr">
-                                <th>浓度序号</th>
-                                <th>理论浓度({{Result.Unit}})</th>
-                                <th>检测值({{Result.Unit}})</th>
-                                <th>回收率(%)</th>
-                                <th>平均回收率（%)</th>
-                                <th>检测值CV(%)</th>
-                            </tr>
-                            {%for c,r in value.items %}
-                            <tr>
-                                <td rowspan="6">{{c}}</td> 
-                                <td rowspan="6">{{r.0}}</td>
-                                <td>{{r.1}}</td>
-                                <td class="recycle">{{r.7}}</td>
-                                <td class="meanrecycle" rowspan="6">{{r.13}}</td>
-                                <td class="CV" rowspan="6">{{r.14}}</td>
-                            </tr>
-                            <tr>
-                                <td>{{r.2}}</td>
-                                <td class="recycle">{{r.8}}</td>
-                            </tr>
-                            <tr>
-                                <td>{{r.3}}</td>
-                                <td class="recycle">{{r.9}}</td>
-                            </tr>
-                            <tr>
-                                <td>{{r.4}}</td>
-                                <td class="recycle">{{r.10}}</td>
-                            </tr>
-                            <tr>
-                                <td>{{r.5}}</td>
-                                <td class="recycle">{{r.11}}</td>
-                            </tr>
-                            <tr>
-                                <td>{{r.6}}</td>
-                                <td class="recycle">{{r.12}}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-                        <br>
-                    {% endfor %} 
-                </div>
-                                           
-                <div class="row">
-                    {% for obj in Result.AMRpicture_table %}
-                        <div class="AMRpicture"><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></div>
-                        <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
-                            <textarea rows="1" cols="120" name = "picturename">
-                            </textarea>
-                        </div>
-                        <br> 
-                    {% endfor %}        
-                </div>
+                    <!-- 3 验证结果展示 -->
+                    <h2>验证指标：方法定量限与线性范围(LOQ)</h2>
+                    <h2>验证结果：<span id="verifyresult">通过!</span></h2>
+                    <br>
+                    <div class="row">
+                        {%for key,value in Result.AMR_dict.items %}               
+                            <table border="1" cellpadding="8" align="center">
+                                <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr class="LOQ_Tabletr">
+                                    <th>浓度序号</th>
+                                    <th>理论浓度({{Result.Unit}})</th>
+                                    <th>检测值({{Result.Unit}})</th>
+                                    <th>回收率(%)</th>
+                                    <th>平均回收率（%)</th>
+                                    <th>检测值CV(%)</th>
+                                </tr>
+                                {%for c,r in value.items %}
+                                <tr>
+                                    <td rowspan="6">{{c}}</td> 
+                                    <td rowspan="6">{{r.0}}</td>
+                                    <td>{{r.1}}</td>
+                                    <td class="recycle">{{r.2}}</td>
+                                    <td class="meanrecycle" rowspan="6">{{r.13}}</td>
+                                    <td class="CV" rowspan="6">{{r.14}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{r.3}}</td>
+                                    <td class="recycle">{{r.4}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{r.5}}</td>
+                                    <td class="recycle">{{r.6}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{r.7}}</td>
+                                    <td class="recycle">{{r.8}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{r.9}}</td>
+                                    <td class="recycle">{{r.10}}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{r.11}}</td>
+                                    <td class="recycle">{{r.12}}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            <br>
+                        {% endfor %} 
+                    </div>
+                                            
+                    <div class="row">
+                        {% for obj in Result.AMRpicture_table %}
+                            <div class="AMRpicture"><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></div>
+                            <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
+                                <textarea rows="1" cols="120" name = "picturename">
+                                </textarea>
+                            </div>
+                            <br> 
+                        {% endfor %}        
+                    </div>
+                    {% if Result.picturenum == 0 %}
+                        <!-- <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div> -->
+                    {% else %}
+                        <div><input type="submit" class="btn btn-danger" value="保存"></div> 
+                    {% endif %}
+                </form>
                 {% if Result.picturenum == 0 %}
-                    <!-- <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div> -->
+                    <form action="{% url 'verifyagain' %}" method="POST" > 
+                        <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                        <input hidden = "hidden" value="{{group}}" name="group">
+                        <input hidden = "hidden" value="{{project}}" name="project">
+                        <input hidden = "hidden" value="{{platform}}" name="platform">
+                        <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                        <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                        <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                    </form>
+                    <br>
+                    <form action="{% url 'returnback' %}" method="POST">
+                        <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                    </form>
                 {% else %}
-                    <div><input type="submit" class="btn btn-danger" value="保存"></div> 
+                    
                 {% endif %}
-            </form>
-            {% if Result.picturenum == 0 %}
+            {% else %}
+                <h2 class="alert alert-danger">{{Result.error_message}}</h2>
                 <form action="{% url 'verifyagain' %}" method="POST" > 
                     <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                    <input hidden = "hidden" value="{{group}}" name="group">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
                     <input hidden = "hidden" value="{{project}}" name="project">
                     <input hidden = "hidden" value="{{platform}}" name="platform">
                     <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
@@ -189,10 +208,8 @@
                 <br>
                 <form action="{% url 'returnback' %}" method="POST">
                     <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
-                </form>
-            {% else %}
-                 
-            {% endif %}
+                </form> 
+            {% endif %} 
         </div>
 
     </body>

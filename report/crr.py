@@ -467,23 +467,23 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
         CRR_dict[norm[j]] = norm_conclist
 
-    if CRR_judgenum == 0:
-        insert_list = []
-        for key, value in CRR_dict.items():
-            for i in value:
-                insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
-                                       test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
+    # if CRR_judgenum == 0:
+    #     insert_list = []
+    #     for key, value in CRR_dict.items():
+    #         for i in value:
+    #             insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
+    #                                    test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
 
-        CRR.objects.bulk_create(insert_list)
+    #     CRR.objects.bulk_create(insert_list)
 
-    else:
-        insert_list = []
-        for key, value in CRR_dict.items():
-            for i in value:
-                insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
-                                       test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
+    # else:
+    #     insert_list = []
+    #     for key, value in CRR_dict.items():
+    #         for i in value:
+    #             insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
+    #                                    test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
 
-        CRR.objects.bulk_create(insert_list)
+    #     CRR.objects.bulk_create(insert_list)
 
     return {"CRR_dict": CRR_dict, "Unit": Unit,"lowvalue":lowvalue,"upvalue":upvalue}
 
@@ -646,7 +646,7 @@ def related_CRR(id):
                         "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
 
         else:
-            CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论。"
+            CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论"
             if len(textlist_special) != 0:
                 return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
                         "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}

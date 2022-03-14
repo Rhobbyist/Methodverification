@@ -1109,7 +1109,280 @@
                 {% endif %}
 
                         
+                <!-------------------------------------------4 CRR(临床可报告范围) --------------------------------------------->             
+                {% if Dilution_data.CRR_dict %}
+                    <tr class="crrtr">
+                        <td class="crrtd">
+                            <div class="CRR_title">{{CRRindex}}. 临床可报告范围(Clinical Reportable Range)</div>
+                            <div class="CRR_data">
+                                <!-- 4.1 进行稀释倍数验证 -->
+                                {% if CRR2_True %}
+                                    <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex}} 稀释倍数验证(Dilution)</div>
+                                    {% for r in Dilution_data.textlist %}
+                                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+                                    <div class="maintext"> {{Dilution_data.serial}})
+                                        实验结果如表{{tableDilutionindex}}所示，对高浓度样本按照
+                                        {{Dilution_data.CRR_conclusion1}}倍稀释后得到的检测结果满足要求。
+                                        因此，当遇到超出标准曲线最高浓度点的样本时，可对其稀释 {{Dilution_data.CRR_conclusion1}}倍后进行检测。
+                                    </div>
+                                    
+                                    {%for key,value in Dilution_data.CRR_dict.items %}
+                                        <table class="Dilution_Table" cellpadding="4">
+                                            <caption>表{{tableDilutionindex}}.{{key}}稀释倍数实验数据</caption>
+                                            <tr class="Dilution_Tabletr">
+                                                <th width="16%">稀释倍数</th>
+                                                <th width="20%">检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="24%">检测浓度平均值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="22%">检测浓度CV(%)</th>
+                                                <th width="18%">回收率(%)</th>
+                                            </tr>
+                                            {%for r in value%}
+                                            <tr class="Dilution_Tabletr">
+                                                <td rowspan="5">{{r.0}}</td>
+                                                <td>{{r.1}}</td>
+                                                <td rowspan="5">{{r.11}}</td>
+                                                <td rowspan="5">{{r.12}}</td>
+                                                <td>{{r.6}}</td>
+                                            </tr>
+                                            <tr class="Dilution_Tabletr">
+                                                <td>{{r.2}}</td>
+                                                <td>{{r.7}}</td>
+                                            </tr>
+                                            <tr class="Dilution_Tabletr">
+                                                <td>{{r.3}}</td>
+                                                <td>{{r.8}}</td>
+                                            </tr>
+                                            <tr class="Dilution_Tabletr">
+                                                <td>{{r.4}}</td>
+                                                <td>{{r.9}}</td>
+                                            </tr>
+                                            <tr class="Dilution_Tabletr">
+                                                <td>{{r.5}}</td>
+                                                <td>{{r.10}}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                    <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
+                                    <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
+                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
+                                    </div>
+                                    <br>
 
+                                <!-- 4.2 不进行稀释倍数验证 -->   
+                                {% else %}                       
+                                <div class="maintext"> 由于该方法分析测量范围能全面覆盖临床标本的浓度分布，充分满足临床检测的需求，
+                                    因此无需进行稀释倍数验证。为了与现有日常检测的临床报告保持一致，临床可报告范围定为如表{{tableCRRindex}}所示。
+                                </div>
+                                <table class="Not_Dilution_Table" cellpadding="4">
+                                    <caption>表{{tableCRRindex}}.{{key}}稀释倍数验证结果</caption>
+                                    <tr>
+                                        <th width="30%">化合物</th>
+                                        <th width="70%">临床可报告范围(CRR)</th>
+                                    </tr>
+                                    {% for key,value in Dilution_data.CRR_dict.items %}
+                                    <tr>
+                                        <td>{{key}}</td>
+                                        <td>{{value}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                                {% endif %}
+                                
+                            </div>                 
+                        </td>                        
+                    </tr>  
+                {% endif %} 
+                
+                <!-------------------------------------------5 基质特异性 -----------------------------------------------------> 
+                {% if resultMS %}
+                    <tr class="mstr">
+                        <td class="mstd">
+                            <div class="MS_title">{{MSindex}}. 基质特异性(Matrix Specificity)</div>
+                            <div class="MS_data">
+                                {% for r in resultMS.MS_textlist_general %}
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                {% endfor %}
+
+                                <div class="maintext"> {{resultMS.serial}}) 如图{{pictureMSindex_start}}-{{pictureMSindex_end}}所示，
+                                    {{resultMS.conclusion}}
+                                </div>
+
+                                {% for obj in resultMS.dataMS %}
+                                    <div class="MS_picture"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
+                                    <div class="MS_picture_title"> 图{{forloop.counter|add:pictureMSindex_start|add:-1}}. {{obj.name}}</div>
+                                    <br>
+                                {% endfor %}
+                            </div>                     
+                        </td>
+                    </tr>          
+                {% endif %}
+
+                <!-------------------------------------------6 基质效应 -----------------------------------------------------> 
+                {% if Matrix_effect_data %}
+                    <tr class="matrix_effecttr">
+                        <td class="matrix_effecttd">
+                            <div class="Matrix_effect_title">{{Matrix_effectindex}}. 基质效应(Matrix effect)</div>
+                            <div class="Matrix_effect_data">
+                                {% for r in Matrix_effect_data.textlist %}
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                {% endfor %}
+                                <div class="maintext"> {{Matrix_effect_data.serial}})
+                                    结果如表{{tableMatrix_effectindex}}所示，
+                                    {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
+                                </div>
+
+                                {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
+                                    <table class="Matrix_effect_Table" cellpadding="4">
+                                        <caption>表{{tableMatrix_effectindex}}.{{key}}基质效应实验数据</caption>
+                                        <tr class="Matrix_effect_Tabletr">
+                                            <th>样本编号</th>
+                                            <th>Area</th>
+                                            <th>IS Area</th>
+                                            <th>Area/<br>IS Area</th>
+                                            <th>Area/<br>IS Area<br>的平均值</th>
+                                            <th>混合样本<br>Area/<br>IS Area<br>的理论值</th>
+                                            <th>偏差(%)</th>
+                                        </tr>
+
+                                        {%for i,j in value.items %}
+                                        <tr class="Matrix_effect_Tabletr">
+                                            <td rowspan="3">{{i}}</td>
+                                            <td>{{j.0}}</td>
+                                            <td>{{j.1}}</td>
+                                            <td>{{j.2}}</td>
+                                            <td rowspan="3">{{j.9}}</td>
+                                            <td rowspan="3">{{j.10}}</td>
+                                            <td>{{j.11}}</td>
+                                        </tr>
+                                        <tr class="Matrix_effect_Tabletr">
+                                            <td>{{j.3}}</td>
+                                            <td>{{j.4}}</td>
+                                            <td>{{j.5}}</td>
+                                            <td>{{j.12}}</td>
+                                        </tr>
+                                        <tr class="Matrix_effect_Tabletr">
+                                            <td>{{j.6}}</td>
+                                            <td>{{j.7}}</td>
+                                            <td>{{j.8}}</td>
+                                            <td>{{j.13}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                    <br>
+                                {% endfor %}
+                                <br>
+                            </div>               
+                        </td>
+                    </tr>       
+                {% endif %}
+
+
+                <!-------------------------------------------7 携带效应 -----------------------------------------------------> 
+                {% if Carryover_data.Carryover_dict %}
+                    <tr class="carryovertr">
+                        <td class="carryovertd">
+                            <div class="Carryover_title">{{Carryoverindex}}. 携带效应(Carryover){{Carryover_data.percent}}</div>
+                            <div class="Carryover_data">
+                                {% for r in Carryover_data.textlist %}
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                {% endfor %}
+                                <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}所示，
+                                    (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                </div>
+                                {%for key,value in Carryover_data.d_reshape.items %}
+                                    <table class="Carryover_Table" cellpadding="4">
+                                        <caption>表{{tableCarryoverindex}}.携带效应实验数据</caption>
+                                        <tr>
+                                            <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
+                                            <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
+                                        </tr>
+                                        <tr>
+                                            {%for c in value.keys %}
+                                                <td class="title topdown-1">{{c}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C1</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.0}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C2</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.1}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C3</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.2}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C1</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.3}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C2</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.4}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C3</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.5}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C1</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.6}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C2</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.7}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C3</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.8}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C1mean</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.9}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>C3mean</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.10}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr class="Carryover_Tabletr">
+                                            <td>(C3mean-C1mean)/<br>C1mean</td>
+                                            {%for r in value.values %}
+                                                <td>{{r.11}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    </table>
+                                    <br>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>                       
+                {% endif %}
                         
         
                 <!-- ------------------------------------------------------稳定性------------------------------------------------------  -->

@@ -821,10 +821,16 @@
                                     {% for r in LOQ_data.textlist %}
                                         <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                     {% endfor %}
+                                    {% if LOQ_data.objs %}
                                     <div class="maintext"> {{LOQ_data.serial}})
                                         结果数据如表{{tableLOQindex_start}}-{{tableLOQindex_end}}和图{{pictureLOQindex_start}}-{{pictureLOQindex_end}},
                                         {{LOQ_data.AMR_textlist_end}}
                                     </div>
+                                    {% else %}
+                                        <div class="maintext"> {{LOQ_data.serial}})
+                                            结果数据如表{{tableLOQindex_start}}-{{tableLOQindex_end}},{{LOQ_data.AMR_textlist_end}}
+                                        </div>
+                                    {% endif %}
 
                                     {%for key,value in LOQ_data.AMR_dict.items %}
                                         <table class="LOQ_Table" cellpadding="4">
@@ -1153,7 +1159,7 @@
                                             </table>
                                             <br>
                                         {% endfor %}
-                                        <div class="Dilution_title">{{CRRindex}}.{{crrindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
+                                        <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
                                         <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
                                             CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
                                         </div>
