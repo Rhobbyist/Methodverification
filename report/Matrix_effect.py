@@ -8,7 +8,7 @@ from report.effectnum import *
 from datetime import datetime
 import re
 
-def Matrix_effect_fileread(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Matrix_effect_fileread(files,reportinfo,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB, Number_of_compounds):
 
     # 第一步:后台数据抓取（回收率上下限）
     id1 = Special.objects.get(project=project).id  
@@ -1387,49 +1387,52 @@ def Matrix_effect_fileread(files,reportinfo,project,platform,manufacturers,digit
 
 def related_Matrix_effect(id):
     # 第一步：后台描述性内容数据提取
+    # 1 根据id找到项目
+    project = ReportInfo.objects.get(id=id).project
 
-    # 根据id找到项目
-    project=ReportInfo.objects.get(id=id).project
+    # 2 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
+    #特殊参数设置描述性内容
+    textlist_special = []
+    try:
+        special_1 = Special.objects.get(project=project) 
+        special_2 = Matrixeffectspecial.objects.get(special=special_1)           
+        if Matrixeffectspecialtexts.objects.filter(matrixeffectspecial=special_2).count()>0:
+            text_special = Matrixeffectspecialtexts.objects.filter(matrixeffectspecial=special_2)  
+            for i in text_special:
+                textlist_special.append(i.text)
+    except:
+        pass
 
-    # 优先查找特殊参数设置里是否有数据，如有就调用，没有则调用通用性参数设置里的数据
-    # 特殊数据抓取
-    Matrix_effect_special = Special.objects.get(project=project)   
-    matrix_effect_special = Matrixeffectspecial.objects.get(special=Matrix_effect_special) 
-    textlist_special = [] #特殊参数设置描述性内容
-    if Matrixeffectspecialtexts.objects.filter(matrixeffectspecial=matrix_effect_special).count()>0: 
-        text_special = Matrixeffectspecialtexts.objects.filter(matrixeffectspecial=matrix_effect_special)  
-        for i in text_special:
-            textlist_special.append(i.text)
-    
-    # 通用数据抓取
-    Matrix_effect_general = General.objects.get(name="通用性项目")
-    matrix_effect_general = Matrixeffectgeneral.objects.get(general=Matrix_effect_general)
-    text_general = Matrixeffectgeneraltexts.objects.filter(matrixeffectgeneral=matrix_effect_general)   
-    textlist_general = []
+    # 3 通用数据抓取
+    # 描述性内容
+    textlist_general = [] 
+    general_1 = General.objects.get(name="通用性项目") #通用参数设置描述性内容
+    general_2 = Matrixeffectgeneral.objects.get(general=general_1)
+    text_general = Matrixeffectgeneraltexts.objects.filter(matrixeffectgeneral=general_2)      
     for i in text_general:
         textlist_general.append(i.text)
 
     # 查找是否单独设置了每个化合物的有效位数
-    DIGITS_TABLE = Special.objects.get(project=project) 
+    DIGITS_TABLE = Special.objects.get(project=project)
     pt_special = PTspecial.objects.get(special=DIGITS_TABLE)
     pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
-    Digitslist=[] # 每个化合物有效位数列表
-    Digitsdict={} # 每个化合物有效位数字典
+    Digitslist = []  # 每个化合物有效位数列表
+    Digitsdict = {}  # 每个化合物有效位数字典
 
     for i in pt_accept:
         Digitslist.append(i.digits)
 
-    if Digitslist==[] or Digitslist[0]=="": #如果全部没设置或者只是单位没设置
+    if Digitslist == [] or Digitslist[0] == "":  # 如果全部没设置或者只是单位没设置
         pass
     else:
         for i in pt_accept:
-            Digitsdict[i.norm]=i.digits
+            Digitsdict[i.norm] = i.digits
 
     # 第二步：报告数据提取
 
     '''
-    注释:需要生成一个字典Matrix_effect_endreport_dict,数据格式如下：
-    print(Matrix_effect_endreport_dict):
+    注释:需要生成一个字典Matrixeffect_dict,数据格式如下：
+    print(Matrixeffect_dict):
     {"化合物1":{"A":[Area1,IS Area1,Area/IS Area1,Area2,IS Area2,Area/IS Area2,Area3,IS Area3,Area/IS Area3,Area/IS Area的平均值,混合样本Area/IS Area的理论值,偏差],
     "B":[Area1,IS Area1,Area/IS Area1,Area2,IS Area2,Area/IS Area2,Area3,IS Area3,Area/IS Area3,Area/IS Area的平均值,混合样本Area/IS Area的理论值,偏差],...,
     "AL":[Area1,IS Area1,Area/IS Area1,Area2,IS Area2,Area/IS Area2,Area3,IS Area3,Area/IS Area3,Area/IS Area的平均值,混合样本Area/IS Area的理论值,偏差],...}
@@ -1437,65 +1440,68 @@ def related_Matrix_effect(id):
     }
     '''
 
-    dataMatrixeffect = Matrixeffect.objects.filter(reportinfo_id=id)
-        
-    if dataMatrixeffect:
-        Matrixeffect_endreport_dict={}  #最终需要的字典
-        norm=[] #去重后的待测物质列表  
+    # 定义需要生成的字典
+    Matrixeffect_dict = {}  # 最终需要的字典
 
-        for item in dataMatrixeffect: 
-            if item.norm not in norm:
-                norm.append(item.norm)  
+    try:
+        # 1 基础数据抓取
+        Matrixeffect_data = Matrixeffect.objects.filter(reportinfo_id=id)
 
-        print(norm)
+        Matrixeffect_norm = []  # 待测物质列表
+        for i in Matrixeffect_data:
+            if i.norm not in Matrixeffect_norm:
+                Matrixeffect_norm.append(i.norm)
 
-        for i in norm:
-            dataMatrixeffect_norm = Matrixeffect.objects.filter(reportinfo_id=id,norm=i) #各待测物质的数据表
+        for i in Matrixeffect_norm:
             norm_dict={} #各待测物质的字典
-            for item in dataMatrixeffect_norm:
+            middle_table = Matrixeffect.objects.filter(reportinfo_id=id,norm=i) #各待测物质的数据表        
+            for item in middle_table:
                 #没有为每个化合物单独设置有效位数，则调用通用性设置
                 if Digitsdict=={} or list(Digitsdict.values())[0]==None:     
-                    norm_group=[] #各待测物质各samplename列表
-                    norm_group.append(item.Area_1)
-                    norm_group.append(item.IS_Area_1)
-                    norm_group.append(item.Area_IS_Area_1)
-                    norm_group.append(item.Area_2)
-                    norm_group.append(item.IS_Area_2)
-                    norm_group.append(item.Area_IS_Area_2)
-                    norm_group.append(item.Area_3)
-                    norm_group.append(item.IS_Area_3)
-                    norm_group.append(item.Area_IS_Area_3)
-                    norm_group.append(item.singlemean)
-                    norm_group.append(item.complexmean)
-                    norm_group.append(item.bias1)
-                    norm_group.append(item.bias2)
-                    norm_group.append(item.bias3)
-                    norm_dict[item.samplename]=norm_group
+                    rowlist = [] 
+                    rowlist.append(item.Area_1)
+                    rowlist.append(item.IS_Area_1)
+                    rowlist.append(item.Area_IS_Area_1)
+                    rowlist.append(item.Area_2)
+                    rowlist.append(item.IS_Area_2)
+                    rowlist.append(item.Area_IS_Area_2)
+                    rowlist.append(item.Area_3)
+                    rowlist.append(item.IS_Area_3)
+                    rowlist.append(item.Area_IS_Area_3)
+                    rowlist.append(item.singlemean)
+                    rowlist.append(item.complexmean)
+                    rowlist.append(item.bias1)
+                    rowlist.append(item.bias2)
+                    rowlist.append(item.bias3)
+                    norm_dict[item.samplename]=rowlist
                 #为每个化合物单独设置了有效位数，则调用每个化合物的设置
                 else:
-                    norm_group=[] #各待测物质各samplename列表
-                    norm_group.append(effectnum(item.Area_1,Digitsdict[i]))
-                    norm_group.append(effectnum(item.IS_Area_1,Digitsdict[i]))
-                    norm_group.append(item.Area_IS_Area_1)
-                    norm_group.append(effectnum(item.Area_2,Digitsdict[i]))
-                    norm_group.append(effectnum(item.IS_Area_2,Digitsdict[i]))
-                    norm_group.append(item.Area_IS_Area_2)
-                    norm_group.append(effectnum(item.Area_3,Digitsdict[i]))
-                    norm_group.append(effectnum(item.IS_Area_3,Digitsdict[i]))
-                    norm_group.append(item.Area_IS_Area_3)
-                    norm_group.append(item.singlemean)
-                    norm_group.append(item.complexmean)
-                    norm_group.append(item.bias1)
-                    norm_group.append(item.bias2)
-                    norm_group.append(item.bias3)
-                    norm_dict[item.samplename]=norm_group
+                    rowlist=[] #各待测物质各samplename列表
+                    rowlist.append(effectnum(item.Area_1,Digitsdict[i]))
+                    rowlist.append(effectnum(item.IS_Area_1,Digitsdict[i]))
+                    rowlist.append(item.Area_IS_Area_1)
+                    rowlist.append(effectnum(item.Area_2,Digitsdict[i]))
+                    rowlist.append(effectnum(item.IS_Area_2,Digitsdict[i]))
+                    rowlist.append(item.Area_IS_Area_2)
+                    rowlist.append(effectnum(item.Area_3,Digitsdict[i]))
+                    rowlist.append(effectnum(item.IS_Area_3,Digitsdict[i]))
+                    rowlist.append(item.Area_IS_Area_3)
+                    rowlist.append(item.singlemean)
+                    rowlist.append(item.complexmean)
+                    rowlist.append(item.bias1)
+                    rowlist.append(item.bias2)
+                    rowlist.append(item.bias3)
+                    norm_dict[item.samplename]=rowlist
 
-            Matrixeffect_endreport_dict[i]=norm_dict
+            Matrixeffect_dict[i]=norm_dict
         
-        Matrixeffect_endreport_conclusion="混合样本中" + "、" .join(list(Matrixeffect_endreport_dict.keys()))+"的相应值(a)与高低浓度样本和病人样本中"+"、" .join(list(Matrixeffect_endreport_dict.keys()))+"响应值的均值(b)差异均小于20%，说明无相对基质效应。"
+        Matrixeffect_endreport_conclusion="混合样本中" + "、" .join(list(Matrixeffect_dict.keys()))+"的相应值(a)与高低浓度样本和病人样本中"+"、" .join(list(Matrixeffect_dict.keys()))+"响应值的均值(b)差异均小于20%，说明无相对基质效应。"
 
         if len(textlist_special)!=0:
-            return {"Matrixeffect_endreport_dict":Matrixeffect_endreport_dict,"textlist":textlist_special,"serial":len(textlist_special)+1,"Matrixeffect_endreport_conclusion":Matrixeffect_endreport_conclusion}
+            return {"Matrixeffect_dict":Matrixeffect_dict,"textlist":textlist_special,"serial":len(textlist_special)+1,"Matrixeffect_endreport_conclusion":Matrixeffect_endreport_conclusion}
 
         else:
-            return {"Matrixeffect_endreport_dict":Matrixeffect_endreport_dict,"textlist":textlist_general,"serial":len(textlist_general)+1,"Matrixeffect_endreport_conclusion":Matrixeffect_endreport_conclusion}
+            return {"Matrixeffect_dict":Matrixeffect_dict,"textlist":textlist_general,"serial":len(textlist_general)+1,"Matrixeffect_endreport_conclusion":Matrixeffect_endreport_conclusion}
+
+    except:
+        pass

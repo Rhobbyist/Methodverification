@@ -3,14 +3,14 @@ import numpy as np
 import xlrd
 from docx import Document
 import math
+import re
 from report.models import *
 from report.effectnum import *
 from report.layout import *
 from datetime import datetime
-import re
 
 # 重复性精密度数据读取
-def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV）
     id1 = Special.objects.get(project=project).id
@@ -552,7 +552,7 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
     return {'jmd_dict': jmd_dict, "namejmd": namejmd, "nrows": jmdnum, "lownumber": int(lownumber), "maxCV": maxCV, "lownum": lownum, "mediannum": mediannum, "highnum": highnum, "Unit": Unit}
 
 # 中间精密度数据读取
-def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds):
 
     # 第一步:后台数据抓取（最小样本数，最大允许CV,化合物个数）
     id1 = Special.objects.get(project=project).id
@@ -937,18 +937,18 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     if file_data.row_values(1)[j] == "样品名称":
                         nameindex = j
                     elif file_data.row_values(1)[j] == "浓度 [ ppm ]" or file_data.row_values(1)[j] == "浓度 [ ppb ]":
-                        conindex.append(j)
+                        concindex.append(j)
 
                 # 匹配原始数据中与精密度相关(实验号前含有"L-"或"M-"或"H-")的行
                 for i in range(2, nrows):
                     if "L-" in file_data.row_values(i)[nameindex]:
                         if k < 1:
                             jmdnum += 1
-                        low.append(file_data.row_values(i)[conindex[k]])
+                        low.append(file_data.row_values(i)[concindex[k]])
                     elif "M" in file_data.row_values(i)[nameindex]:
-                        median.append(file_data.row_values(i)[conindex[k]])
+                        median.append(file_data.row_values(i)[concindex[k]])
                     elif "H" in file_data.row_values(i)[nameindex]:
-                        high.append(file_data.row_values(i)[conindex[k]])
+                        high.append(file_data.row_values(i)[concindex[k]])
 
         normlist.append(low)
         normlist.append(median)
@@ -1096,8 +1096,8 @@ def related_PNjmd(id):
     # 第二步：报告数据提取
 
     '''
-    注释:需要生成一个字典JMD_endreport_dict和一句话JMD_CONCLUSION,数据格式如下:
-    JMD_endreport_dict:{"D3":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...],"D2":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...]}
+    注释:需要生成一个字典JMD_dict和一句话JMD_CONCLUSION,数据格式如下:
+    JMD_dict:{"D3":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...],"D2":[[SAMPLE1],[SAMPLE2],[SAMPLE3]...]}
     JMD_CONCLUSION:结果表明25OHD3、25OHD2的变异系数CV分别在x1%-x2%,y1%-y2%范围内,均小于20%,满足检测要求。
     '''
 
@@ -1228,7 +1228,7 @@ def related_PNjmd(id):
         for value in JMD_CV.values():
             JMD_CVrange.append(str(min(value))+"%"+"-"+str(max(value))+"%")
 
-        string = "," .join(list(JMD_CVrange))+"范围内,均小于20%,满足检测要求。"
+        string = "," .join(list(JMD_CVrange))+"范围内，均小于20%，满足检测要求。"
 
         for i in string:
             JMD_CONCLUSION = JMD_CONCLUSION + i
@@ -1438,7 +1438,7 @@ def related_PJjmd(id):
         for value in JMD_CV.values():
             JMD_CVrange.append(str(min(value))+"%"+"-"+str(max(value))+"%")
 
-        string = "," .join(list(JMD_CVrange))+"范围内,均小于20%,满足检测要求。"
+        string = "，" .join(list(JMD_CVrange))+"范围内，均小于20%，满足检测要求。"
 
         for i in string:
             JMD_CONCLUSION = JMD_CONCLUSION + i

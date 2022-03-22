@@ -4,9 +4,10 @@ from django.shortcuts import render, redirect
 from numpy import number
 from report import models
 from .forms import UploadFileForm
-from report import jmd, zqd, amr, crr, ms, Carry_over, Matrix_effect, testmethod, equipment, reagents_consumables, sample_preparation, QC, Sample_Stability,Sample_ReferenceInterval
+from report import jmd, zqd, amr, crr, ms, Carry_over, Matrix_effect, Sample_Stability,Sample_ReferenceInterval,QC,others
 from .models import *
 import time
+import re
 
 # 认证模块
 from django.contrib import auth
@@ -79,7 +80,6 @@ def get_verification_page(request):
 
             verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
             # verifyoccasiontexts = request.POST["verifyoccasiontexts"] #自定义验证时机
-            End_conclusion = request.POST["End_conclusion"]  # 报告最终结论
             # verifytime = time.strftime('%Y-%m-%d', time.localtime(time.time()))  # 初始验证时间
 
             # 二 后台管理系统查找单位,有效位数和化合物个数,此处由于单位,有效位数和化合物个数都为必填项,因此使用get()方法时不需要try
@@ -133,13 +133,13 @@ def get_verification_page(request):
                 if request.POST["jmd"] == "重复性精密度":
                     namejmd = "重复性精密度"
                     files = request.FILES.getlist('fileuploads')
-                    Result = jmd.IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = jmd.IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
 
                 # 1.2 中间精密度
                 elif request.POST["jmd"] == "中间精密度":
                     namejmd = "中间精密度"
                     files = request.FILES.getlist('fileuploads')
-                    Result = jmd.InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = jmd.InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers,Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
                 return render(request, 'report/project/Jmd.html', locals())
 
             # 2 正确度
@@ -148,13 +148,13 @@ def get_verification_page(request):
                 # 2.1 PT
                 if request.POST["zqd"] == "PT":
                     files = request.FILES.getlist('fileuploads')
-                    Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
                     return render(request, 'report/project/PT.html', locals())
 
                 # 2.2 加标回收率
                 elif request.POST["zqd"] == "加标回收":
                     files = request.FILES.getlist('fileuploads')
-                    Result = zqd.Recyclefileread(files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = zqd.Recyclefileread(files, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
                     return render(request, 'report/project/Recycle.html', locals())
 
                 # 2.3 仪器比对
@@ -174,7 +174,6 @@ def get_verification_page(request):
                     for file in files:
                         if '.png' not in file.name and ".JPG" not in file.name:
                             data_uploadfile_num +=1
-                    print(data_uploadfile_num)
                     
                     # 3.1.1 液质平台(理论浓度从原始文件中读取)
                     if platform == "液质": 
@@ -186,14 +185,14 @@ def get_verification_page(request):
                     
                     # 3.1.2 非液质平台(上传多个数据文件,且理论浓度需由用户自行输入) 
                     else:
-                        Result = amr.LOQspecial_fileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
+                        Result = amr.LOQspecial_fileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                         return render(request, 'report/project/LOQspecial.html', locals())
 
                 # 3.2 方法检出限(Limit of Detection,LOD)
                 elif request.POST["amr"] == "方法检出限":
                     files = request.FILES.getlist('fileuploads')
                     dicLOD = amr.LODfileread(files, reportinfo, project, platform, manufacturers,
-                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion)
+                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/LOD.html', locals())
                 elif request.POST["amr"] == "结论":
                     AMRid = ReportInfo.objects.get(number=instrument_num, project=project).id
@@ -206,7 +205,7 @@ def get_verification_page(request):
                 else:
                     files = request.FILES.getlist('fileuploads')
                     Result = crr.CRRfileread(files, reportinfo, project, platform, manufacturers,
-                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                                            Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/CRRgeneral.html', locals())
 
             elif request.POST["quota"] == "基质特异性":
@@ -216,33 +215,33 @@ def get_verification_page(request):
 
             elif request.POST["quota"] == "基质效应":
                 files = request.FILES.getlist('fileuploads')
-                Result = Matrix_effect.Matrix_effect_fileread(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                Result = Matrix_effect.Matrix_effect_fileread(files, reportinfo, project, platform, manufacturers, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                 return render(request, 'report/project/Matrix_effect.html', locals())
 
             elif request.POST["quota"] == "携带效应":        
                 if request.POST["carryover"] == "9个样本":
                     files = request.FILES.getlist('fileuploads')
                     Result = Carry_over.Carryover_9sample_fileread(files, Detectionplatform, reportinfo, project, platform,
-                    manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/Carryovergeneral.html', locals())
 
             elif request.POST["quota"] == "样品稳定性":
                 if request.POST["stability"] == "样品储存稳定性":     
                     files = request.FILES.getlist('fileuploads')
-                    Result = Sample_Stability.store_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = Sample_Stability.store_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                 elif request.POST["stability"] == "样品处理后稳定性":     
                     files = request.FILES.getlist('fileuploads')
-                    Result = Sample_Stability.handle_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB) 
+                    Result = Sample_Stability.handle_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds) 
                 return render(request, 'report/project/Sample_Stability.html', locals())
 
             elif request.POST["quota"] == "参考区间":
                 if request.POST["referenceinterval"] == "参考区间建立":     
                     files = request.FILES.getlist('fileuploads')
-                    Result = Sample_ReferenceInterval.create_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = Sample_ReferenceInterval.create_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/RI_Create.html', locals())
                 elif request.POST["referenceinterval"] == "参考区间验证":        
                     files = request.FILES.getlist('fileuploads')
-                    Result = Sample_ReferenceInterval.quote_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB)
+                    Result = Sample_ReferenceInterval.quote_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/RI_quote.html', locals())
 
 
@@ -371,19 +370,21 @@ def get_reportpreview_page(request, id):
         tablePNindex = tableindex # 重复性精密度表格索引  表3
 
         PNjmd_data = jmd.related_PNjmd(id)
-        if PNjmd_data["JMD_dict"]:
-            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
-            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
+        if PNjmd_data:
+            if PNjmd_data["JMD_dict"]: 
+                PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+                tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
         # 2 中间精密度数据
         PJjmdindex = PNjmdindex  # 重复性精密度副标题索引赋值给中间精密度副标题索引
 
         tablePJindex = tableindex
 
-        PJjmd_data = jmd.related_PJjmd(id)   
-        if PJjmd_data["JMD_dict"]:
-            PJjmdindex += 1  # 中间精密度副标题索引+1
-            tableindex += Number_of_compounds 
+        PJjmd_data = jmd.related_PJjmd(id)  
+        if PJjmd_data: 
+            if PJjmd_data["JMD_dict"]:
+                PJjmdindex += 1  # 中间精密度副标题索引+1
+                tableindex += Number_of_compounds 
 
         # 3 精密度结论
         JMDconclusionindex = PJjmdindex
@@ -391,12 +392,12 @@ def get_reportpreview_page(request, id):
 
         if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
             jmdconclusion_data = jmd.related_jmdendconclusion(id)
-           
+        
             if jmdconclusion_data:
                 JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
 
-        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+        if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:   # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
@@ -424,7 +425,7 @@ def get_reportpreview_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if PT_data or Recycle_data:
+        if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
         # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
@@ -476,8 +477,8 @@ def get_reportpreview_page(request, id):
 
         tableDilutionindex = tableindex
 
-        Dilution_data = crr.related_CRR(id)
-        if Dilution_data:
+        Dilution_data = crr.related_CRR(id,unit)
+        if Dilution_data["CRR_dict"]:
             Dilutionindex += 1
             titleindex += 1
             tableindex += 1
@@ -496,7 +497,7 @@ def get_reportpreview_page(request, id):
         tableMatrix_effectindex = tableindex
 
         Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
-        if Matrix_effect_data:
+        if Matrix_effect_data["Matrixeffect_dict"]:
             titleindex += 1
             tableindex += 1
 
@@ -506,22 +507,83 @@ def get_reportpreview_page(request, id):
         tableCarryoverindex = tableindex
 
         Carryover_data = Carry_over.related_Carryover(id)
-        if Carryover_data:
+        if Carryover_data["Carryover_dict"]:
             titleindex += 1
             tableindex += 1
 
-        # 检测方法
-        resulttest_method = testmethod.related_testmethod(id)
+        # --------------------------------------- 样品稳定性 ---------------------------------------
+        # 1 数据抓取与参数设置
+        Stability_data = Sample_Stability.data_scrap(id)  # 抓取数据库中的数据
+        Stabilityindex = titleindex  # 设置标题索引
+        tableStabilityindex_start = tableindex  # 设置第一个表格索引
+        tableStabilityindex_end = tableindex+Number_of_compounds*3-1
 
-        resultequipment = equipment.related_equipment(id)
-        resultReagents_Consumables = reagents_consumables.related_Reagents_Consumables(id)
-        resultSample_Preparation = sample_preparation.related_Sample_Preparation(id)
+        # 2 如果存在数据，自增标题索引和表格索引
+        if Stability_data["Room_conclevel_list"]:
+            titleindex += 1
+            tableindex += Number_of_compounds*2-1
 
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
+        # --------------------------------------- 参考区间 ---------------------------------------
+        # 1 数据抓取与参数设置
+        Reference_Interval_data = Sample_ReferenceInterval.data_scrap(id)  # 抓取数据库中的数据
+        Reference_Interval_index = titleindex  # 设置标题索引
+        table_Reference_Interval_index_start = tableindex+1  # 设置第一个表格索引,参考区间在一个表格中显示
+        # table_Reference_Interval_index_end = tableindex+Number_of_compounds*2-1 # 设置最后一个表格索引索引
+
+        # 2 如果存在数据，自增标题索引和表格索引
+        if Reference_Interval_data["Referenceinterval_dict"]:
+            titleindex += 1
+            tableindex += 1
+
+        # --------------------------------------- 检测方法，设备，试剂耗材，样品处理，最终结论 ---------------------------------------
+        Test_method_data = others.related_testmethod(id)
+        Equipment_data = others.related_equipment(id)
+        Reagents_Consumables_data = others.related_Reagents_Consumables(id)
+        Sample_Preparation_data = others.related_Sample_Preparation(id)
+        
+        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应、样品稳定性（样本储存稳定性和样本处理后稳定性）、参考区间均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
+
+        Endconclusion = Endconclusion.replace('FXS-YZ26', Instrument_number)
+        Endconclusion = Endconclusion.replace('Thermo TSQ Altis LC-MS/MS', Instrument_model)
+        Endconclusion = Endconclusion.replace('血清雌二醇、雌酮', project)
+
+        if not LOQ_data["AMR_dict"]:      
+            Endconclusion = Endconclusion.replace('分析灵敏度、分析测量范围、', '')
+
+        if not resultMS:
+            Endconclusion = Endconclusion.replace('基质特异性、', '')
+
+        if not Matrix_effect_data["Matrixeffect_dict"]:
+            Endconclusion = Endconclusion.replace('基质效应、', '')
+
+        if not Dilution_data["CRR_dict"]:
+            Endconclusion = Endconclusion.replace('临床可报告范围（稀释倍数）、', '')
+
+        # 精密度
+        if not PNjmd_data["JMD_dict"] and not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('精密度（重复性精密度和中间精密度）、', '')
+
+        if not PNjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('重复性精密度和', '')
+
+        if not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('和中间精密度', '')
+
+        # 正确度
+        if not PT_data["PT_dict"] and not Recycle_data:
+            Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
+
+        if not Carryover_data["Carryover_dict"]:
+            Endconclusion = Endconclusion.replace('携带效应、', '')
+
+        if not Stability_data["Room_conclevel_list"]:
+            Endconclusion = Endconclusion.replace('样品稳定性（样本储存稳定性和样本处理后稳定性）、', '')
+
+        if not Reference_Interval_data["Referenceinterval_dict"]:
+            Endconclusion = Endconclusion.replace('、参考区间', '')
+
+        
+
         return render(request, 'report/reportpreview-single.html', locals())
 
     else:  # 多个化合物
@@ -572,7 +634,7 @@ def get_reportpreview_page(request, id):
                 JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
 
-        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+        if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
@@ -601,12 +663,14 @@ def get_reportpreview_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if PT_data or Recycle_data:
+        if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
         # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
         
         AMRindex = titleindex  # AMR主标题索引
+
+        print("titleindex:%s" % (titleindex))
 
         # 1 LOQ
         LOQindex = 0
@@ -664,7 +728,7 @@ def get_reportpreview_page(request, id):
         tableDilutionindex_start = tableindex
         tableDilutionindex_end = tableindex+Number_of_compounds-1
 
-        Dilution_data = crr.related_CRR(id)
+        Dilution_data = crr.related_CRR(id, unit)
         if Dilution_data:
             Dilutionindex += 1
             titleindex += 1
@@ -699,7 +763,7 @@ def get_reportpreview_page(request, id):
             titleindex += 1
             tableindex += 1
 
-        ## ----稳定性----
+        # --------------------------------------- 样品稳定性 ---------------------------------------
         # 1 数据抓取与参数设置
         Stability_data = Sample_Stability.data_scrap(id)  # 抓取数据库中的数据
         Stabilityindex = titleindex  # 设置标题索引
@@ -711,7 +775,7 @@ def get_reportpreview_page(request, id):
             titleindex += 1
             tableindex += Number_of_compounds*2-1
 
-        ## ----参考区间----
+        # --------------------------------------- 参考区间 ---------------------------------------
         # 1 数据抓取与参数设置
         Reference_Interval_data = Sample_ReferenceInterval.data_scrap(id)  # 抓取数据库中的数据
         Reference_Interval_index = titleindex  # 设置标题索引
@@ -824,9 +888,10 @@ def get_reportdelete_page(request, id):
         tablePNindex = tableindex # 重复性精密度表格索引  表3
 
         PNjmd_data = jmd.related_PNjmd(id)
-        if PNjmd_data["JMD_dict"]:
-            PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
-            tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
+        if PNjmd_data:
+            if PNjmd_data["JMD_dict"]:
+                PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
+                tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
         # 2 中间精密度数据
         PJjmdindex = PNjmdindex  # 重复性精密度副标题索引赋值给中间精密度副标题索引
@@ -834,20 +899,22 @@ def get_reportdelete_page(request, id):
         tablePJindex = tableindex
 
         PJjmd_data = jmd.related_PJjmd(id)   
-        if PJjmd_data["JMD_dict"]:
-            PJjmdindex += 1  # 中间精密度副标题索引+1
-            tableindex += Number_of_compounds 
+        if PJjmd_data:
+            if PJjmd_data["JMD_dict"]:
+                PJjmdindex += 1  # 中间精密度副标题索引+1
+                tableindex += Number_of_compounds 
 
         # 3 精密度结论
         JMDconclusionindex = PJjmdindex
         tableJMDconclusionindex = tableindex
 
-        if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
-            jmdconclusion_data = jmd.related_jmdendconclusion(id)
-           
-            if jmdconclusion_data:
-                JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
-                tableindex += 1
+        if PNjmd_data and PJjmd_data:
+            if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
+                jmdconclusion_data = jmd.related_jmdendconclusion(id)
+            
+                if jmdconclusion_data:
+                    JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
+                    tableindex += 1
 
         if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
@@ -929,7 +996,7 @@ def get_reportdelete_page(request, id):
 
         tableDilutionindex = tableindex
 
-        Dilution_data = crr.related_CRR(id)
+        Dilution_data = crr.related_CRR(id,unit)
         if Dilution_data:
             Dilutionindex += 1
             titleindex += 1
@@ -987,44 +1054,48 @@ def get_reportdelete_page(request, id):
         titleindex = 6  # 总标题索引从6开始  -- 6
         tableindex = 3  # 总表格索引从3开始。表1质谱参数，表2液相梯度条件
 
-        # ---------------------------------------1 精密度（每个化合物一个表格）---------------------------------------
+        # ---------------------------------------精密度（每个化合物一个表格）---------------------------------------
         JMDindex = titleindex  # 精密度主标题索引 6
+
+        # 1  重复性精密度数据
         PNjmdindex = 0  # 重复性精密度副标题索引   6.1
 
         tablePNindex_start = tableindex # 第一个化合物的表格索引  表3
         tablePNindex_end = tableindex+Number_of_compounds-1 # 最后一个化合物的表格索引  以3个化合物为例，表3+3-1=5
 
-        # 重复性精密度数据
         PNjmd_data = jmd.related_PNjmd(id)
-        if PNjmd_data:
+        if PNjmd_data["JMD_dict"]:
+            print("重复性精密度存在")
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
-        # 中间精密度
-        PJjmd_data = jmd.related_PJjmd(id)
+        # 2 中间精密度数据
         PJjmdindex = PNjmdindex  # 中间精密度副标题索引
 
         tablePJindex_start = tableindex
         tablePJindex_end = tableindex+Number_of_compounds-1
 
-        # 中间精密度数据
-        if PJjmd_data:
+        PJjmd_data = jmd.related_PJjmd(id)
+        if PJjmd_data["JMD_dict"]:
+            print("中间精密度存在")
             PJjmdindex += 1  # 中间精密度副标题索引+1  -- 6.2
             tableindex += Number_of_compounds  # 总表格索引+n
 
-        # 精密度结论
-        if PNjmd_data and PJjmd_data:
+        # 3 精密度结论数据
+        JMDconclusionindex = PJjmdindex
+        tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
+
+        if PNjmd_data["JMD_dict"] and PJjmd_data["JMD_dict"]:
             jmdconclusion_data = jmd.related_jmdendconclusion(id)
-            JMDconclusionindex = PJjmdindex
-            tableJMDconclusionindex = tableindex  # 精密度结论表格索引,不管几个化合物，最终结论都只有一个表格
+           
             if jmdconclusion_data:
                 JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
 
-        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+        if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
-        # --------------------------------------- 2 正确度（每个化合物一个表格）---------------------------------------
+        # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
 
         ZQDindex = titleindex # 正确度主标题索引 
 
@@ -1050,12 +1121,14 @@ def get_reportdelete_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if PT_data or Recycle_data:
+        if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
         # --------------------------------------- 3 AMR（每个化合物一个表格）---------------------------------------
         
         AMRindex = titleindex  # AMR主标题索引
+
+        print("titleindex:%s" % (titleindex))
 
         # 1 LOQ
         LOQindex = 0
@@ -1108,7 +1181,7 @@ def get_reportdelete_page(request, id):
         tableDilutionindex_start = tableindex
         tableDilutionindex_end = tableindex+Number_of_compounds-1
 
-        Dilution_data = crr.related_CRR(id)
+        Dilution_data = crr.related_CRR(id,unit)
         if Dilution_data:
             Dilutionindex += 1
             titleindex += 1
@@ -1943,7 +2016,7 @@ def Sample_Stability_Save(request):
 
 def verifyagain(request):
     if request.method == 'POST':
-        # print(request.POST)
+        print(request.POST)
         instrument_num_verifyagain = request.POST["instrument_num"]
         # 项目组
         Detectionplatform_verifyagain = request.POST["Detectionplatform"]

@@ -33,156 +33,175 @@
 </style>
 
     <body>
-        <div class="container">    
-            <form action="{% url 'Recyclesave' %}" method="POST" >  
-                <!-- 1 验证基本信息展示 -->
-                <div class="basicinfo">
-                    <!-- 标题 -->
-                    <h2>验证基本信息</h2>
-                    <br>
+        <div class="container">  
+            <!-- 未返回报错信息  -->
+            {% if not Result.error_message %}   
+                <form action="{% url 'Recyclesave' %}" method="POST" >  
+                    <!-- 1 验证基本信息展示 -->
+                    <div class="basicinfo">
+                        <!-- 标题 -->
+                        <h2>验证基本信息</h2>
+                        <br>
 
-                    <!-- 仪器型号 -->
-                    <div class="form-group">
-                        <label for="exampleInputEmail1">仪器型号</label>
-                        <input class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
-                    </div> 
+                        <!-- 仪器型号 -->
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器型号</label>
+                            <input class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                        </div> 
 
-                    <!-- 检测平台及检测项目 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">检测平台</label>
-                                <input class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
-                            </div> 
+                        <!-- 检测平台及检测项目 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测平台</label>
+                                    <input class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测项目</label>
+                                    <input class="form-control" value="{{project}}" name="project" readonly>
+                                </div> 
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">检测项目</label>
-                                <input class="form-control" value="{{project}}" name="project" readonly>
-                            </div> 
+                        
+                        <!-- 仪器平台及仪器厂家 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器平台</label>
+                                    <input class="form-control" value="{{platform}}" name="platform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器厂家</label>
+                                    <input class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 仪器平台及仪器厂家 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">仪器平台</label>
-                                <input class="form-control" value="{{platform}}" name="platform" readonly>
-                            </div> 
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">仪器厂家</label>
-                                <input class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+
+                        <!-- 验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
                             </div>
                         </div>
                     </div>
 
-                    <!-- 验证时机 -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="exampleInputEmail1">验证时机</label>
-                                <input class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
-                            </div> 
-                        </div>
-                    </div>
-                </div>
+                    <!-- 2 分界线 -->
+                    <h1 class="page-header"></h1>
 
-                <!-- 2 分界线 -->
-                <h1 class="page-header"></h1>
+                    <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue">
+                    <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue">
 
-                <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue">
-                <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue">
+                    <!-- 3 验证结果展示 -->
+                    <h2>验证指标:加标回收率</h2>
+                    <h2>验证结果：<span id="verifyresult"></span></h2>
+                    {%for key,value in Result.Recycle_enddict.items %} 
+                        <table border="1" cellpadding="11">
+                            <caption><h3>{{key}}验证结果</h3></caption>
+                            <tr> 
+                                <th colspan="3">病人基质样本</th>
+                                <th colspan="2">加标标准溶液</th>
+                                <th rowspan="2">混合样本体积<br/>(μL)</th>
+                                <th rowspan="2">加标理论值<br/>({{Result.Unit}})</th>
+                                <th colspan="2">加标后样本</th>
+                                <th rowspan="2" width="10%">回收率（%）</th>
+                            </tr>
+                            <tr>
+                                <th width="10%">样本编号</th>
+                                <th width="10%">平行检测浓度<br/>({{Result.Unit}})</th>
+                                <th width="10%">均值<br/>({{Result.Unit}})</th>
+                                <th>浓度<br/>({{Result.Unit}})</th>
+                                <th>体积<br/>(μL)</th>                           
+                                <th width="10%">浓度水平</th>
+                                <th width="10%">平行检测浓度<br/>({{Result.Unit}})</th>
+                            </tr>
+                            {%for r,c in value.items %}
+                            <tr>
+                                <td rowspan="9">{{r}}</td> 
+                                <td class="sam_conc1" rowspan="3">{{c.0}}</td>
+                                <td rowspan="9" class="mean" ></td>
+                                <td rowspan="3"><input class="standard_conc1" type="text" style="width:60px;" value={{c.12}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_volume1" type="text" style="width:60px;" value={{c.13}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="end_volume1" type="text" style="width:60px;" value={{c.14}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="theory_conc1" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc1" readonly></td>
+                                <td rowspan="3">low</td>
+                                <td class="end_lowconc1">{{c.3}}</td>
+                                <td><input class="end_lowrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle1" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_lowconc2">{{c.4}}</td>
+                                <td><input class="end_lowrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle2" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_lowconc3">{{c.5}}</td>
+                                <td ><input class="end_lowrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle3" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="sam_conc2" rowspan="3">{{c.1}}</td> 
+                                <td rowspan="3"><input class="standard_conc2" type="text" style="width:60px;" value={{c.15}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_volume2" type="text" style="width:60px;" value={{c.16}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="end_volume2" type="text" style="width:60px;" value={{c.17}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="theory_conc2" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc2" readonly></td>
+                                <td rowspan="3">median</td>
+                                <td class="end_medianconc1">{{c.6}}</td>
+                                <td><input class="end_medianrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle1" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_medianconc2">{{c.7}}</td>
+                                <td><input class="end_medianrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle2" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_medianconc3">{{c.8}}</td>
+                                <td><input class="end_medianrecycle3" id="end_medianrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle3" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="sam_conc3" rowspan="3">{{c.2}}</td> 
+                                <td rowspan="3"><input class="standard_conc3" type="text" style="width:60px;" value={{c.18}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_volume3" type="text" style="width:60px;" value={{c.19}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="end_volume3" type="text" style="width:60px;" value={{c.20}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="theory_conc3" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc3" readonly></td>
+                                <td rowspan="3">high</td>
+                                <td class="end_highconc1">{{c.9}}</td>
+                                <td><input class="end_highrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle1" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_highconc2">{{c.10}}</td>
+                                <td><input class="end_highrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle2" readonly></td>
+                            </tr>
+                            <tr>
+                                <td class="end_highconc3">{{c.11}}</td>
+                                <td><input class="end_highrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle3" readonly></td>
+                            </tr>
+                            {% endfor %}
+                        </table>  
+                    {% endfor %}      
+                    <br>
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="保存" hidden /></div>     
+                </form>
 
-                <!-- 3 验证结果展示 -->
-                <h2>验证指标:加标回收率</h2>
-                <h2>验证结果：<span id="verifyresult"></span></h2>
-                {%for key,value in Result.Recycle_enddict.items %} 
-                    <table border="1" cellpadding="11">
-                        <caption><h3>{{key}}验证结果</h3></caption>
-                        <tr> 
-                            <th colspan="3">病人基质样本</th>
-                            <th colspan="2">加标标准溶液</th>
-                            <th rowspan="2">混合样本体积<br/>(μL)</th>
-                            <th rowspan="2">加标理论值<br/>({{Result.Unit}})</th>
-                            <th colspan="2">加标后样本</th>
-                            <th rowspan="2" width="10%">回收率（%）</th>
-                        </tr>
-                        <tr>
-                            <th width="10%">样本编号</th>
-                            <th width="10%">平行检测浓度<br/>({{Result.Unit}})</th>
-                            <th width="10%">均值<br/>({{Result.Unit}})</th>
-                            <th>浓度<br/>({{Result.Unit}})</th>
-                            <th>体积<br/>(μL)</th>                           
-                            <th width="10%">浓度水平</th>
-                            <th width="10%">平行检测浓度<br/>({{Result.Unit}})</th>
-                        </tr>
-                        {%for r,c in value.items %}
-                        <tr>
-                            <td rowspan="9">{{r}}</td> 
-                            <td class="sam_conc1" rowspan="3">{{c.0}}</td>
-                            <td rowspan="9" class="mean" ></td>
-                            <td rowspan="3"><input class="standard_conc1" type="text" style="width:60px;" value={{c.12}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="standard_volume1" type="text" style="width:60px;" value={{c.13}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="end_volume1" type="text" style="width:60px;" value={{c.14}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="theory_conc1" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc1" readonly></td>
-                            <td rowspan="3">low</td>
-                            <td class="end_lowconc1">{{c.3}}</td>
-                            <td><input class="end_lowrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle1" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_lowconc2">{{c.4}}</td>
-                            <td><input class="end_lowrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle2" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_lowconc3">{{c.5}}</td>
-                            <td ><input class="end_lowrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle3" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="sam_conc2" rowspan="3">{{c.1}}</td> 
-                            <td rowspan="3"><input class="standard_conc2" type="text" style="width:60px;" value={{c.15}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="standard_volume2" type="text" style="width:60px;" value={{c.16}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="end_volume2" type="text" style="width:60px;" value={{c.17}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="theory_conc2" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc2" readonly></td>
-                            <td rowspan="3">median</td>
-                            <td class="end_medianconc1">{{c.6}}</td>
-                            <td><input class="end_medianrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle1" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_medianconc2">{{c.7}}</td>
-                            <td><input class="end_medianrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle2" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_medianconc3">{{c.8}}</td>
-                            <td><input class="end_medianrecycle3" id="end_medianrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle3" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="sam_conc3" rowspan="3">{{c.2}}</td> 
-                            <td rowspan="3"><input class="standard_conc3" type="text" style="width:60px;" value={{c.18}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="standard_volume3" type="text" style="width:60px;" value={{c.19}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="end_volume3" type="text" style="width:60px;" value={{c.20}} onkeyup="myFunction()"></td>
-                            <td rowspan="3"><input class="theory_conc3" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc3" readonly></td>
-                            <td rowspan="3">high</td>
-                            <td class="end_highconc1">{{c.9}}</td>
-                            <td><input class="end_highrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle1" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_highconc2">{{c.10}}</td>
-                            <td><input class="end_highrecycle2" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle2" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="end_highconc3">{{c.11}}</td>
-                            <td><input class="end_highrecycle3" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle3" readonly></td>
-                        </tr>
-                        {% endfor %}
-                    </table>  
-                {% endfor %}      
+            <!-- 返回报错信息  --> 
+            {% else %}
+                <h2 class="alert alert-danger">{{Result.error_message}}</h2>
+                <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                </form>
                 <br>
-                <div><input class="btn btn-primary" id="submit" type="submit" value="保存" hidden /></div>     
-            </form>
-            {% comment %} <div><button class="btn btn-primary" id="run" align="center" onclick="myFunction()" >运行</button></div>   {% endcomment %}
+                <form action="{% url 'returnback' %}" method="POST">
+                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                </form> 
+            {% endif %} 
         </div>
     </body>
     {% endblock %}

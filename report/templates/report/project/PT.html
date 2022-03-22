@@ -50,24 +50,34 @@
                         <h2>验证基本信息</h2>
                         <br>
 
-                        <!-- 仪器型号 -->
-                        <div class="form-group">
-                            <label for="exampleInputEmail1">仪器型号</label>
-                            <input class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
-                        </div> 
+                        <!-- 仪器型号及验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器型号</label>
+                                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
+                            </div>
+                        </div>
 
                         <!-- 检测平台及检测项目 -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">检测平台</label>
-                                    <input class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
                                 </div> 
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">检测项目</label>
-                                    <input class="form-control" value="{{project}}" name="project" readonly>
+                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
                                 </div> 
                             </div>
                         </div>
@@ -77,27 +87,17 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">仪器平台</label>
-                                    <input class="form-control" value="{{platform}}" name="platform" readonly>
+                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
                                 </div> 
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">仪器厂家</label>
-                                    <input class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 验证时机 -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">验证时机</label>
-                                    <input class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
-                                </div> 
-                            </div>
-                        </div>
-                    </div>  
+                    </div> 
 
                     <input hidden = "hidden" value="{{Result.PT_dict}}" name="Result">
                     <input hidden = "hidden" value="{{Result.PT_num}}" name="PT_num">
@@ -134,7 +134,8 @@
                     <br>
                     <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
                 </form>
-                <!-- <div><button class="btn btn-primary" id="run" align="center">保存</button></div>   -->
+            
+            <!-- 返回报错信息  --> 
             {% else %}
                 <h2 class="alert alert-danger">{{Result.error_message}}</h2>
                 <form action="{% url 'verifyagain' %}" method="POST" > 

@@ -232,12 +232,6 @@ class Reference_Interval(models.Model):
     Result = models.CharField(max_length=32)  # 结果
 
 
-# 3.15 最终结论
-class endconclusion(models.Model):
-    reportinfo = models.ForeignKey(ReportInfo, on_delete=models.CASCADE)  # 外键
-    text = models.CharField(max_length=32)
-
-
 ##########################分界线###############################
 
 
@@ -1192,8 +1186,8 @@ class YX_Method(models.Model):
     step = models.CharField(max_length=200, verbose_name="步骤", blank=True)
     time = models.CharField(max_length=200, verbose_name="分析时间(min)", blank=True)
     Flowrate = models.CharField(max_length=200, verbose_name="流速(mL/min)", blank=True)
-    Mobile_phaseA = models.CharField(max_length=200, verbose_name="流动相A", blank=True)
-    Mobile_phaseB = models.CharField(max_length=200, verbose_name="流动相B", blank=True)
+    Mobile_phaseA = models.CharField(max_length=200, verbose_name="流动相A(水相)", blank=True)
+    Mobile_phaseB = models.CharField(max_length=200, verbose_name="流动相B(有机相)", blank=True)
 
     def __str__(self):
         return ""

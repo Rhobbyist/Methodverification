@@ -695,7 +695,7 @@
                                     {% for r in PT_data.textlist %}
                                         <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                     {% endfor %}
-                                    <div class="maintext">{{PT_data.serial}}) 实验结果如表{{tablePTindex_start}}-{{tablePTindex_end}}所示,结果表明检测结果均在可接受范围内,说明该方法的正确度满足要求。</div>
+                                    <div class="maintext">{{PT_data.serial}}) 实验结果如表{{tablePTindex_start}}-{{tablePTindex_end}}所示，结果表明检测结果均在可接受范围内，说明该方法的正确度满足要求。</div>
                                     {%for key,value in PT_data.PT_dict.items %}
                                         <table class="PT_Table" cellpadding="4">
                                             <caption>表{{forloop.counter|add:tablePTindex_start|add:"-1"}}. {{key}}室间质量评价实验数据</caption>
@@ -878,7 +878,7 @@
                                         {% for obj in LOQ_data.objs %}
                                             {% if key in obj.name %}
                                                 <div class="LOQ_picture"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
-                                                <div class="LOQ_picture_title">图{{forloop.parentloop.counter|add:pictureAMRindex_start|add:-1}}.{{obj.name}}</div>
+                                                <div class="LOQ_picture_title">图{{forloop.parentloop.counter|add:pictureLOQindex_start|add:-1}}.{{obj.name}}</div>
                                                 <br>
                                             {% endif %}
                                         {% endfor %}

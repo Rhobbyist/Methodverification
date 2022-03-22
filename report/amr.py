@@ -50,10 +50,11 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
     for i in pt_accept:
         Unitlist.append(i.unit)
 
-    # 未在后台管理系统里准确设置离子对数值,直接返回并提示
-    if len(normAB)!=Number_of_compounds:
-        error_message="未在后台管理系统里准确设置离子对数值!"  
-        return {"error_message":error_message}
+    # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
+    if manufacturers=="AB":
+        if len(normAB)!=Number_of_compounds:
+            error_message="未在后台管理系统里规范设置定量离子对数值，请检查并规范设置后重新提交数据!"  
+            return {"error_message":error_message}
 
     #  第二步:开始文件读取
     '''
@@ -506,9 +507,9 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
 
                             normdict[AMR_STD_sort[j]]=[]
                             normdict[AMR_STD_sort[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
-                            for i in len(calconc):
-                                normdict[AMR_STD[j]].append(calconc[i])
-                                normdict[AMR_STD[j]].append(Accuracy[i])
+                            for i in range(len(calconc)):
+                                normdict[AMR_STD_sort[j]].append(calconc[i])
+                                normdict[AMR_STD_sort[j]].append(Accuracy[i])
 
                         AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表normdict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
 
@@ -588,11 +589,16 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
 
                     print(AMR_dict)
 
+    # 判断是否一共6条曲线
+    if len(AMR_dict[norm[k]][AMR_STD_sort[0]])!=13:
+        error_message="LOQ验证曲线不为6条,请规范操作后再进行数据验证!"  
+        return {"error_message":error_message}
+
     ########文件读取完毕#######
     #  第三步:文件读取完毕后的操作(添加平均回收率和检测值CV)
 
     if platform=="液质":
-        print(AMR_dict)
+        
         '''
         注释2:最终需要生成一个字典AMR_dict,数据格式如下：
         print(AMR_dict):
@@ -618,6 +624,8 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
                 value[r].append(meanrecycle) #添加平均回收率
                 value[r].append(cvcalconc) #添加检测值CV
 
+        print(AMR_dict)        
+        
         #  第四步:数据存入数据库
 
         # judgenum(回收率及检测值CV超过范围的个数,此数字为0才将数据存入数据库)
@@ -627,8 +635,8 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
         indexlist=[2,4,6,8,10,12,13,14]
         for key,value in AMR_dict.items():     
             for i in value.values():
-                for j in range(len(indexlist)): # 前7个值为回收率和平均回收率,最后一个为检测值cv
-                    if j<7:
+                for index,j in enumerate(indexlist): # 前7个值为回收率和平均回收率,最后一个为检测值cv
+                    if index<7:
                         if float(i[j])<lowvalue or float(i[j])>upvalue: # 如回收率不通过，添加不通过提示
                             judgenum+=1
                     else:
@@ -640,9 +648,9 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
             insert_list =[]
             for key,value in AMR_dict.items():
                 for r,c in value.items():
-                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
-                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
-                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[3],
+                    test_conc3=c[5],test_conc4=c[7],test_conc5=c[9],test_conc6=c[11],recycle1=c[2],recycle2=c[4],recycle3=c[6],recycle4=c[8],
+                    recycle5=c[10],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
 
             AMR.objects.bulk_create(insert_list)
 
@@ -650,9 +658,9 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
             insert_list =[]
             for key,value in AMR_dict.items():
                 for r,c in value.items():
-                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
-                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
-                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[3],
+                    test_conc3=c[5],test_conc4=c[7],test_conc5=c[9],test_conc6=c[11],recycle1=c[2],recycle2=c[4],recycle3=c[6],recycle4=c[8],
+                    recycle5=c[10],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
 
             AMR.objects.bulk_create(insert_list)
 
@@ -750,51 +758,7 @@ def LOQgeneral_multiplefileread(files,reportinfo,project,platform,manufacturers,
                     id.append(item.reportinfo_id)
 
             else:
-                if manufacturers =="Agilent": 
-                    data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
-                    file.seek(0,0)  #循环读取同一个文件两遍，需加此句代码移动文件读取指针到开头，否则会报错
-                    file_data = data.sheets()[0]
-                    nrows=file_data.nrows
-                    ncols=file_data.ncols
-
-                    # 从第一行确定化合物名称
-                    for j in range(ncols):
-                        for i in PTnorm:             
-                            if i in file_data.row_values(0)[j] and i not in norm:
-                                norm.append(i) 
-
-                    # 从第二行确定实验号和化合物浓度索引
-                    nameindex=0  #实验号索引
-                    conindex=[] #浓度索引
-                    for j in range(ncols):       
-                        if file_data.row_values(1)[j] == "样品名称":
-                            nameindex = j
-                        elif file_data.row_values(1)[j] == "浓度 [ ppm ]" or file_data.row_values(1)[j] == "浓度 [ ppb ]":
-                            conindex.append(j)
-
-                    # 确认原始数据中与AMR相关(实验号前含有"AMR-")的sample name名，放进一个列表
-                    AMR_STD=[] 
-                    for i in range(nrows):
-                        if "AMR-" in file_data.row_values(i)[nameindex]:
-                            AMR_STD.append(file_data.row_values(i)[nameindex])
-                
-
-                    for j in range(len(AMR_STD)): 
-                        calconc=[]  # 每个化合物内各曲线点（S1,S2,S3...）的数据列表列表：['S1检测值1','S1检测值2',...] 
-                         
-                        for i in range(nrows): # 循环原始数据中的每一行
-                            if file_data.row_values(i)[nameindex] == AMR_STD[j]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据  
-                                calconc.append(effectnum(file_data.row_values(i)[conindex[k]],digits)) #添加实际浓度       
-
-                        # # 第一个化合物的第一个曲线点列表calconc循环完成，放入norm_dict中，开始循环该化合物的下一个曲线点
-
-                        # 第一个文件才将norm_dict[AMR_STD[j]]设为空，否则只能显示最后一个文件的数据
-                        if index==0:
-                            norm_dict[AMR_STD[j]]=[]
-                        for i in calconc:
-                            norm_dict[AMR_STD[j]].append(i)
-
-                elif manufacturers =="AB":
+                if manufacturers =="AB":
 
                     # 定义化合物列表，列表统一命名为norm(第一个化合物才需要设置)
                     if index==0:
@@ -899,7 +863,11 @@ def LOQgeneral_multiplefileread(files,reportinfo,project,platform,manufacturers,
 
 
         AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表norm_dict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
-    
+
+    # 判断是否一共6条曲线
+    if len(AMR_dict[norm[k]][AMR_STD_sort[0]])!=13:
+        error_message="LOQ验证曲线不为6条,请规范操作后再进行数据验证!"  
+        return {"error_message":error_message}
 
     #  第三步:文件读取完毕后的操作(添加平均回收率和检测值CV)
 
@@ -938,36 +906,36 @@ def LOQgeneral_multiplefileread(files,reportinfo,project,platform,manufacturers,
         indexlist=[2,4,6,8,10,12,13,14]
         for key,value in AMR_dict.items():     
             for i in value.values():
-                for j in range(len(indexlist)): # 前7个值为回收率和平均回收率,最后一个为检测值cv
-                    if j<7:
+                for index,j in enumerate(indexlist): # 前7个值为回收率和平均回收率,最后一个为检测值cv
+                    if index<7:
                         if float(i[j])<lowvalue or float(i[j])>upvalue: # 如回收率不通过，添加不通过提示
                             judgenum+=1
                     else:
                         if float(i[j])>maxCV: 
                             judgenum+=1
 
+
         # 判断judgenum是否为0,为0才能将数据存入数据库              
-        if judgenum==0:
-            insert_list =[]
-            for key,value in AMR_dict.items():
-                for r,c in value.items():
-                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
-                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
-                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+        # if judgenum==0:
+        #     insert_list =[]
+        #     for key,value in AMR_dict.items():
+        #         for r,c in value.items():
+        #             insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[3],
+        #             test_conc3=c[5],test_conc4=c[7],test_conc5=c[9],test_conc6=c[11],recycle1=c[2],recycle2=c[4],recycle3=c[6],recycle4=c[8],
+        #             recycle5=c[10],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
 
-            AMR.objects.bulk_create(insert_list)
+        #     AMR.objects.bulk_create(insert_list)
 
-        else: 
-            insert_list =[]
-            for key,value in AMR_dict.items():
-                for r,c in value.items():
-                    insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
-                    test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
-                    recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+        # else: 
+        #     insert_list =[]
+        #     for key,value in AMR_dict.items():
+        #         for r,c in value.items():
+        #             insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[3],
+        #             test_conc3=c[5],test_conc4=c[7],test_conc5=c[9],test_conc6=c[11],recycle1=c[2],recycle2=c[4],recycle3=c[6],recycle4=c[8],
+        #             recycle5=c[10],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
 
-            AMR.objects.bulk_create(insert_list)
+        #     AMR.objects.bulk_create(insert_list)
 
-        print(AMR_dict)
         if picturenum==0:
             return {"AMR_dict":AMR_dict,"Unit":Unit,"judgenum":judgenum,"picturenum":picturenum,"lowvalue":lowvalue,
             "upvalue":upvalue,"maxCV":maxCV}      
@@ -1284,14 +1252,13 @@ def related_AMR(id,unit):
         for key,value in middle_dict.items():
             AMR_textlist_end+=key
             AMR_textlist_end+="线性范围为"
-            AMR_textlist_end+=str(min(value))+'~'+str(max(value))+unit+','
-            AMR_textlist_end+='定量限为'+str(min(value))+unit+';'
+            AMR_textlist_end+=str(min(value))+'~'+str(max(value))+unit+'，'
+            AMR_textlist_end+='定量限为'+str(min(value))+unit+'；'
 
         AMR_textlist_end=AMR_textlist_end[:-1] #去除最后一个分号
         AMR_textlist_end=AMR_textlist_end+"。"
         
         objs = AMRpicture.objects.filter(reportinfo_id=id) #图片数据表
-        print(objs)
 
         if len(textlist_special)!=0:
             return {"AMR_dict":AMR_dict,"AMR_textlist_end":AMR_textlist_end,"textlist":textlist_special,"serial":len(textlist_special)+1,"id":id,"objs":objs}

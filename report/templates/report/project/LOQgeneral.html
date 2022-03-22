@@ -180,7 +180,7 @@
                 {% if Result.picturenum == 0 %}
                     <form action="{% url 'verifyagain' %}" method="POST" > 
                         <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                        <input hidden = "hidden" value="{{group}}" name="group">
+                        <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
                         <input hidden = "hidden" value="{{project}}" name="project">
                         <input hidden = "hidden" value="{{platform}}" name="platform">
                         <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">

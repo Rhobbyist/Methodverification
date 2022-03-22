@@ -10,7 +10,7 @@ from docx import Document
 import re
 
 
-def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB):
+def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds):
 
     # 第一步:后台数据抓取（回收率上下限）
     id1 = Special.objects.get(project=project).id
@@ -467,28 +467,28 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
         CRR_dict[norm[j]] = norm_conclist
 
-    # if CRR_judgenum == 0:
-    #     insert_list = []
-    #     for key, value in CRR_dict.items():
-    #         for i in value:
-    #             insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
-    #                                    test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
+    if CRR_judgenum == 0:
+        insert_list = []
+        for key, value in CRR_dict.items():
+            for i in value:
+                insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
+                                       test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
 
-    #     CRR.objects.bulk_create(insert_list)
+        CRR.objects.bulk_create(insert_list)
 
-    # else:
-    #     insert_list = []
-    #     for key, value in CRR_dict.items():
-    #         for i in value:
-    #             insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
-    #                                    test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
+    else:
+        insert_list = []
+        for key, value in CRR_dict.items():
+            for i in value:
+                insert_list.append(CRR(reportinfo=reportinfo, norm=key, Dilution=i[0], test_conc1=i[1], test_conc2=i[2], test_conc3=i[3],
+                                       test_conc4=i[4], test_conc5=i[5], mean_conc=i[6], cv_conc=i[7], calresults=i[8]+","+i[9]+","+i[10]+","+i[11]+","+i[12]))
 
-    #     CRR.objects.bulk_create(insert_list)
+        CRR.objects.bulk_create(insert_list)
 
     return {"CRR_dict": CRR_dict, "Unit": Unit,"lowvalue":lowvalue,"upvalue":upvalue}
 
 # CRR数据关联进入最终报告
-def related_CRR(id):
+def related_CRR(id,unit):
     # 第一步：后台描述性内容数据提取
     # 1 根据id找到项目
     project = ReportInfo.objects.get(id=id).project
@@ -616,7 +616,7 @@ def related_CRR(id):
         # 第三步：临床可报告范围数据提取
 
         # 找到对应化合物AMR的上下限
-        AMR_theoryconc = []  # AMR理论浓度列表，方便提取每个物质AMR的上下限
+        AMR_theoryconc = []  # AMR理论浓度列表，方便提取每个化合物AMR的上下限
         for i in CRR_norm:
             data_AMR = AMR.objects.filter(reportinfo_id=id, norm=i)  # AMR每个待测物质的数据表
             if data_AMR.exists():
@@ -628,12 +628,31 @@ def related_CRR(id):
                 pass
 
         Dilution = []
-        for i in CRR_range[0]:
-            Dilution.append(str(int(i)))
 
-        CRR_conclusion1 = "、".join(Dilution)
+        # 需进行判断，否则如果CRR_range为空列表，其后所有代码均不执行
+        if len(CRR_range)!=0:
+            for i in CRR_range[0]:
+                Dilution.append(str(int(i)))
+            
+            CRR_conclusion1 = "、".join(Dilution)
 
-        CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，" + "、" .join(list(CRR_norm))+"的临床可报告范围分别为"
+            CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，" + "、" .join(list(CRR_norm))+"的临床可报告范围分别为"
+
+
+            if len(CRR_norm)>1:
+                for i in range(len(CRR_norm)):
+                    if i==0:
+                        CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
+                    else:
+                        CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+
+            else:
+                for i in range(len(CRR_norm)):
+                    CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+        
+        else:
+            CRR_conclusion1 = ""
+            CRR_conclusion2 = ""
 
         if AMR_theoryconc!= []:
             if len(textlist_special) != 0:
@@ -655,5 +674,7 @@ def related_CRR(id):
                 return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                         "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
 
-    except:
+
+
+    except: 
         pass

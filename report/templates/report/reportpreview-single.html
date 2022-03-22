@@ -149,13 +149,15 @@
     /* 三 验证数据 */
 
     /* 每个验证指标外层容器td，设置padding25px */
-    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.carryovertd,.stabilitytd,.reference_intervaltd{
+    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.carryovertd,
+    .stabilitytd,.reference_intervaltd,.endconclusiontd{
         padding: 0px 25px;
     }
 
     /* 每个验证指标一级标题 */
     .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Matrix_effect_title,
-    .Carryover_title,.Stability_title,.ReferenceInterval_title{
+    .Carryover_title,.Stability_title,.ReferenceInterval_title,
+    .Endconclusion_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -213,7 +215,6 @@
     .LOQ_Tabletr th{
         width: 16.67%;
     }
-
 
     .End_Table{
         margin-bottom: 25px;
@@ -525,7 +526,7 @@
                                 {% endfor %}
                                 <div class="maintext">{{PNjmd_data.serial}})
                                     <!-- cut 去除指定字符 -->
-                                    表{{tablePNindex}} 即为重复性精密度数据,{{PNjmd_data.JMD_CONCLUSION | cut:"分别" | cut:"均"}}
+                                    表{{tablePNindex}} 即为重复性精密度数据，{{PNjmd_data.JMD_CONCLUSION | cut:"分别" | cut:"均"}}
                                 </div>
                                 
                                 {%for key,value in PNjmd_data.JMD_dict.items %}
@@ -700,7 +701,7 @@
                                 {% for r in PT_data.textlist %}
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="maintext">{{PT_data.serial}}) PT实验结果如表{{tablePTindex}}所示,结果表明检测结果均在可接受范围内,说明该方法的正确度满足要求。</div>
+                                <div class="maintext">{{PT_data.serial}}) PT实验结果如表{{tablePTindex}}所示，结果表明检测结果均在可接受范围内，说明该方法的正确度满足要求。</div>
                                 {%for key,value in PT_data.PT_dict.items %}
                                     <table class="PT_Table" cellpadding="4">
                                         <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
@@ -827,8 +828,12 @@
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
                                 {% if LOQ_data.objs %}
-                                    <div class="maintext"> {{LOQ_data.serial}})
+                                    <!-- <div class="maintext"> {{LOQ_data.serial}})
                                         结果数据如表{{tableLOQindex}}和图{{pictureLOQindex_start}}-{{pictureLOQindex_end}},
+                                        {{LOQ_data.AMR_textlist_end}}
+                                    </div> -->
+                                    <div class="maintext"> {{LOQ_data.serial}})
+                                        结果数据如表{{tableLOQindex}}所示,
                                         {{LOQ_data.AMR_textlist_end}}
                                     </div>
                                 {% else %}
@@ -1167,7 +1172,7 @@
                                     {% endfor %}
                                     <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
                                     <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
-                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
+                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2 | cut:"分别"}}。
                                     </div>
                                     <br>
 
@@ -1234,7 +1239,7 @@
                                     {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
                                 </div>
 
-                                {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
+                                {%for key,value in Matrix_effect_data.Matrixeffect_dict.items %}
                                     <table class="Matrix_effect_Table" cellpadding="4">
                                         <caption>表{{tableMatrix_effectindex}}.{{key}}基质效应实验数据</caption>
                                         <tr class="Matrix_effect_Tabletr">
@@ -1385,7 +1390,7 @@
                 {% endif %}
                         
         
-                <!-- ------------------------------------------------------稳定性------------------------------------------------------  -->
+                <!-- ----------------------------------------8 稳定性 ------------------------------------------------------->
                 <tr class="stabilitytr">
                     <td class="stabilitytd">
                         {% if Stability_data.Room_tem_dict or Stability_data.Refrigerate_tem_dict %}
@@ -2731,9 +2736,8 @@
                     </td>
                 </tr>
                 
-
                 
-                <!-- -----------------------------------------------------参考区间----------------------------------------------------- -->
+                <!-- ----------------------------------------9 参考区间------------------------------------------------------->
                 <tr class="reference_intervaltr">
                     <td class="reference_intervaltd">
                         {% if Reference_Interval_data.Referenceinterval_dict %}
@@ -2776,11 +2780,13 @@
         
 
                 <!-------------------------------------------10 最终结论 ------------------------------------------------------->
-                {% if resultEnd_conclusion %}
-                    <div class="four" style="text-align:left;">{{titleindex}}. 结论(Conclusion)</div>
-                    <div class="five"> {{resultEnd_conclusion.0}}</div>
-                {% endif %}
-
+                <tr class="endconclusiontr">
+                    <td class="endconclusiontd">
+                        <div class="Endconclusion_title">{{titleindex}}. 结论(Conclusion)</div>
+                        <div class="maintext"> {{Endconclusion}}</div>
+                    </td>       
+                </tr>
+                
                 <!-------------------------------------------11 报告编辑人，审核人，... ------------------------------------------------------->
                 <table class="End_Table" cellpadding="8" align="center">
                     <tr>
@@ -2810,7 +2816,7 @@
                     </div>
                     <br>
                     <div class="col-md-12 d-print-none">
-                        <button id="copyBtn" data-clipboard-target="#content"class="btn btn-danger">复制到word</button>
+                        <button id="copyBtn" data-clipboard-target="#content" class="btn btn-danger">复制到word</button>
                     </div>
                 </div>
 

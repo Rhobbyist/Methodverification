@@ -361,8 +361,3 @@ def cv(lst):
 
     return new_round(cvresult)
 
-
-data=[8.58, 8.23, 7.95, 7.96, 8.22, 8.33]
-
-
-print(cv(data))

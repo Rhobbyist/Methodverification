@@ -4,7 +4,7 @@ from docx import Document
 from report.effectnum import *
 import re
 
-def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
     # 第一步 后台数据抓取（待测物质,可接受标准，单位）
     zqd = Special.objects.get(project=project) 
@@ -36,6 +36,12 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
     if all(i is None for i in PTrange1):
         error_message="尚未在后台管理系统中设置PT的可接受标准,请设置后重新提交数据!"
         return {"error_message":error_message}
+
+    # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
+    if manufacturers=="AB":
+        if len(normAB)!= Number_of_compounds:
+            error_message="未在后台管理系统里规范设置定量离子对数值，请检查并规范设置后重新提交数据!"  
+            return {"error_message":error_message}
 
     #  第二步:开始文件读取
     '''
@@ -213,12 +219,16 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                     if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
                         paragraphs.append(p.text.strip())
 
+                print(paragraphs)
+
                 # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格
                 tableindex = []
                 for i in range(len(paragraphs)):
                     for j in range(len(ZP_Method_precursor_ion)):
                         if ZP_Method_precursor_ion[j] in paragraphs[i] and ZP_Method_product_ion[j] in paragraphs[i]:
                             tableindex.append(2*i+1)
+
+                print(tableindex)
 
                 tables = file_data.tables  # 获取文件中的表格集
 
@@ -344,7 +354,7 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
 
         return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"PTrange1":len(PTrange1)}
 
-def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
     # 第一步:后台数据抓取（回收率上下限，最大允许CV）
     id1 = Special.objects.get(project=project).id  
@@ -361,6 +371,11 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
         lowvalue=Recyclegeneralmethod.objects.get(recyclegeneral=recycle_general).lowvalue #回收率下限
         upvalue=Recyclegeneralmethod.objects.get(recyclegeneral=recycle_general).upvalue #回收率上限
 
+    # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
+    if manufacturers=="AB":
+        if len(normAB)!= Number_of_compounds:
+            error_message="未在后台管理系统里规范设置定量离子对数值，请检查并规范设置后重新提交数据!"  
+            return {"error_message":error_message}
 
     #  第二步:开始文件读取
 

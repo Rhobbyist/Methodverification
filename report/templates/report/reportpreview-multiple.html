@@ -214,9 +214,13 @@
         width: 16.67%;
     }
 
-
     .End_Table{
         margin-bottom: 25px;
+    }
+
+    /* LOQ图片居中 */
+    .LOQ_picture{
+        text-align: center;
     }
 
     /* ------------------------------------- */
@@ -832,7 +836,7 @@
                                     </div>
                                 {% else %}
                                     <div class="maintext"> {{LOQ_data.serial}})
-                                        结果数据如表{{tableLOQindex_start}}-{{tableLOQindex_end}},{{LOQ_data.AMR_textlist_end}}
+                                        结果数据如表{{tableLOQindex_start}}-{{tableLOQindex_end}}所示，{{LOQ_data.AMR_textlist_end}}
                                     </div>
                                 {% endif %}
 
@@ -878,12 +882,15 @@
                                         </tr>
                                         {% endfor %}
                                     </table>
+                                    <br>
 
                                     {% for obj in LOQ_data.objs %}
                                         {% if key in obj.name %}
-                                            <div class="LOQ_picture"><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
-                                            <div class="LOQ_picture_title">图{{forloop.parentloop.counter|add:pictureAMRindex_start|add:-1}}.{{obj.name}}</div>
-                                            <br>
+                                        <div class="LOQ_picture">
+                                            <div><img src="/media/{{ obj.img }}" alt="" width="500px" height="300px"></div>
+                                            <div class="LOQ_picture_title">图{{forloop.parentloop.counter|add:pictureLOQindex_start|add:-1}}.{{obj.name}}</div>
+                                        </div>
+                                            
                                         {% endif %}
                                     {% endfor %}
                                     <br>
@@ -1233,7 +1240,7 @@
                                     {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
                                 </div>
 
-                                {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
+                                {%for key,value in Matrix_effect_data.Matrixeffect_dict.items %}
                                     <table class="Matrix_effect_Table" cellpadding="4">
                                         <caption>表{{forloop.counter|add:tableMatrix_effectindex_start|add:-1}}.{{key}}基质效应实验数据</caption>
                                         <tr class="Matrix_effect_Tabletr">

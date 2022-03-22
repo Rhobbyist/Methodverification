@@ -7,7 +7,7 @@ from report.effectnum import *
 from datetime import datetime
 
 
-def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
+def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
     # 第一步:后台数据抓取（回收率上下限）
     id1 = Special.objects.get(project=project).id  
@@ -36,6 +36,12 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
     Unitlist = []
     for i in pt_accept:
         Unitlist.append(i.unit)
+
+    # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
+    if manufacturers=="AB":
+        if len(normAB)!= Number_of_compounds:
+            error_message="未在后台管理系统里规范设置定量离子对数值，请检查并规范设置后重新提交数据!"  
+            return {"error_message":error_message}
 
     #  第二步:开始文件读取
 
@@ -245,9 +251,6 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
                     Carryover_list.append(group_Carryover)
 
             elif manufacturers =="AB":
-                if normAB==[]:
-                    error_message="尚未在后台管理系统中正确设置定量表格标识(如忘记添加“定量”关键词),请设置后重新提交数据!"
-                    return {"error_message":error_message}
 
                 # 定义化合物列表，列表统一命名为norm
                 norm = normAB
@@ -272,7 +275,7 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
 
                 tables = file_data.tables  # 获取文件中的表格集
 
-                for k in tableindex:
+                for k in range(len(tableindex)):
                     # 获取文件中的定量表格
                     tablequantify = tables[tableindex[k]] 
 
