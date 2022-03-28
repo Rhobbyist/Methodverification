@@ -641,7 +641,7 @@ def related_CRR(id,unit):
 
             if len(CRR_norm)>1:
                 for i in range(len(CRR_norm)):
-                    if i==0:
+                    if i!=len(CRR_norm):
                         CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
                     else:
                         CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit

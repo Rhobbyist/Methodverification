@@ -462,6 +462,12 @@ class PTspecialacceptInline(admin.TabularInline):
     can_delete = True
     extra = 1
 
+class PTspecialBooleanInline(admin.TabularInline):
+    model = PTspecialBoolean
+    show_change_link = True
+    can_delete = True
+    extra = 1
+
 # 4 加标回收率
 class RecyclespecialInline(admin.StackedInline):
     model = Recyclespecial
@@ -644,8 +650,7 @@ class InterprecisionspecialAdmin(admin.ModelAdmin):
 
 #  3 PT
 class PTspecialAdmin(admin.ModelAdmin):
-    inlines = [PTspecialmethodInline,
-               PTspecialtextsInline, PTspecialacceptInline]
+    inlines = [PTspecialmethodInline,PTspecialtextsInline, PTspecialacceptInline,PTspecialBooleanInline]
 
     def has_module_permission(self, requset):
         return False

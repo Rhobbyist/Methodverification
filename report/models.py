@@ -146,6 +146,7 @@ class MS(models.Model):
 class Carryover(models.Model):
     reportinfo = models.ForeignKey(ReportInfo, on_delete=models.CASCADE)  # 外键
     norm = models.CharField(max_length=32)  # 指标：D2,D3
+    systermnum = models.CharField(max_length=32)  # 针对多系统情况：系统编号
     C1_1 = models.CharField(max_length=32)
     C2_1 = models.CharField(max_length=32)
     C3_1 = models.CharField(max_length=32)
@@ -438,8 +439,6 @@ class AMRgeneraltexts(models.Model):
         verbose_name_plural = "描述性内容"
 
 # JCX(检出限)
-
-
 class JCXgeneral(models.Model):
     general = models.OneToOneField(General, verbose_name="方法学报告性能验证指标", on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=32, verbose_name="验证指标", blank=True, editable=False)
@@ -450,7 +449,6 @@ class JCXgeneral(models.Model):
     class Meta:
         verbose_name = "检出限"
         verbose_name_plural = "检出限"
-
 
 class JCXgeneraltexts(models.Model):
     jCXgeneral = models.ForeignKey(JCXgeneral, verbose_name="JCX", on_delete=models.CASCADE)
@@ -464,8 +462,6 @@ class JCXgeneraltexts(models.Model):
         verbose_name_plural = "描述性内容"
 
 # CRR(临床可报告范围)
-
-
 class CRRgeneral(models.Model):
     general = models.OneToOneField(General, verbose_name="方法学报告性能验证指标", on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=32, verbose_name="验证指标", blank=True, editable=False)
@@ -824,6 +820,18 @@ class PTspecialaccept(models.Model):
         verbose_name = "可接受标准"
         verbose_name_plural = "可接受标准"
 
+class PTspecialBoolean(models.Model):
+    pTspecial = models.OneToOneField(PTspecial, verbose_name="PT", on_delete=models.CASCADE)
+    Boolean = models.BooleanField(verbose_name="结果不通过时是否关联数据进入报告", blank=True, null=True)
+
+    def __str__(self):
+        return ""
+
+    class Meta:
+        verbose_name = "数据关联"
+        verbose_name_plural = "数据关联"
+
+
 # 加标回收
 class Recyclespecial(models.Model):
     special = models.OneToOneField(Special, verbose_name="特殊参数设置", on_delete=models.CASCADE, null=True)
@@ -1157,16 +1165,22 @@ class ZP_Method(models.Model):
     norm = models.CharField(max_length=200, verbose_name="分析物名称")
     precursor_ion = models.CharField(max_length=200, verbose_name="母离子(m/z)")
     product_ion = models.CharField(max_length=200, verbose_name="子离子(m/z)")
-    Times = models.CharField(max_length=200, verbose_name="Time(s)", blank=True)
-    ConeV = models.CharField(max_length=200, verbose_name="Cone(V)", blank=True)
-    CollisionV = models.CharField(max_length=200, verbose_name="Collision(V)", blank=True)
+    Col4 = models.CharField(max_length=200, verbose_name="第4列", blank=True)
+    Col5 = models.CharField(max_length=200, verbose_name="第5列", blank=True)
+    Col6 = models.CharField(max_length=200, verbose_name="第6列", blank=True)
+    Col7 = models.CharField(max_length=200, verbose_name="第7列", blank=True)
+    Col8 = models.CharField(max_length=200, verbose_name="第8列", blank=True)
+
+    # Times = models.CharField(max_length=200, verbose_name="Time(s)", blank=True)
+    # ConeV = models.CharField(max_length=200, verbose_name="Cone(V)", blank=True)
+    # CollisionV = models.CharField(max_length=200, verbose_name="Collision(V)", blank=True)
 
     def __str__(self):
         return ""
 
     class Meta:
-        verbose_name = "质谱方法"
-        verbose_name_plural = "质谱方法"
+        verbose_name = "质谱方法(首行输入列名)"
+        verbose_name_plural = "质谱方法(首行输入列名)"
 
 
 class ZP_Methodtexts(models.Model):

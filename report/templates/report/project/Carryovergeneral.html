@@ -94,68 +94,191 @@
                     <h2>验证指标:携带效应</h2>
                     <h2>验证结果:<span id="verifyresult">通过!</span></h2>
                     <br>
+
+                    <!-- 单系统 -->
+                    {% if Result.Systermnum == 1 %} 
                     <div class="row">
                         {%for key,value in Result.Carryover_dict.items %}
-                            <div class="col-md-4">          
-                                <table border="1" cellpadding="8" class="Carryover_Table">
-                                <caption><h4>{{key}}验证结果</h4></caption>
-                                    <tr>
-                                        <th width="45%">样本</th>
-                                        <th>检测结果({{Result.Unit}})<br/>或偏差(%)</th>
-                                    </tr>
-                                    <tr> 
-                                        <td>C1</td>
-                                        <td>{{value.0}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C2</td>
-                                        <td>{{value.1}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C3</td>
-                                        <td>{{value.2}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C1</td>
-                                        <td>{{value.3}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C2</td>
-                                        <td>{{value.4}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C3</td>
-                                        <td>{{value.5}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C1</td>
-                                        <td>{{value.6}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C2</td>
-                                        <td>{{value.7}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C3</td>
-                                        <td>{{value.8}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C1mean</td>
-                                        <td>{{value.9}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>C3mean</td>
-                                        <td>{{value.10}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>(C3mean-C1mean)<br>/C1mean</td>
-                                        <td class="accept">{{value.11}}</td>
-                                    </tr>
-                                    <br>
-                                </table>
+                            <div class="col-md-4"> 
+                                        
+                            <table border="1" cellpadding="8" class="Carryover_Table">
+                            <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th width="40%">样本</th>
+                                    <th>检测结果({{Result.Unit}})<br/>或偏差(%)</th>
+                                </tr>                         
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.0}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.1}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.2}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.3}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.4}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.5}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.6}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.7}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.8}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C1mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.9}}</td>
+                                    {% endfor %} 
+                                </tr>
+                                <tr>
+                                    <td>C3mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.10}}</td>
+                                    {% endfor %} 
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 10px;">(C3mean-C1mean)<br>/C1mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td class="accept">{{c.11}}</td>
+                                    {% endfor %} 
+                                </tr>                  
+                                <br>
+                            </table>
                             </div> 
                         {% endfor %}
                     </div>
+                    {% else %} 
+                    <div class="row">
+                        {%for key,value in Result.Carryover_dict.items %}
+                            <div class="col-md-4"> 
+                                        
+                            <table border="1" cellpadding="8" class="Carryover_Table">
+                            <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th width="20%" rowspan="2">样本</th>
+                                    <th colspan="{{Result.Systermnum}}">检测结果({{Result.Unit}})<br/>或偏差(%)</th>
+                                </tr>
+                                <tr>
+                                    {%for r,c in value.items %} 
+                                        <th>{{r}}</th>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.0}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.1}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.2}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.3}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.4}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.5}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr> 
+                                    <td>C1</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.6}}</td>
+                                    {% endfor %}                   
+                                </tr>
+                                <tr>
+                                    <td>C2</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.7}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C3</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.8}}</td>
+                                    {% endfor %}   
+                                </tr>
+                                <tr>
+                                    <td>C1mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.9}}</td>
+                                    {% endfor %} 
+                                </tr>
+                                <tr>
+                                    <td>C3mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td>{{c.10}}</td>
+                                    {% endfor %} 
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 10px;">(C3mean-C1mean)/C1mean</td>
+                                    {%for r,c in value.items %} 
+                                        <td class="accept">{{c.11}}</td>
+                                    {% endfor %} 
+                                </tr>                  
+                                <br>
+                            </table>
+                            </div> 
+                        {% endfor %}
+                    </div>
+                    {% endif %} 
                     <br>                    
                     <input class="btn btn-primary" id="submit" type="submit" value="继续验证" />
                 </form >

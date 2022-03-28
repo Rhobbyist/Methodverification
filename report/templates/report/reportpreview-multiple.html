@@ -149,13 +149,15 @@
     /* 三 验证数据 */
 
     /* 每个验证指标外层容器td，设置padding25px */
-    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.carryovertd,.stabilitytd,.reference_intervaltd{
+    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.carryovertd,
+    .stabilitytd,.reference_intervaltd,.endconclusiontd{
         padding: 0px 25px;
     }
 
     /* 每个验证指标一级标题 */
     .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Matrix_effect_title,
-    .Carryover_title,.Stability_title,.ReferenceInterval_title{
+    .Carryover_title,.Stability_title,.ReferenceInterval_title,
+    .Endconclusion_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -218,8 +220,11 @@
         margin-bottom: 25px;
     }
 
-    /* LOQ图片居中 */
-    .LOQ_picture{
+    /*图片格式*/
+    .Recycle_picture,.LOQ_picture,.LOQ_picture_title{
+        font-size: 14px;
+        font-family: Times New Roman, 宋体;
+        font-weight: bold;
         text-align: center;
     }
 
@@ -330,16 +335,6 @@
         top: 20px;
     }
 
-    /*图片格式*/
-    p.picture {
-        font-size: 14px;
-        font-family: Times New Roman, 宋体;
-        font-weight: bold;
-        text-align: center;
-    }
-
-    /*图片*/
-
     /*输入框格式*/
     input {
         border-bottom: 1px solid #000;
@@ -440,21 +435,21 @@
 
                         <!----------------------质谱方法-------------------------->
                         <table class="MSMethodTable" cellpadding="4">
-                            <caption>表1.质谱参数</caption>
-                            <tr class="MSMethodTabletr">
-                                <th width="20%">分析物名称</th>
-                                <th>母离子</th>
-                                <th>子离子</th>
-                                <th>TIME(S)</th>
-                                <th width="20%">CONE(V)</th>
-                                <th width="20%">COLLISION(V)</th>
-                            </tr>
+                            <caption>表1.质谱参数</caption>                  
                             {% for r in Test_method_data.zp_method_list %}
-                            <tr>
-                                {% for c in r %}
-                                    <td class="tablemaintext">{{c}}</td>
-                                {% endfor %}
-                            </tr>
+                                {% if forloop.first %}
+                                    <tr class="MSMethodTabletr">
+                                        {% for c in r %}
+                                            <th>{{c}}</th>
+                                        {% endfor %}
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        {% for c in r %}
+                                            <td class="tablemaintext">{{c}}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
                             {% endfor %}
                         </table>
                         
@@ -741,7 +736,7 @@
                                 </div>
 
                                 {%for key,value in Recycle_data.Recycle_endreport_dict.items %}
-                                    <table class="Recycle_table" cellpadding="4">
+                                    <table class="Recycle_Table" cellpadding="4">
                                         <caption>表{{forloop.counter|add:tableRecycleindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
                                         <tr class="Recycle_Tabletr">
                                             <th colspan="3" width="43%">病人基质样本</th>
@@ -883,7 +878,6 @@
                                         {% endfor %}
                                     </table>
                                     <br>
-
                                     {% for obj in LOQ_data.objs %}
                                         {% if key in obj.name %}
                                         <div class="LOQ_picture">
@@ -1227,7 +1221,7 @@
                 {% endif %}
 
                 <!-------------------------------------------6 基质效应 -----------------------------------------------------> 
-                {% if Matrix_effect_data %}
+                {% if Matrix_effect_data.Matrixeffect_dict %}
                     <tr class="matrix_effecttr">
                         <td class="matrix_effecttd">
                             <div class="Matrix_effect_title">{{Matrix_effectindex}}. 基质效应(Matrix effect)</div>
@@ -1295,96 +1289,214 @@
                                 {% for r in Carryover_data.textlist %}
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}所示，
-                                    (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
-                                </div>
-                                {%for key,value in Carryover_data.d_reshape.items %}
-                                    <table class="Carryover_Table" cellpadding="4">
-                                        <caption>表{{tableCarryoverindex}}.携带效应实验数据</caption>
-                                        <tr>
-                                            <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
-                                            <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
-                                        </tr>
-                                        <tr>
-                                            {%for c in value.keys %}
-                                                <td class="title topdown-1">{{c}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C1</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.0}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C2</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.1}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C3</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.2}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C1</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.3}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C2</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.4}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C3</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.5}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C1</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.6}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C2</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.7}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C3</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.8}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C1mean</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.9}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>C3mean</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.10}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        <tr class="Carryover_Tabletr">
-                                            <td>(C3mean-C1mean)/<br>C1mean</td>
-                                            {%for r in value.values %}
-                                                <td>{{r.11}}</td>
-                                            {% endfor %}
-                                        </tr>
-                                    </table>
-                                    <br>
-                                {% endfor %}
+                                
+                                {% if Carryover_data.Systermnum == 1 %} 
+                                    <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}所示，
+                                        (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求222。
+                                    </div>
+                                    {%for key,value in Carryover_data.d_reshape.items %}
+                                        <table class="Carryover_Table" cellpadding="4">
+                                            <caption>表{{tableCarryoverindex}}.携带效应实验数据</caption>
+                                            <tr>
+                                                <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
+                                                <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
+                                            </tr>
+                                            <tr>
+                                                {%for c in value.keys %}
+                                                    <td class="title topdown-1">{{c}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.0}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.1}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.2}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.3}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.4}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.5}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.6}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.7}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.8}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1mean</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.9}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3mean</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.10}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>(C3mean-C1mean)/<br>C1mean</td>
+                                                {%for r in value.values %}
+                                                    {%for m in r.values %}
+                                                        <td>{{m.11}}</td>
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            </tr>
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}-{{tableCarryoverindex|add:Carryover_data.normnum|add:-1}}所示，
+                                        (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                    </div>
+                                    {%for key,value in Carryover_data.Carryover_dict.items %}
+                                        <table class="Carryover_Table" cellpadding="4">
+                                            <caption>表{{tableCarryoverindex|add:forloop.counter|add:-1}}.{{key}}携带效应实验数据</caption>
+                                            <tr>
+                                                <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
+                                                <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
+                                            </tr>
+                                            <tr>
+                                                {%for c in value.keys %}
+                                                    <td class="title topdown-1">{{c}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.0}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.1}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.2}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.3}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.4}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.5}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.6}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C2</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.7}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.8}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C1mean</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.9}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>C3mean</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.10}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            <tr class="Carryover_Tabletr">
+                                                <td>(C3mean-C1mean)/<br>C1mean</td>
+                                                {%for r in value.values %}
+                                                    <td>{{r.11}}</td>
+                                                {% endfor %}
+                                            </tr>
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         </td>
                     </tr>                       
@@ -2779,13 +2891,13 @@
                 </tr>
         
 
-
-
                 <!-------------------------------------------10 最终结论 ------------------------------------------------------->
-                {% if resultEnd_conclusion %}
-                    <div class="four" style="text-align:left;">{{titleindex}}. 结论(Conclusion)</div>
-                    <div class="five"> {{resultEnd_conclusion.0}}</div>
-                {% endif %}
+                <tr class="endconclusiontr">
+                    <td class="endconclusiontd">
+                        <div class="Endconclusion_title">{{titleindex}}. 结论(Conclusion)</div>
+                        <div class="maintext"> {{Endconclusion}}</div>
+                    </td>       
+                </tr>
 
                 <!-------------------------------------------11 报告编辑人，审核人，... ------------------------------------------------------->
                 <table class="End_Table" cellpadding="8" align="center">

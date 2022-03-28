@@ -96,6 +96,9 @@ def float_newround(num):
 # 有效位数
 def effectnum(num,n):
     if isinstance(num, str):
+        # 如原始结果中含有“<”号(如“<0”)，需手动去除
+        if "<" in num:
+            num = num.replace('<', '')
         num=float(num)
         if num>=1:
             if "." in f'%.{n}g' % num:
@@ -360,4 +363,6 @@ def cv(lst):
     cvresult = sdresult/meanresult*100
 
     return new_round(cvresult)
+
+print(effectnum("<0",2))
 

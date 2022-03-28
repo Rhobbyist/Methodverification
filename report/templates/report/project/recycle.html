@@ -43,24 +43,34 @@
                         <h2>验证基本信息</h2>
                         <br>
 
-                        <!-- 仪器型号 -->
-                        <div class="form-group">
-                            <label for="exampleInputEmail1">仪器型号</label>
-                            <input class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
-                        </div> 
+                        <!-- 仪器型号及验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器型号</label>
+                                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
+                            </div>
+                        </div>
 
                         <!-- 检测平台及检测项目 -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">检测平台</label>
-                                    <input class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
                                 </div> 
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">检测项目</label>
-                                    <input class="form-control" value="{{project}}" name="project" readonly>
+                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
                                 </div> 
                             </div>
                         </div>
@@ -70,38 +80,37 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">仪器平台</label>
-                                    <input class="form-control" value="{{platform}}" name="platform" readonly>
+                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
                                 </div> 
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="exampleInputEmail1">仪器厂家</label>
-                                    <input class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 验证时机 -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">验证时机</label>
-                                    <input class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
-                                </div> 
-                            </div>
-                        </div>
-                    </div>
+                    </div> 
 
                     <!-- 2 分界线 -->
                     <h1 class="page-header"></h1>
+                    
+                    <!-- 数据展示字典 -->
+                    <input hidden = "hidden" value="{{Result.Recycle_enddict_show_show}}" name="Recycle_enddict_show">
+
+                    <!-- 数据保存字典 -->
+                    <input hidden = "hidden" value="{{Result.Recycle_enddict_savedata}}" name="Recycle_enddict_savedata">
 
                     <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue">
                     <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue">
 
+                    <!-- 超出限值的回收率的个数 -->
+                    <input value=0 name="falsecounter">
+
                     <!-- 3 验证结果展示 -->
                     <h2>验证指标:加标回收率</h2>
                     <h2>验证结果：<span id="verifyresult"></span></h2>
-                    {%for key,value in Result.Recycle_enddict.items %} 
+                    {%for key,value in Result.Recycle_enddict_show.items %} 
                         <table border="1" cellpadding="11">
                             <caption><h3>{{key}}验证结果</h3></caption>
                             <tr> 
@@ -110,7 +119,7 @@
                                 <th rowspan="2">混合样本体积<br/>(μL)</th>
                                 <th rowspan="2">加标理论值<br/>({{Result.Unit}})</th>
                                 <th colspan="2">加标后样本</th>
-                                <th rowspan="2" width="10%">回收率（%）</th>
+                                <th rowspan="2" width="10%">回收率（%)</th>
                             </tr>
                             <tr>
                                 <th width="10%">样本编号</th>
@@ -126,11 +135,11 @@
                                 <td rowspan="9">{{r}}</td> 
                                 <td class="sam_conc1" rowspan="3">{{c.0}}</td>
                                 <td rowspan="9" class="mean" ></td>
-                                <td rowspan="3"><input class="standard_conc1" type="text" style="width:60px;" value={{c.12}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="standard_volume1" type="text" style="width:60px;" value={{c.13}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="end_volume1" type="text" style="width:60px;" value={{c.14}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_conc1" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.12}}></td>
+                                <td rowspan="3"><input class="standard_volume1" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.13}}></td>
+                                <td rowspan="3"><input class="end_volume1" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.14}}></td>
                                 <td rowspan="3"><input class="theory_conc1" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc1" readonly></td>
-                                <td rowspan="3">low</td>
+                                <td rowspan="3">L</td>
                                 <td class="end_lowconc1">{{c.3}}</td>
                                 <td><input class="end_lowrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endlowrecycle1" readonly></td>
                             </tr>
@@ -144,11 +153,11 @@
                             </tr>
                             <tr>
                                 <td class="sam_conc2" rowspan="3">{{c.1}}</td> 
-                                <td rowspan="3"><input class="standard_conc2" type="text" style="width:60px;" value={{c.15}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="standard_volume2" type="text" style="width:60px;" value={{c.16}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="end_volume2" type="text" style="width:60px;" value={{c.17}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_conc2" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.15}}></td>
+                                <td rowspan="3"><input class="standard_volume2" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.16}}></td>
+                                <td rowspan="3"><input class="end_volume2" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.17}}></td>
                                 <td rowspan="3"><input class="theory_conc2" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc2" readonly></td>
-                                <td rowspan="3">median</td>
+                                <td rowspan="3">M</td>
                                 <td class="end_medianconc1">{{c.6}}</td>
                                 <td><input class="end_medianrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endmedianrecycle1" readonly></td>
                             </tr>
@@ -162,11 +171,11 @@
                             </tr>
                             <tr>
                                 <td class="sam_conc3" rowspan="3">{{c.2}}</td> 
-                                <td rowspan="3"><input class="standard_conc3" type="text" style="width:60px;" value={{c.18}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="standard_volume3" type="text" style="width:60px;" value={{c.19}} onkeyup="myFunction()"></td>
-                                <td rowspan="3"><input class="end_volume3" type="text" style="width:60px;" value={{c.20}} onkeyup="myFunction()"></td>
+                                <td rowspan="3"><input class="standard_conc3" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.18}}></td>
+                                <td rowspan="3"><input class="standard_volume3" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.19}}></td>
+                                <td rowspan="3"><input class="end_volume3" type="text" style="width:60px;" onkeyup="myFunction()" value={{c.20}}></td>
                                 <td rowspan="3"><input class="theory_conc3" type=text style="width:60px;border-style:none;text-align: center;" name="theoryconc3" readonly></td>
-                                <td rowspan="3">high</td>
+                                <td rowspan="3">H</td>
                                 <td class="end_highconc1">{{c.9}}</td>
                                 <td><input class="end_highrecycle1" type=text style="width:120px;border-style:none;text-align: center;" name="endhighrecycle1" readonly></td>
                             </tr>
@@ -227,11 +236,6 @@
             // 获取值
             lowvalue = parseFloat(document.getElementsByName("lowvalue")[0].value);  //后端传递的回收率下限
             upvalue = parseFloat(document.getElementsByName("upvalue")[0].value);    //后端传递的回收率上限
-            
-            // sam_conc1 = document.getElementsByClassName("sam_conc1");
-            // sam_conc2 = document.getElementsByClassName("sam_conc2");
-            // sam_conc3 = document.getElementsByClassName("sam_conc3");
-            // mean = document.getElementsByClassName("mean");
 
             standard_conc1 = document.getElementsByClassName("standard_conc1");
             standard_conc2 = document.getElementsByClassName("standard_conc2");
@@ -276,7 +280,9 @@
             // 验证结果
             var verifyresult = document.getElementById("verifyresult")
 
-            // 验证结果判断计数器
+            // 验证结果判断计数器        
+            var falsecountervalue = document.getElementsByName("falsecounter")[0]
+
             var falsecounter = 0
    
             for (var i = 0; i<mean.length; i++){
@@ -407,8 +413,7 @@
                     end_highrecycle3[i].style.fontWeight=400
                 }
             }
-            
-            
+                       
             // 不通过时显示红色的“不通过!”,通过时显示绿色的“通过!”
             if(falsecounter>0){
                 verifyresult.innerHTML="不通过!";
@@ -417,6 +422,9 @@
                 verifyresult.innerHTML="通过!";
                 verifyresult.style.color= "green";
             }
+
+            falsecountervalue.value = falsecounter
+
         }
 
         //四舍五入保留2位小数（若第二位小数为0，则保留一位小数）
@@ -480,6 +488,8 @@
             var verifyresult = document.getElementById("verifyresult")
 
             // 验证结果判断计数器
+            var falsecountervalue = document.getElementsByName("falsecounter")[0]
+
             var falsecounter = 0
    
             for (var i = 0; i<mean.length; i++){
@@ -619,6 +629,8 @@
                 verifyresult.innerHTML="通过!";
                 verifyresult.style.color= "green";
             }
+
+            falsecountervalue.value = falsecounter
         }
     </script>
     {% endblock %}

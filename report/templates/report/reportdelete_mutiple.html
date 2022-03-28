@@ -152,12 +152,13 @@
     /* 三 验证数据 */
 
     /* 每个验证指标外层容器td，设置padding25px */
-    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.stabilitytd,.reference_intervaltd{
+    .jmdtd,.zqdtd,.amrtd,.crrtd,.matrix_effecttd,.carryovertd,.stabilitytd,.reference_intervaltd{
         padding: 0px 25px;
     }
 
     /* 每个验证指标一级标题 */
-    .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Matrix_effect_title,.Stability_title,.ReferenceInterval_title{
+    .JMD_title,.ZQD_title,.AMR_title,.CRR_title,.Matrix_effect_title,
+    .Carryover_title,.Stability_title,.ReferenceInterval_title{
         font-size: 18.6px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -176,14 +177,14 @@
 
     /* 每个验证指标下的表格 */
     .PNjmd_Table,.PJjmd_Table,.JMDconclusion_Table,.PT_Table,.Recycle_Table,.LOQ_Table,.Dilution_Table,
-    .Matrix_effect_Table{
+    .Matrix_effect_Table,.Carryover_Table{
         table-layout: fixed; /*table表格宽度固定，同时td内容过长也不会被撑开*/  
         word-break: break-all;  
         border-collapse: collapse;  /* 关键属性：合并表格内外边框(其实表格边框有2px，外面1px，里面还有1px) */    
         border: 2px solid #000;
         border-left: none;
         border-right: none;
-        width: 580px;
+        width: 700px;
         margin: 0 auto; /*居中 */ 
     }
 
@@ -202,13 +203,22 @@
         font-weight: bold;
     }
 
-    .JMDconclusion_Tabletr td,.LOQ_Tabletr td,.Dilution_Tabletr td,.Matrix_effect_Tabletr td{
+    .JMDconclusion_Tabletr td,.Recycle_Tabletr td,.LOQ_Tabletr td,.Dilution_Tabletr td,.Matrix_effect_Tabletr td,
+    .Carryover_Tabletr td{
         font-family: Times New Roman, 宋体;
         text-align: center;
     }
 
     .Matrix_effect_Tabletr th{
         width: 14.28%;
+    }
+
+    /*图片格式*/
+    .Recycle_picture,.LOQ_picture,.LOQ_picture_title{
+        font-size: 14px;
+        font-family: Times New Roman, 宋体;
+        font-weight: bold;
+        text-align: center;
     }
 
     /*页眉页脚格式*/
@@ -344,8 +354,9 @@
     }
 
     body {
-        margin：0
+        margin:0
     }
+
 </style>
 
 {% load myfilter %}
@@ -439,21 +450,21 @@
 
                             <!----------------------质谱方法-------------------------->
                             <table class="MSMethodTable" cellpadding="4">
-                                <caption>表1.质谱参数</caption>
-                                <tr class="MSMethodTabletr">
-                                    <th width="20%">分析物名称</th>
-                                    <th>母离子</th>
-                                    <th>子离子</th>
-                                    <th>TIME(S)</th>
-                                    <th width="20%">CONE(V)</th>
-                                    <th width="20%">COLLISION(V)</th>
-                                </tr>
+                                <caption>表1.质谱参数</caption>              
                                 {% for r in Test_method_data.zp_method_list %}
-                                <tr>
-                                    {% for c in r %}
-                                        <td class="tablemaintext">{{c}}</td>
-                                    {% endfor %}
-                                </tr>
+                                    {% if forloop.first %}
+                                        <tr class="MSMethodTabletr">
+                                            {% for c in r %}
+                                                <th>{{c}}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            {% for c in r %}
+                                                <td class="tablemaintext">{{c}}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endif %}
                                 {% endfor %}
                             </table>
                             
@@ -734,7 +745,7 @@
                                     </div>
 
                                     {%for key,value in Recycle_data.Recycle_endreport_dict.items %}
-                                        <table class="Recycle_table" cellpadding="4">
+                                        <table class="Recycle_Table" cellpadding="4">
                                             <caption>表{{forloop.counter|add:tableRecycleindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
                                             <tr class="Recycle_Tabletr">
                                                 <th colspan="3" width="43%">病人基质样本</th>
@@ -1215,7 +1226,7 @@
                     {% endif %}
 
                     <!-------------------------------------------6 基质效应 -----------------------------------------------------> 
-                    {% if Matrix_effect_data%}
+                    {% if Matrix_effect_data.Matrixeffect_dict %}
                         <tr class="matrix_effecttr">
                             <td class="matrix_effecttd">
                                 <div class="Matrix_effect_title"><input type="checkbox" name="quota" value="基质效应" unchecked>{{Matrix_effectindex}}. 基质效应(Matrix effect)</div>
@@ -1228,7 +1239,7 @@
                                         {{Matrix_effect_data.Matrixeffect_endreport_conclusion}}
                                     </div>
 
-                                    {%for key,value in Matrix_effect_data.Matrixeffect_endreport_dict.items %}
+                                    {%for key,value in Matrix_effect_data.Matrixeffect_dict.items %}
                                         <table class="Matrix_effect_Table" cellpadding="4">
                                             <caption>表{{forloop.counter|add:tableMatrix_effectindex_start|add:-1}}.{{key}}基质效应实验数据</caption>
                                             <tr class="Matrix_effect_Tabletr">
@@ -1272,6 +1283,1616 @@
                             </td>
                         </tr>       
                     {% endif %}
+
+                    <!-------------------------------------------7 携带效应 -----------------------------------------------------> 
+                    {% if Carryover_data.Carryover_dict %}
+                        <tr class="carryovertr">
+                            <td class="carryovertd">
+                                <div class="Carryover_title"><input type="checkbox" name="quota" value="携带效应" unchecked>{{Carryoverindex}}. 携带效应(Carryover){{Carryover_data.percent}}</div>
+                                <div class="Carryover_data">
+                                    {% for r in Carryover_data.textlist %}
+                                        <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                    {% endfor %}
+                                    
+                                    {% if Carryover_data.Systermnum == 1 %} 
+                                        <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}所示，
+                                            (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                        </div>
+                                        {%for key,value in Carryover_data.d_reshape.items %}
+                                            <table class="Carryover_Table" cellpadding="4">
+                                                <caption>表{{tableCarryoverindex}}.携带效应实验数据</caption>
+                                                <tr>
+                                                    <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
+                                                    <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
+                                                </tr>
+                                                <tr>
+                                                    {%for c in value.keys %}
+                                                        <td class="title topdown-1">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.0}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.1}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.2}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.3}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.4}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.5}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.6}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.7}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.8}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1mean</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.9}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3mean</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.10}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>(C3mean-C1mean)/<br>C1mean</td>
+                                                    {%for r in value.values %}
+                                                        {%for m in r.values %}
+                                                            <td>{{m.11}}</td>
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </tr>
+                                            </table>
+                                            <br>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}-{{tableCarryoverindex|add:Carryover_data.normnum|add:-1}}所示，
+                                            (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                        </div>
+                                        {%for key,value in Carryover_data.Carryover_dict.items %}
+                                            <table class="Carryover_Table" cellpadding="4">
+                                                <caption>表{{tableCarryoverindex|add:forloop.counter|add:-1}}.{{key}}携带效应实验数据</caption>
+                                                <tr>
+                                                    <th class="title topdown-1" rowspan="2" width="24%">样本编号</th>
+                                                    <th class="title topdown-1" colspan="{{value.keys|length}}">检测结果({{Unitdict|get_item:key|default:unit}})或偏差(%)</th>
+                                                </tr>
+                                                <tr>
+                                                    {%for c in value.keys %}
+                                                        <td class="title topdown-1">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.0}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.1}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.2}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.3}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.4}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.5}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.6}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C2</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.7}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.8}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C1mean</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.9}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>C3mean</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.10}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr class="Carryover_Tabletr">
+                                                    <td>(C3mean-C1mean)/<br>C1mean</td>
+                                                    {%for r in value.values %}
+                                                        <td>{{r.11}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            </table>
+                                            <br>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>                       
+                    {% endif %}
+    
+                    <!-------------------------------------------8 样品稳定性 ----------------------------------------------------->
+                    <!-- 补充储存稳定性 -->
+                    <tr class="stabilitytr">
+                        <td class="stabilitytd">
+                            {% if Stability_data.Room_tem_dict or Stability_data.Refrigerate_tem_dict %}
+                                <div class="Stabilitytitle">{{Stabilityindex}}. 稳定性(Stability)</div>
+                                {% for r in Stability_data.textlist %}
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                {% endfor %}
+                                <div class="maintext">{{Stability_data.serial}})
+                                    表{{tableStabilityindex_start}}-{{tableStabilityindex_end}} 即为样品处理后稳定性实验数据，表明处理后的样品在室温(15~30℃)和冷藏(2~8℃)条件下至少可以稳定存放72 h。</div>
+
+                                <!-- 一 室温 -->
+                                {% for key,value in Stability_data.Room_tem_dict.items %}
+                                    <!-- 首次循环，索引为tableStabilityindex_start -->
+                                    {% if forloop.first %}
+                                        {% with i=tableStabilityindex_start %}
+                                            {% if Stability_data.Room_conclevel_list|length == 3 %}
+                                                <table class="Stability_handle_Table" cellpadding="4">
+                                                    <caption>表{{i}}.{{key}}样品处理后稳定性实验数据(室温)</caption>
+                                                        <tr>
+                                                            <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                            <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                        </tr>
+                                                        {%for r,c in value.items %}
+                                                            <!-- 最后一行需在表格最下方添加边框 -->
+                                                            {% if forloop.last %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                    <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                    <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                    <td class="five">{{c.18}}</td>
+                                                                    <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                    <td class="five">{{c.21}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.16}}</td>
+                                                                    <!-- 中浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.19}}</td>
+                                                                    <!-- 高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.7}}</td>
+                                                                    <td class="five">{{c.22}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.2}}</td>
+                                                                    <td class="five down-1">{{c.17}}</td>
+                                                                    <!-- 中浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.5}}</td>
+                                                                    <td class="five down-1">{{c.20}}</td>
+                                                                    <!-- 高浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.8}}</td>
+                                                                    <td class="five down-1">{{c.23}}</td>
+                                                                </tr>
+                                                            {% else %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five">{{r}}</td>
+                                                                    <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five">{{c.9}}</td>
+                                                                    <td rowspan="3" class="five">{{c.12}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                    <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five">{{c.10}}</td>
+                                                                    <td rowspan="3" class="five">{{c.13}}</td>
+                                                                    <td class="five">{{c.18}}</td>
+                                                                    <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five">{{c.11}}</td>
+                                                                    <td rowspan="3" class="five">{{c.14}}</td>
+                                                                    <td class="five">{{c.21}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.16}}</td>
+                                                                    <!-- 中浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.19}}</td>
+                                                                    <!-- 高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.7}}</td>
+                                                                    <td class="five">{{c.22}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度3,回收率3 -->
+                                                                    <td class="five">{{c.2}}</td>
+                                                                    <td class="five">{{c.17}}</td>
+                                                                    <!-- 中浓度3,回收率3 -->
+                                                                    <td class="five">{{c.5}}</td>
+                                                                    <td class="five">{{c.20}}</td>
+                                                                    <!-- 高浓度3,回收率3 -->
+                                                                    <td class="five">{{c.8}}</td>
+                                                                    <td class="five">{{c.23}}</td>
+                                                                </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                </table>
+                                            {% elif Stability_data.Room_conclevel_list|length == 2 %}
+                                                <table cellpadding="4" width="100%" >
+                                                    <caption>表{{i}}.{{key}}样品处理后稳定性实验数据(室温)</caption>
+                                                        <tr>
+                                                            <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                            <th class="title topdown-1" colspan="4">{{Stability_data.Room_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">{{Stability_data.Room_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                        </tr>
+                                                        {%for r,c in value.items %}
+                                                            <!-- 最后一行需在表格最下方添加边框 -->
+                                                            {% if forloop.last %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                    <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                    <td class="five">{{c.10}}</td>
+                                                                    <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                    <td class="five">{{c.13}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.11}}</td>
+                                                                    <!-- 较高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.14}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.2}}</td>
+                                                                    <td class="five down-1">{{c.12}}</td>                                               
+                                                                    <!-- 较高浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.5}}</td>
+                                                                    <td class="five down-1">{{c.15}}</td>
+                                                                </tr>
+                                                            {% else %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five">{{r}}</td>
+                                                                    <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five">{{c.8}}</td>
+                                                                    <td class="five">{{c.10}}</td>
+                                                                    <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five">{{c.7}}</td>
+                                                                    <td rowspan="3" class="five">{{c.9}}</td>
+                                                                    <td class="five">{{c.13}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.11}}</td>
+                                                                    <!-- 较高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.14}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度3,回收率3 -->
+                                                                    <td class="five">{{c.2}}</td>
+                                                                    <td class="five">{{c.12}}</td>                                               
+                                                                    <!-- 较高浓度3,回收率3 -->
+                                                                    <td class="five">{{c.5}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                </table>
+                                            {% endif %}
+                                            <br>
+
+                                            <!-- 二 冷藏  -->
+                                            {% for key,value in Stability_data.Refrigerate_tem_dict.items %}
+                                                <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                                                {% if forloop.counter == forloop.parentloop.counter %}
+                                                    {% if Stability_data.Refrigerate_conclevel_list|length == 3 %}
+                                                        <table cellpadding="4" width="100%">
+                                                            <caption>表{{i|add:1}}.{{key}}样品处理后稳定性实验数据(冷藏)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.8}}</td>
+                                                                            <td class="five down-1">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% elif Stability_data.Refrigerate_conclevel_list|length == 2 %}
+                                                        <table cellpadding="4" width="100%" >
+                                                            <caption>表{{i|add:1}}.{{key}}样品处理后稳定性实验数据(室温)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Refrigerate_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Refrigerate_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% endif %}
+                                                    <br>
+                                                {% endif %}       
+                                            {% endfor %} 
+
+                                            <!-- 三 冷冻  -->
+                                            {% for key,value in Stability_data.Freeze_tem_dict.items %}
+                                                <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                                                {% if forloop.counter == forloop.parentloop.counter %}
+                                                    {% if Stability_data.Freeze_conclevel_list|length == 3 %}
+                                                        <table cellpadding="4" width="100%">
+                                                            <caption>表{{i|add:2}}.{{key}}样品处理后稳定性实验数据(冷冻)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.8}}</td>
+                                                                            <td class="five down-1">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% elif Stability_data.Freeze_conclevel_list|length == 2 %}
+                                                        <table cellpadding="4" width="100%" >
+                                                            <caption>表{{i|add:2}}.{{key}}样品处理后稳定性实验数据(冷冻)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Freeze_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Freeze_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% endif %}
+                                                    <br>
+                                                {% endif %}       
+                                            {% endfor %}                  
+                                        {% endwith %}
+                                    {% else %}
+                                        <!-- 非首次循环，索引为tableStabilityindex_start+2*外循环索引-2 -->
+                                        <!-- 一 室温 -->
+                                        {% with i=forloop.counter|add:forloop.counter|add:forloop.counter|add:tableStabilityindex_start|add:-3 %}
+                                            {% if Stability_data.Room_conclevel_list|length == 3 %}
+                                                <table cellpadding="4" width="100%" >
+                                                    <caption>表{{i}}.{{key}}样品处理后稳定性实验数据(室温)</caption>
+                                                        <tr>
+                                                            <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                            <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                        </tr>
+                                                        {%for r,c in value.items %}
+                                                            <!-- 最后一行需在表格最下方添加边框 -->
+                                                            {% if forloop.last %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                    <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                    <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                    <td class="five">{{c.18}}</td>
+                                                                    <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                    <td class="five">{{c.21}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.16}}</td>
+                                                                    <!-- 中浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.19}}</td>
+                                                                    <!-- 高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.7}}</td>
+                                                                    <td class="five">{{c.22}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.2}}</td>
+                                                                    <td class="five down-1">{{c.17}}</td>
+                                                                    <!-- 中浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.5}}</td>
+                                                                    <td class="five down-1">{{c.20}}</td>
+                                                                    <!-- 高浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.8}}</td>
+                                                                    <td class="five down-1">{{c.23}}</td>
+                                                                </tr>
+                                                            {% else %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five">{{r}}</td>
+                                                                    <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five">{{c.9}}</td>
+                                                                    <td rowspan="3" class="five">{{c.12}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                    <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five">{{c.10}}</td>
+                                                                    <td rowspan="3" class="five">{{c.13}}</td>
+                                                                    <td class="five">{{c.18}}</td>
+                                                                    <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five">{{c.11}}</td>
+                                                                    <td rowspan="3" class="five">{{c.14}}</td>
+                                                                    <td class="five">{{c.21}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.16}}</td>
+                                                                    <!-- 中浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.19}}</td>
+                                                                    <!-- 高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.7}}</td>
+                                                                    <td class="five">{{c.22}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 低浓度3,回收率3 -->
+                                                                    <td class="five">{{c.2}}</td>
+                                                                    <td class="five">{{c.17}}</td>
+                                                                    <!-- 中浓度3,回收率3 -->
+                                                                    <td class="five">{{c.5}}</td>
+                                                                    <td class="five">{{c.20}}</td>
+                                                                    <!-- 高浓度3,回收率3 -->
+                                                                    <td class="five">{{c.8}}</td>
+                                                                    <td class="five">{{c.23}}</td>
+                                                                </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                </table>
+                                            {% elif Stability_data.Room_conclevel_list|length == 2 %}
+                                                <table cellpadding="4" width="100%" >
+                                                    <caption>表{{i}}.{{key}}样品处理后稳定性实验数据(室温)</caption>
+                                                        <tr>
+                                                            <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                            <th class="title topdown-1" colspan="4">{{Stability_data.Room_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                            <th class="title topdown-1" colspan="4">{{Stability_data.Room_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                            <th class="title topdown-1">实验数据</th>
+                                                            <th class="title topdown-1">均值</th>
+                                                            <th class="title topdown-1">CV(%)</th>
+                                                            <th class="title topdown-1">回收率(%)</th>
+                                                        </tr>
+                                                        {%for r,c in value.items %}
+                                                            <!-- 最后一行需在表格最下方添加边框 -->
+                                                            {% if forloop.last %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                    <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                    <td class="five">{{c.10}}</td>
+                                                                    <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                    <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                    <td class="five">{{c.13}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.11}}</td>
+                                                                    <!-- 较高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.14}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.2}}</td>
+                                                                    <td class="five down-1">{{c.12}}</td>                                               
+                                                                    <!-- 较高浓度3,回收率3 -->
+                                                                    <td class="five down-1">{{c.5}}</td>
+                                                                    <td class="five down-1">{{c.15}}</td>
+                                                                </tr>
+                                                            {% else %}
+                                                                <!-- 第一行 -->
+                                                                <tr>
+                                                                    <td rowspan="3" class="five">{{r}}</td>
+                                                                    <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.0}}</td>
+                                                                    <td rowspan="3" class="five">{{c.6}}</td>
+                                                                    <td rowspan="3" class="five">{{c.8}}</td>
+                                                                    <td class="five">{{c.10}}</td>
+                                                                    <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                    <td class="five">{{c.3}}</td>
+                                                                    <td rowspan="3" class="five">{{c.7}}</td>
+                                                                    <td rowspan="3" class="five">{{c.9}}</td>
+                                                                    <td class="five">{{c.13}}</td>
+                                                                </tr>
+
+                                                                <!-- 第二行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度2,回收率2 -->
+                                                                    <td class="five">{{c.1}}</td>
+                                                                    <td class="five">{{c.11}}</td>
+                                                                    <!-- 较高浓度2,回收率2 -->
+                                                                    <td class="five">{{c.4}}</td>
+                                                                    <td class="five">{{c.14}}</td>
+                                                                </tr>
+
+                                                                <!-- 第三行 -->
+                                                                <tr>
+                                                                    <!-- 较低浓度3,回收率3 -->
+                                                                    <td class="five">{{c.2}}</td>
+                                                                    <td class="five">{{c.12}}</td>                                               
+                                                                    <!-- 较高浓度3,回收率3 -->
+                                                                    <td class="five">{{c.5}}</td>
+                                                                    <td class="five">{{c.15}}</td>
+                                                                </tr>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                </table>
+                                            {% endif %}
+                                            <br>
+
+                                            <!-- 二 冷藏  -->
+                                            {% for key,value in Stability_data.Refrigerate_tem_dict.items %}
+                                                <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                                                {% if forloop.counter == forloop.parentloop.counter %}
+                                                    {% if Stability_data.Refrigerate_conclevel_list|length == 3 %}
+                                                        <table cellpadding="4" width="100%">
+                                                            <caption>表{{i|add:1}}.{{key}}样品处理后稳定性实验数据(冷藏)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    {% comment %} 最后一行需在表格最下方添加边框 {% endcomment %}
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.8}}</td>
+                                                                            <td class="five down-1">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% elif Stability_data.Refrigerate_conclevel_list|length == 2 %}
+                                                        <table cellpadding="4" width="100%" >
+                                                            <caption>表{{i|add:1}}.{{key}}样品处理后稳定性实验数据(冷藏)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Refrigerate_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Refrigerate_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% endif %}
+                                                    <br>
+                                                {% endif %}       
+                                            {% endfor %}  
+                                            
+                                            <!-- 三 冷冻  -->
+                                            {% for key,value in Stability_data.Freeze_tem_dict.items %}
+                                                <!--判断内循环的计数是否与外循环相等，相等才展示结果-->
+                                                {% if forloop.counter == forloop.parentloop.counter %}
+                                                    {% if Stability_data.Freeze_conclevel_list|length == 3 %}
+                                                        <table cellpadding="4" width="100%">
+                                                            <caption>表{{i|add:2}}.{{key}}样品处理后稳定性实验数据(冷冻)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">低浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">中浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">高浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    {% comment %} 最后一行需在表格最下方添加边框 {% endcomment %}
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.8}}</td>
+                                                                            <td class="five down-1">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td rowspan="3" class="five">{{c.12}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                            <!-- 中浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.10}}</td>
+                                                                            <td rowspan="3" class="five">{{c.13}}</td>
+                                                                            <td class="five">{{c.18}}</td>
+                                                                            <!-- 高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.11}}</td>
+                                                                            <td rowspan="3" class="five">{{c.14}}</td>
+                                                                            <td class="five">{{c.21}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.16}}</td>
+                                                                            <!-- 中浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.19}}</td>
+                                                                            <!-- 高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.7}}</td>
+                                                                            <td class="five">{{c.22}}</td>
+                                                                        </tr>
+
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.17}}</td>
+                                                                            <!-- 中浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.20}}</td>
+                                                                            <!-- 高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.23}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% elif Stability_data.Freeze_conclevel_list|length == 2 %}
+                                                        <table cellpadding="4" width="100%" >
+                                                            <caption>表{{i|add:2}}.{{key}}样品处理后稳定性实验数据(冷冻)</caption>
+                                                                <tr>
+                                                                    <th class="title topdown-1" rowspan="2">时间(h)</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Freeze_conclevel_list.0}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                    <th class="title topdown-1" colspan="4">{{Stability_data.Freeze_conclevel_list.1}}浓度({{Unitdict|get_item:key|default:unit}})</th>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                    <th class="title topdown-1">实验数据</th>
+                                                                    <th class="title topdown-1">均值</th>
+                                                                    <th class="title topdown-1">CV(%)</th>
+                                                                    <th class="title topdown-1">回收率(%)</th>
+                                                                </tr>
+                                                                {%for r,c in value.items %}
+                                                                    <!-- 最后一行需在表格最下方添加边框 -->
+                                                                    {% if forloop.last %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five down-1">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five down-1">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.2}}</td>
+                                                                            <td class="five down-1">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five down-1">{{c.5}}</td>
+                                                                            <td class="five down-1">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% else %}
+                                                                        <!-- 第一行 -->
+                                                                        <tr>
+                                                                            <td rowspan="3" class="five">{{r}}</td>
+                                                                            <!-- 较低浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.0}}</td>
+                                                                            <td rowspan="3" class="five">{{c.6}}</td>
+                                                                            <td rowspan="3" class="five">{{c.8}}</td>
+                                                                            <td class="five">{{c.10}}</td>
+                                                                            <!-- 较高浓度1,均值,CV,回收率1 -->
+                                                                            <td class="five">{{c.3}}</td>
+                                                                            <td rowspan="3" class="five">{{c.7}}</td>
+                                                                            <td rowspan="3" class="five">{{c.9}}</td>
+                                                                            <td class="five">{{c.13}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第二行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度2,回收率2 -->
+                                                                            <td class="five">{{c.1}}</td>
+                                                                            <td class="five">{{c.11}}</td>
+                                                                            <!-- 较高浓度2,回收率2 -->
+                                                                            <td class="five">{{c.4}}</td>
+                                                                            <td class="five">{{c.14}}</td>
+                                                                        </tr>
+                            
+                                                                        <!-- 第三行 -->
+                                                                        <tr>
+                                                                            <!-- 较低浓度3,回收率3 -->
+                                                                            <td class="five">{{c.2}}</td>
+                                                                            <td class="five">{{c.12}}</td>                                               
+                                                                            <!-- 较高浓度3,回收率3 -->
+                                                                            <td class="five">{{c.5}}</td>
+                                                                            <td class="five">{{c.15}}</td>
+                                                                        </tr>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                        </table>
+                                                    {% endif %}
+                                                    <br>
+                                                {% endif %}       
+                                            {% endfor %}  
+                                        {% endwith %}
+                                    {% endif %}           
+                                {% endfor %}  
+                            {% endif %}
+                        </td>
+                    </tr>
+       
+                    <!-------------------------------------------9 参考区间 ------------------------------------------------------->
+                    <tr class="reference_intervaltr">
+                        <td class="reference_intervaltd">
+                            {% if Reference_Interval_data.Referenceinterval_dict %}
+                                <div class="Reference_Intervaltitle">{{Reference_Interval_index}}. 稳定性(Stability)</div>
+                                {% for r in Reference_Interval_data.textlist %}
+                                    <div class="maintext"> {{forloop.counter}}) {{r}}</div>
+                                {% endfor %}
+                                <div class="maintext" style="width: 100%;">{{Reference_Interval_data.serial}})
+                                    表{{table_Reference_Interval_index_start}} 即为参考区间实验数据</div>
+
+                                {% comment %} 具体数据 {% endcomment %}        
+                                <table class="mainbody" cellpadding="4" align="center">
+                                    <caption>表{{table_Reference_Interval_index_start}}.参考区间实验数据</caption>
+                                    <tr>
+                                        <th class="title topdown-1">实验号</th>
+                                        {%for key,value in Reference_Interval_data.Referenceinterval_dict.items %}
+                                            <th class="title topdown-1">{{key}}</th>
+                                        {% endfor %}
+                                    </tr>
+                                    {% for r in Reference_Interval_data.Referenceinterval_list %}
+                                        <tr>
+                                            {% if forloop.last %}
+                                                <td class="five">参考区间</td>
+                                                {%for c in r %}                  
+                                                    <td class="five">{{c}}</td>
+                                                {% endfor %}
+                                            {% else %}
+                                                <td class="five">{{forloop.counter}}</td>
+                                                {%for c in r %}                  
+                                                    <td class="five">{{c}}</td>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                                <br>
+                            {% endif %}
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

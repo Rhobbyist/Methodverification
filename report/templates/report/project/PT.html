@@ -99,7 +99,7 @@
                         </div>
                     </div> 
 
-                    <input hidden = "hidden" value="{{Result.PT_dict}}" name="Result">
+                    <input hidden = "hidden" value="{{Result.PT_dict}}" name="PT_dict">
                     <input hidden = "hidden" value="{{Result.PT_num}}" name="PT_num">
 
                     <!-- 2 分界线 -->
@@ -107,6 +107,30 @@
 
                     <!-- 3 验证结果展示 -->
                     <h2>验证指标:PT</h2>
+                    {% if Result.templates == 1 %} 
+                        {%for key,value in Result.PT_dict.items %}        
+                            <table border="1" cellpadding="8">
+                                <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th>样本编号</th>
+                                    <th>检测值({{Result.PTunit}})</th>
+                                    <th>可接受区间上限({{Result.PTunit}})</th>
+                                    <th>可接受区间下限({{Result.PTunit}})</th>
+                                    <th>是否通过</th>
+                                </tr>
+                                {%for r in value %}
+                                <tr>
+                                    <td>{{r.0}}</td> 
+                                    <td><span class="conc">{{r.1}}</span></td>
+                                    <td><input class="accept1" type="text" style="width:80px;" name="accept1{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
+                                    <td><input class="accept2" type="text" style="width:80px;" name="accept2{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
+                                    <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            <br>
+                        {% endfor %} 
+                    {% else %} 
                         {%for key,value in Result.PT_dict.items %}        
                             <table border="1" cellpadding="8">
                                 <caption><h4>{{key}}验证结果</h4></caption>
@@ -130,7 +154,8 @@
                                 {% endfor %}
                             </table>
                             <br>
-                        {% endfor %}            
+                        {% endfor %} 
+                    {% endif %}       
                     <br>
                     <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
                 </form>
@@ -199,17 +224,7 @@
                         pass[i].style.fontWeight=700                    
                     }
                 }
-            }
-
-            // submit = document.getElementById("submit");
-            // submit.removeAttribute("hidden");
-            // submit.addClass("btn btn-danger");
-            // $("#submit").removeAttr("hidden").addClass("btn btn-danger");
-            // $("#run").attr("hidden","hidden").removeClass("btn btn-primary");
-
-            // run = document.getElementById("run"); 
-            // run.removeClass("btn btn-danger");      
-            // run.setAttribute("hidden", "hidden");           
+            }         
                        
         }
     </script>

@@ -77,7 +77,6 @@ def get_verification_page(request):
             project = request.POST["project"]  # 检测项目
             platform = request.POST["platform"]  # 仪器平台(液质,液相,ICP-MS...)       
             manufacturers = request.POST["manufacturers"] # 仪器厂家(AB,Agilent...)
-
             verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
             # verifyoccasiontexts = request.POST["verifyoccasiontexts"] #自定义验证时机
             # verifytime = time.strftime('%Y-%m-%d', time.localtime(time.time()))  # 初始验证时间
@@ -243,12 +242,6 @@ def get_verification_page(request):
                     files = request.FILES.getlist('fileuploads')
                     Result = Sample_ReferenceInterval.quote_fileread(files, Detectionplatform, reportinfo, project, platform,manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
                     return render(request, 'report/project/RI_quote.html', locals())
-
-
-            elif request.POST["quota"] == "最终结论":
-                endconclusion.objects.create(reportinfo=reportinfo, text=End_conclusion)
-                HttpResponse = "最终结论保存成功！"
-                return render(request, 'report/Datasave.html', locals())
 
     else:
         Detectionplatform = []  # 检测平台列表，需传到verification.html
@@ -440,13 +433,13 @@ def get_reportpreview_page(request, id):
         pictureLOQindex_end = pictureindex+Number_of_compounds-1
 
         LOQ_data = amr.related_AMR(id, unit)
-        if LOQ_data:
+        if LOQ_data["AMR_dict"]:
             LOQindex += 1
             pictureindex += Number_of_compounds*2  # 总图片索引
             tableindex += Number_of_compounds
 
         # 2 LOD
-        LODindex = AMRindex
+        LODindex = LOQindex
         tableLODindex = tableindex
         pictureLODindex_start = pictureindex
         pictureLODindex_end = pictureindex+Number_of_compounds-1
@@ -607,7 +600,6 @@ def get_reportpreview_page(request, id):
 
         PNjmd_data = jmd.related_PNjmd(id)
         if PNjmd_data["JMD_dict"]:
-            print("重复性精密度存在")
             PNjmdindex += 1  # 重复性精密度副标题索引+1  6.2
             tableindex += Number_of_compounds  # 总表格索引+n，以两个化合物为例，开始是表3，现在是表5   表5
 
@@ -619,7 +611,6 @@ def get_reportpreview_page(request, id):
 
         PJjmd_data = jmd.related_PJjmd(id)
         if PJjmd_data["JMD_dict"]:
-            print("中间精密度存在")
             PJjmdindex += 1  # 中间精密度副标题索引+1  -- 6.2
             tableindex += Number_of_compounds  # 总表格索引+n
 
@@ -636,6 +627,9 @@ def get_reportpreview_page(request, id):
 
         if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
+
+        print("精密度 tableindex:%s" % (tableindex))
+        print("精密度 titleindex:%s" % (titleindex))
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
 
@@ -666,11 +660,12 @@ def get_reportpreview_page(request, id):
         if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
+        print("正确度 tableindex:%s" % (tableindex))
+        print("正确度 titleindex:%s" % (titleindex))
+
         # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
         
         AMRindex = titleindex  # AMR主标题索引
-
-        print("titleindex:%s" % (titleindex))
 
         # 1 LOQ
         LOQindex = 0
@@ -715,8 +710,11 @@ def get_reportpreview_page(request, id):
             AMRconclusionindex += 1
             tableindex += 1
 
-        if LOQ_data or LOD_data:
+        if LOQ_data["AMR_dict"] or LOD_data:
             titleindex += 1
+
+        print("AMR tableindex:%s" % (tableindex))
+        print("AMR titleindex:%s" % (titleindex))
             
         # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
         CRRindex = titleindex # CRR主标题索引
@@ -729,10 +727,13 @@ def get_reportpreview_page(request, id):
         tableDilutionindex_end = tableindex+Number_of_compounds-1
 
         Dilution_data = crr.related_CRR(id, unit)
-        if Dilution_data:
+        if Dilution_data["CRR_dict"]:
             Dilutionindex += 1
             titleindex += 1
             tableindex += Number_of_compounds
+
+        print("CRR tableindex:%s" % (tableindex))
+        print("CRR titleindex:%s" % (titleindex))
 
         # ---------------------------------------------- 基质特异性 --------------------------------------------------
         MSindex = titleindex
@@ -749,7 +750,7 @@ def get_reportpreview_page(request, id):
         tableMatrix_effectindex_end = tableindex+Number_of_compounds-1
 
         Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
-        if Matrix_effect_data:
+        if Matrix_effect_data["Matrixeffect_dict"]:
             titleindex += 1
             tableindex += Number_of_compounds
 
@@ -759,7 +760,7 @@ def get_reportpreview_page(request, id):
         tableCarryoverindex = tableindex
 
         Carryover_data = Carry_over.related_Carryover(id)
-        if Carryover_data:
+        if Carryover_data["Carryover_dict"]:
             titleindex += 1
             tableindex += 1
 
@@ -771,7 +772,7 @@ def get_reportpreview_page(request, id):
         tableStabilityindex_end = tableindex+Number_of_compounds*3-1
 
         # 2 如果存在数据，自增标题索引和表格索引
-        if Stability_data:
+        if Stability_data["Room_conclevel_list"]:
             titleindex += 1
             tableindex += Number_of_compounds*2-1
 
@@ -783,27 +784,58 @@ def get_reportpreview_page(request, id):
         # table_Reference_Interval_index_end = tableindex+Number_of_compounds*2-1 # 设置最后一个表格索引索引
 
         # 2 如果存在数据，自增标题索引和表格索引
-        if Reference_Interval_data:
+        if Reference_Interval_data["Referenceinterval_dict"]:
             titleindex += 1
             tableindex += 1
 
-        # 仪器条件
-        Test_method_data = testmethod.related_testmethod(id)
+        # --------------------------------------- 检测方法，设备，试剂耗材，样品处理，最终结论 ---------------------------------------
+        Test_method_data = others.related_testmethod(id)
+        Equipment_data = others.related_equipment(id)
+        Reagents_Consumables_data = others.related_Reagents_Consumables(id)
+        Sample_Preparation_data = others.related_Sample_Preparation(id)
+        
+        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应、样品稳定性（样本储存稳定性和样本处理后稳定性）、参考区间均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
 
-        # 设备
-        Equipment_data = equipment.related_equipment(id)
+        Endconclusion = Endconclusion.replace('FXS-YZ26', Instrument_number)
+        Endconclusion = Endconclusion.replace('Thermo TSQ Altis LC-MS/MS', Instrument_model)
+        Endconclusion = Endconclusion.replace('血清雌二醇、雌酮', project)
 
-        # 试剂耗材
-        Reagents_Consumables_data = reagents_consumables.related_Reagents_Consumables(id)
+        if not LOQ_data["AMR_dict"]:      
+            Endconclusion = Endconclusion.replace('分析灵敏度、分析测量范围、', '')
 
-        # 样品处理
-        Sample_Preparation_data= sample_preparation.related_Sample_Preparation(id)
+        if not resultMS:
+            Endconclusion = Endconclusion.replace('基质特异性、', '')
 
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
+        if not Matrix_effect_data["Matrixeffect_dict"]:
+            Endconclusion = Endconclusion.replace('基质效应、', '')
+
+        if not Dilution_data["CRR_dict"]:
+            Endconclusion = Endconclusion.replace('临床可报告范围（稀释倍数）、', '')
+
+        # 精密度
+        if not PNjmd_data["JMD_dict"] and not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('精密度（重复性精密度和中间精密度）、', '')
+
+        if not PNjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('重复性精密度和', '')
+
+        if not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('和中间精密度', '')
+
+        # 正确度
+        if not PT_data["PT_dict"] and not Recycle_data:
+            Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
+
+        if not Carryover_data["Carryover_dict"]:
+            Endconclusion = Endconclusion.replace('携带效应、', '')
+
+        if not Stability_data["Room_conclevel_list"]:
+            Endconclusion = Endconclusion.replace('样品稳定性（样本储存稳定性和样本处理后稳定性）、', '')
+
+        if not Reference_Interval_data["Referenceinterval_dict"]:
+            Endconclusion = Endconclusion.replace('、参考区间', '')
+
+
         return render(request, 'report/reportpreview-multiple.html', locals())
 
 # 在报告生成界面点击删除时跳转的界面
@@ -916,7 +948,7 @@ def get_reportdelete_page(request, id):
                     JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                     tableindex += 1
 
-        if PNjmd_data or PJjmd_data:  # 如果有重复性精密度和中间精密度,总标题索引+1
+        if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:  # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
         # --------------------------------------- 正确度（每个化合物一个表格）---------------------------------------
@@ -944,7 +976,7 @@ def get_reportdelete_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
-        if PT_data or Recycle_data:
+        if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
         # --------------------------------------- AMR（每个化合物一个表格）---------------------------------------
@@ -959,10 +991,19 @@ def get_reportdelete_page(request, id):
         pictureLOQindex_end = pictureindex+Number_of_compounds-1
 
         LOQ_data = amr.related_AMR(id, unit)
-        if LOQ_data:
+        # 有数据和图片,同时增加表格和图片索引
+        if LOQ_data["AMR_dict"] and LOQ_data["objs"]:
             LOQindex += 1
-            pictureindex += Number_of_compounds*2  # 总图片索引
+            pictureindex += Number_of_compounds  # 总图片索引
             tableindex += Number_of_compounds
+
+        # 没有图片,不增加图片索引
+        elif LOQ_data["AMR_dict"]:
+            LOQindex += 1
+            tableindex += Number_of_compounds
+        
+        else:
+            pass
 
         # 2 LOD
         LODindex = AMRindex
@@ -997,7 +1038,7 @@ def get_reportdelete_page(request, id):
         tableDilutionindex = tableindex
 
         Dilution_data = crr.related_CRR(id,unit)
-        if Dilution_data:
+        if Dilution_data["CRR_dict"]:
             Dilutionindex += 1
             titleindex += 1
             tableindex += 1
@@ -1016,7 +1057,7 @@ def get_reportdelete_page(request, id):
         tableMatrix_effectindex = tableindex
 
         Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
-        if Matrix_effect_data:
+        if Matrix_effect_data["Matrixeffect_dict"]:
             titleindex += 1
             tableindex += 1
 
@@ -1030,18 +1071,53 @@ def get_reportdelete_page(request, id):
             titleindex += 1
             tableindex += 1
 
-        # 检测方法
-        resulttest_method = testmethod.related_testmethod(id)
+        # --------------------------------------- 检测方法，设备，试剂耗材，样品处理，最终结论 ---------------------------------------
+        Test_method_data = others.related_testmethod(id)
+        Equipment_data = others.related_equipment(id)
+        Reagents_Consumables_data = others.related_Reagents_Consumables(id)
+        Sample_Preparation_data = others.related_Sample_Preparation(id)
+        
+        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应、样品稳定性（样本储存稳定性和样本处理后稳定性）、参考区间均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
 
-        resultequipment = equipment.related_equipment(id)
-        resultReagents_Consumables = reagents_consumables.related_Reagents_Consumables(id)
-        resultSample_Preparation = sample_preparation.related_Sample_Preparation(id)
+        Endconclusion = Endconclusion.replace('FXS-YZ26', Instrument_number)
+        Endconclusion = Endconclusion.replace('Thermo TSQ Altis LC-MS/MS', Instrument_model)
+        Endconclusion = Endconclusion.replace('血清雌二醇、雌酮', project)
 
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
+        if not LOQ_data["AMR_dict"]:      
+            Endconclusion = Endconclusion.replace('分析灵敏度、分析测量范围、', '')
+
+        if not resultMS:
+            Endconclusion = Endconclusion.replace('基质特异性、', '')
+
+        if not Matrix_effect_data["Matrixeffect_dict"]:
+            Endconclusion = Endconclusion.replace('基质效应、', '')
+
+        if not Dilution_data["CRR_dict"]:
+            Endconclusion = Endconclusion.replace('临床可报告范围（稀释倍数）、', '')
+
+        # 精密度
+        if not PNjmd_data["JMD_dict"] and not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('精密度（重复性精密度和中间精密度）、', '')
+
+        if not PNjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('重复性精密度和', '')
+
+        if not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('和中间精密度', '')
+
+        # 正确度
+        if not PT_data["PT_dict"] and not Recycle_data:
+            Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
+
+        if not Carryover_data["Carryover_dict"]:
+            Endconclusion = Endconclusion.replace('携带效应、', '')
+
+        # if not Stability_data["Room_conclevel_list"]:
+        #     Endconclusion = Endconclusion.replace('样品稳定性（样本储存稳定性和样本处理后稳定性）、', '')
+
+        # if not Reference_Interval_data["Referenceinterval_dict"]:
+        #     Endconclusion = Endconclusion.replace('、参考区间', '')
+
         return render(request, 'report/reportdelete_single.html', locals())
 
     else:  # 多个化合物
@@ -1139,7 +1215,7 @@ def get_reportdelete_page(request, id):
         pictureLOQindex_end = pictureindex+Number_of_compounds*2-1
 
         LOQ_data = amr.related_AMR(id, unit)
-        if LOQ_data:
+        if LOQ_data["AMR_dict"]:
             LOQindex += 1
             pictureindex += Number_of_compounds*2  # 总图片索引
             tableindex += Number_of_compounds
@@ -1150,24 +1226,21 @@ def get_reportdelete_page(request, id):
         pictureLODindex_start = pictureindex
         pictureLODindex_end = pictureindex+Number_of_compounds-1
 
-        resultLOD = amr.related_LOD(id)
-        if resultLOD:
-            if group != "元素":
-                LODindex += 1
-                pictureindex += Number_of_compounds
-            else:
-                LODindex += 1
-                tableindex += 1
+        LOD_data = amr.related_LOD(id)
+        if LOD_data:
+            LODindex += 1
+            pictureindex += Number_of_compounds
 
         # 3 AMRconclusion
         AMRconclusionindex = LODindex
         tableAMRconclusionindex = tableindex
-        resultAMRconclusion = amr.related_AMRconclusion(id)
-        if resultAMRconclusion:
+
+        AMRconclusion_data = amr.related_AMRconclusion(id)
+        if AMRconclusion_data:
             AMRconclusionindex += 1
             tableindex += 1
 
-        if LOQ_data or resultLOD:
+        if LOQ_data["AMR_dict"] or LOD_data:
             titleindex += 1
 
 
@@ -1202,7 +1275,7 @@ def get_reportdelete_page(request, id):
         tableMatrix_effectindex_end = tableindex+Number_of_compounds-1
 
         Matrix_effect_data = Matrix_effect.related_Matrix_effect(id)
-        if Matrix_effect_data:
+        if Matrix_effect_data["Matrixeffect_dict"]:
             titleindex += 1
             tableindex += Number_of_compounds
 
@@ -1217,23 +1290,53 @@ def get_reportdelete_page(request, id):
             titleindex += 1
             tableindex += 1
 
-        # 仪器条件
-        Test_method_data = testmethod.related_testmethod(id)
+        # --------------------------------------- 检测方法，设备，试剂耗材，样品处理，最终结论 ---------------------------------------
+        Test_method_data = others.related_testmethod(id)
+        Equipment_data = others.related_equipment(id)
+        Reagents_Consumables_data = others.related_Reagents_Consumables(id)
+        Sample_Preparation_data = others.related_Sample_Preparation(id)
+        
+        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应、样品稳定性（样本储存稳定性和样本处理后稳定性）、参考区间均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
 
-        # 设备
-        Equipment_data = equipment.related_equipment(id)
+        Endconclusion = Endconclusion.replace('FXS-YZ26', Instrument_number)
+        Endconclusion = Endconclusion.replace('Thermo TSQ Altis LC-MS/MS', Instrument_model)
+        Endconclusion = Endconclusion.replace('血清雌二醇、雌酮', project)
 
-        # 试剂耗材
-        Reagents_Consumables_data = reagents_consumables.related_Reagents_Consumables(id)
+        if not LOQ_data["AMR_dict"]:      
+            Endconclusion = Endconclusion.replace('分析灵敏度、分析测量范围、', '')
 
-        # 样品处理
-        Sample_Preparation_data= sample_preparation.related_Sample_Preparation(id)
+        if not resultMS:
+            Endconclusion = Endconclusion.replace('基质特异性、', '')
 
-        End_conclusion_table = endconclusion.objects.filter(reportinfo_id=id)
-        if End_conclusion_table:
-            resultEnd_conclusion = []
-            for i in End_conclusion_table:
-                resultEnd_conclusion.append(i.text)
+        if not Matrix_effect_data["Matrixeffect_dict"]:
+            Endconclusion = Endconclusion.replace('基质效应、', '')
+
+        if not Dilution_data["CRR_dict"]:
+            Endconclusion = Endconclusion.replace('临床可报告范围（稀释倍数）、', '')
+
+        # 精密度
+        if not PNjmd_data["JMD_dict"] and not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('精密度（重复性精密度和中间精密度）、', '')
+
+        if not PNjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('重复性精密度和', '')
+
+        if not PJjmd_data["JMD_dict"]:
+            Endconclusion = Endconclusion.replace('和中间精密度', '')
+
+        # 正确度
+        if not PT_data["PT_dict"] and not Recycle_data:
+            Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
+
+        if not Carryover_data["Carryover_dict"]:
+            Endconclusion = Endconclusion.replace('携带效应、', '')
+
+        # if not Stability_data["Room_conclevel_list"]:
+        #     Endconclusion = Endconclusion.replace('样品稳定性（样本储存稳定性和样本处理后稳定性）、', '')
+
+        # if not Reference_Interval_data["Referenceinterval_dict"]:
+        #     Endconclusion = Endconclusion.replace('、参考区间', '')
+
     
         return render(request, 'report/reportdelete_mutiple.html', locals())
 
@@ -1344,7 +1447,7 @@ def PTsave(request):
         verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
 
         # 2 提取html中的字典
-        PT_dict = eval(str(request.POST.getlist("Result")[0]))
+        PT_dict = eval(str(request.POST.getlist("PT_dict")[0]))
 
         PTtarget = []  # 靶值列表
         PTbias = []  # 偏移或绝对差值列表
@@ -1391,6 +1494,8 @@ def PTsave(request):
 
 
 def Recyclesave(request):
+
+    # 从数据库中抓取当前用户名传递到layout.html
     try:
         name = User.objects.get(username=request.user).first_name
     except:
@@ -1399,6 +1504,8 @@ def Recyclesave(request):
         User_class = 0
     else:
         User_class = 1
+
+    # 提取Recycle.html中的数据，并存入数据库   
     if request.method == 'POST':
         print(request.POST)
         '''
@@ -1413,6 +1520,8 @@ def Recyclesave(request):
         'theoryconc3': ['62.50', '125.00', '166.67'], 'endhighrecycle1': ['52.46', '28.08', '21.35'], 
         'endhighrecycle2': ['54.77', '29.20', '22.13'], 'endhighrecycle3': ['55.23', '28.45', '21.52']}>
         '''
+
+        # 1 基本信息提取
         instrument_num = request.POST["instrument_num"]  # 仪器编号,strip()的作用是去除前后空格
         Detectionplatform = request.POST["Detectionplatform"]  # 项目组
         project = request.POST["project"]  # 项目
@@ -1420,7 +1529,8 @@ def Recyclesave(request):
         manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
         verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
 
-        dic_recyclesave = eval(str(request.POST.getlist("Recycle_enddict")[0]))
+        # 2 提取html中的数据
+        Recycle_dict = eval(str(request.POST.getlist("Recycle_enddict_savedata")[0])) # 需要提取数据保存字典，而不是数据展示字典
         theoryconc1 = request.POST.getlist("theoryconc1")
         theoryconc2 = request.POST.getlist("theoryconc2")
         theoryconc3 = request.POST.getlist("theoryconc3")
@@ -1432,28 +1542,27 @@ def Recyclesave(request):
         endmedianrecycle1 = request.POST.getlist("endmedianrecycle1")
         endmedianrecycle2 = request.POST.getlist("endmedianrecycle2")
         endmedianrecycle3 = request.POST.getlist("endmedianrecycle3")
-        endmedianrecycle = [endmedianrecycle1,
-                            endmedianrecycle2, endmedianrecycle3]
+        endmedianrecycle = [endmedianrecycle1,endmedianrecycle2, endmedianrecycle3]
 
         endhighrecycle1 = request.POST.getlist("endhighrecycle1")
         endhighrecycle2 = request.POST.getlist("endhighrecycle2")
         endhighrecycle3 = request.POST.getlist("endhighrecycle3")
         endhighrecycle = [endhighrecycle1, endhighrecycle2, endhighrecycle3]
 
-        # Recycle_enddict的格式为一个列表，列表里只有一个字符串，字符串里又是一个字典，见上述注释，需要先把该字符串里的字典提取出来
-
+        falsecounter = request.POST.getlist("falsecounter")[0]
+        
         norm = []  # 化合物列表
-        for key in dic_recyclesave.keys():
+        for key in Recycle_dict.keys():
             norm.append(key)
 
         samnum = []  # 本底个数列表
-        for key, value in dic_recyclesave.items():
+        for key, value in Recycle_dict.items():
             samnum.append(len(value))
 
-        samname = ["one", "two", "three", "four", "five",
-                   "six", "seven", "eight", "nine", "ten"]  # 本底后缀
+        samname = ["RecB-1", "RecB-2", "RecB-3"]  # 本底后缀
+
         for i in range(len(norm)):
-            norm_dict = dic_recyclesave[norm[i]]
+            norm_dict = Recycle_dict[norm[i]]
             for j in range(samnum[i]):  # 循环每个化合物下的本底个数
                 norm_dict[samname[j]].append(theoryconc1[j+3*i])
                 norm_dict[samname[j]].append(theoryconc2[j+3*i])
@@ -1468,37 +1577,19 @@ def Recyclesave(request):
                 norm_dict[samname[j]].append(endhighrecycle2[j+3*i])
                 norm_dict[samname[j]].append(endhighrecycle3[j+3*i])
 
-        print(dic_recyclesave)
+        print(Recycle_dict)
 
-        reportinfo = ReportInfo.objects.get(
-            number=request.POST["instrument_num"], project=request.POST["project"])
-
-        recycle_judgenum = 0
-        for i in endlowrecycle:
-            for j in i:
-                if "不通过" in j:
-                    recycle_judgenum += 1
-
-        for i in endmedianrecycle:
-            for j in i:
-                if "不通过" in j:
-                    recycle_judgenum += 1
-
-        for i in endhighrecycle:
-            for j in i:
-                if "不通过" in j:
-                    recycle_judgenum += 1
+        reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
 
         level = ["L", "M", "H"]
-        if recycle_judgenum == 0:
+        if int(falsecounter) == 0:
             insert_list = []
-            for key, value in dic_recyclesave.items():  # 循环本底
+            for key, value in Recycle_dict.items():  # 循环本底
                 for r, c in value.items():
                     for j in range(len(level)):
                         insert_list.append(RECYCLE(reportinfo=reportinfo, norm=key, Experimentnum=r, level=level[j],
-                                                   sam_conc=c[j], theory_conc=c[j+12], end_conc1=c[3 *
-                                                                                                   j+3], end_conc2=c[3*j+4], end_conc3=c[3*j+5],
-                                                   end_recycle1=c[3*j+15], end_recycle2=c[3*j+16], end_recycle3=c[3*j+17]))
+                                                   sam_conc=c[j], theory_conc=c[j+12], end_conc1=c[3*j+3], end_conc2=c[3*j+4], 
+                                                   end_conc3=c[3*j+5],end_recycle1=c[3*j+15], end_recycle2=c[3*j+16], end_recycle3=c[3*j+17]))
 
             RECYCLE.objects.bulk_create(insert_list)  # 这种保存数据方法较省时间
             HttpResponse = "加标回收率数据保存成功!"
@@ -1507,13 +1598,12 @@ def Recyclesave(request):
         else:
             # 展示数据需要，后续需把这段代码删除
             insert_list = []
-            for key, value in dic_recyclesave.items():  # 循环本底
+            for key, value in Recycle_dict.items():  # 循环本底
                 for r, c in value.items():
                     for j in range(len(level)):
                         insert_list.append(RECYCLE(reportinfo=reportinfo, norm=key, Experimentnum=r, level=level[j],
-                                                   sam_conc=c[j], theory_conc=c[j+12], end_conc1=c[3 *
-                                                                                                   j+3], end_conc2=c[3*j+4], end_conc3=c[3*j+5],
-                                                   end_recycle1=c[3*j+15], end_recycle2=c[3*j+16], end_recycle3=c[3*j+17]))
+                                                   sam_conc=c[j], theory_conc=c[j+12], end_conc1=c[3*j+3], end_conc2=c[3*j+4], 
+                                                   end_conc3=c[3*j+5],end_recycle1=c[3*j+15], end_recycle2=c[3*j+16], end_recycle3=c[3*j+17]))
 
             RECYCLE.objects.bulk_create(insert_list)  # 这种保存数据方法较省时间
             HttpResponse = "加标回收率验证结果中含有不通过数据,请核对后重新提交!"
@@ -1589,10 +1679,6 @@ def AMR2save(request):
         AMR_judgenum = int(request.POST.getlist('AMRjudgenum')[0])
         picturenum = int(request.POST.getlist('picturenum')[0])
         # objfile_list=request.POST.getlist('objfile')[0].split(',')
-
-        # print("111111")
-        # print(objfile_list)
-        # print(type(objfile_list))
 
         AMR2save_norm = []  # 化合物列表
         for key in dic_AMRsave.keys():
@@ -1735,10 +1821,9 @@ def AMR_conclusionsave(request):
     else:
         User_class = 1
     if request.method == 'POST':
-        print(request.POST)
-        # 仪器编号,strip()的作用是去除前后空格
+        # 接收验证基本信息，点击继续验证按钮时需用到
         instrument_num = request.POST["instrument_num"]
-        group = request.POST["group"]  # 项目组
+        Detectionplatform = request.POST["Detectionplatform"]  # 项目组
         project = request.POST["project"]  # 项目
         platform = request.POST["platform"]  # 仪器平台(液质,液相,ICP-MS...)
         manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
@@ -1751,8 +1836,7 @@ def AMR_conclusionsave(request):
         amr = request.POST.getlist("amr")
 
         for i in range(len(compound)):
-            AMRconsluion.objects.create(
-                reportinfo_id=id, name=compound[i], lodconclusion=lod[i], loqconclusion=loq[i], amrconclusion=amr[i])
+            AMRconsluion.objects.create(reportinfo_id=id, name=compound[i], lodconclusion=lod[i], loqconclusion=loq[i], amrconclusion=amr[i])
 
     HttpResponse = "AMR最终结论数据保存成功!"
     return render(request, 'report/Datasave.html', locals())

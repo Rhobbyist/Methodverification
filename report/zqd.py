@@ -1,3 +1,4 @@
+from ast import Pass
 import xlrd
 from report.models import *
 from docx import Document
@@ -23,19 +24,16 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
         PTstandard1.append(i.accept1) 
         PTrange2.append(i.range2) 
         PTstandard2.append(i.accept2) 
-    
-    print(PTnorm)
-    print(PTrange1)
 
-    # 如果没在后台管理系统中设置化合物名称或者可接受标准，直接返回并提示
+    # 如果没在后台管理系统中设置化合物名称直接返回并提示
     if all(i is None for i in PTnorm):
         error_message="尚未在后台管理系统中设置PT的化合物名称,请设置后重新提交数据!"
         return {"error_message":error_message}
 
     # Python判断列表中是否为空，包括None
-    if all(i is None for i in PTrange1):
-        error_message="尚未在后台管理系统中设置PT的可接受标准,请设置后重新提交数据!"
-        return {"error_message":error_message}
+    # if all(i is None for i in PTrange1):
+    #     error_message="尚未在后台管理系统中设置PT的可接受标准,请设置后重新提交数据!"
+    #     return {"error_message":error_message}
 
     # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
     if manufacturers=="AB":
@@ -208,6 +206,8 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                                     PT_dict[PTnorm[j]].append([content[i][nameindex],effectnum(content[i][conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
             
             elif manufacturers =="AB":
+                print(normAB)
+                print(PTnorm)
                 # 获取上传的文件
                 file_data = Document(file)
 
@@ -265,14 +265,26 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                             nameindex = i
                         elif "Calculated Conc" in rowdatagatherlist[0][i]:
                             concindex = i
+
+                    # 判断是否在后台管理系统中设置了可接受标准
+
+                    # 第一种情况，未设置，前端调用可接受区间模板
+                    if all(i is None for i in PTrange1):
+                        templates = 1
+                        for i in range(len(rowdatagatherlist)): 
+                            if "PT" in rowdatagatherlist[i][nameindex]:
+                                PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits)])
+
+                    # 第二种情况，已设置，前端调用可接受标准模板
+                    else:
+                        templates = 2
+                        for i in range(len(rowdatagatherlist)): 
+                            if "PT" in rowdatagatherlist[i][nameindex]:                       
+                                if float(rowdatagatherlist[i][concindex])<PTrange1[k]:
+                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
+                                elif float(rowdatagatherlist[i][concindex])>=PTrange2[k]:
+                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
                 
-                    for i in range(len(rowdatagatherlist)): 
-                        if "PT" in rowdatagatherlist[i][nameindex]:                       
-                            if float(rowdatagatherlist[i][concindex])<PTrange1[k]:
-                                PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
-                            elif float(rowdatagatherlist[i][concindex])>=PTrange2[k]:
-                                PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
-            
             # 判断每个指标有几个样本
             PT_num = len(PT_dict[PTnorm[0]])
 
@@ -352,7 +364,8 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
 
             PT_num = len(PT_dict[PTnorm[0]])
 
-        return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"PTrange1":len(PTrange1)}
+        print(PT_dict)
+        return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"templates":templates}
 
 def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
@@ -422,11 +435,12 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
     # 2 抓取加标回收率原始数据
 
     # 头部定义相关需要提取生成的结果
-    Recycle_enddict={} # 加班回收率最终字典
+    Recycle_enddict_show={} # 加班回收率最终字典(展示数据用,如用户上传了加标数据的文件,需要添加加标数据)
+    Recycle_enddict_savedata={} # 加班回收率最终字典(保存数据用,如用户上传了加标数据的文件,不需要添加加标数据,在验证界面点击保存按钮后需要用到此字典)
 
     for file in files:
         print(file.name)
-        if file.name=="加标回收率-原始数据.csv":
+        if file.name!="加标回收率-加标数据.csv":
             if platform=="液质":
                 if manufacturers =="Agilent":
                     # 1 读取csv文件（Agilent）
@@ -459,14 +473,13 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
                         elif lines[1][j]  == "Final Conc." :
                             conindex.append(j)
 
-                    # 确定本底数，含有"RecB"
+                    # 确定本底数(含有"RecB")
                     RecBlist=[] #本底列表,长度/3即为本底数  
                     for i in range(len(lines)): # 循环原始数据中的每一行,并避免重复添加 
                         # 加标回收率本底实验号命名“RecB-1-1”                
                         if "RecB" in lines[i][nameindex][0:6] and lines[i][nameindex][0:6] not in RecBlist: 
                             RecBlist.append(lines[i][nameindex][0:6])
 
-        
                     # 匹配原始数据中与加标回收相关的行  
                     for k in range(len(norm)):
                         norm_dict={} #每个化合物数据字典
@@ -491,11 +504,14 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
                             norm_dict[RecBlist[j]].extend(low)
                             norm_dict[RecBlist[j]].extend(median)
                             norm_dict[RecBlist[j]].extend(high)
-                            norm_dict[RecBlist[j]].extend(Rec_dict[Reclist[j]])
+                            if Rec_dict!={}:
+                                norm_dict[RecBlist[j]].extend(Rec_dict[Reclist[j]])
+                            else:
+                                norm_dict[RecBlist[j]].extend(["","","","","","","","",""])
                             
-                        Recycle_enddict[norm[k]]=norm_dict
+                        Recycle_enddict_show[norm[k]]=norm_dict
 
-                    print(Recycle_enddict)
+                    print(Recycle_enddict_show)
 
                 elif manufacturers =="Waters":
                     data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
@@ -716,93 +732,107 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
                     print(Recycle_enddict)
                     
                 elif manufacturers =="AB":
-                    norm=normAB
-                    # norm_notdistinct=[] # 未去重的指标列表
+                    # 定义化合物列表，列表统一命名为norm
+                    norm = normAB
+
+                    # 获取上传的文件
                     file_data = Document(file)
-                    paragraphs=[] #段落列表，需依此及母离子和子离子列表判断table索引
 
-                    # 将待测物质添加进入norm列表中
-                    for p in file_data.paragraphs: 
-                        if len(p.text)!=0 and p.text!="\n":
-                            paragraphs.append(p.text)
-                        # if "Analyte" in p.text:
-                        #     norm_notdistinct.append(p.text.split(" ")[1])
+                    # 每个表格最上方的标题内容列表，含有母离子和子离子的信息。需依此及母离子和子离子列表判断table索引
+                    paragraphs = [] 
 
-                    # 确定table索引
-                    tableindex=[]
+                    # 若标题长度为0或为换行等，不添加进入标题内容列表
+                    for p in file_data.paragraphs:
+                        if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
+                            paragraphs.append(p.text.strip())
+
+                    # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格
+                    tableindex = []
                     for i in range(len(paragraphs)):
                         for j in range(len(ZP_Method_precursor_ion)):
                             if ZP_Method_precursor_ion[j] in paragraphs[i] and ZP_Method_product_ion[j] in paragraphs[i]:
                                 tableindex.append(2*i+1)
 
-                    # norm = []
-                    # for i in norm_notdistinct:
-                    #     if i not in norm:
-                    #         norm.append(i)
+                    tables = file_data.tables  # 获取文件中的表格集
 
-                    tables = file_data.tables #获取文件中的表格集
-
-                    for k in range(len(tableindex)): 
-                        tableRecycle = tables[tableindex[k]] #获取文件中的相关表格
-                        nameindex=0
-                        conindex=0
+                    # 循环定量表格的索引
+                    for k in range(len(tableindex)):
+                        # 获取文件中的定量表格
+                        tablequantify = tables[tableindex[k]] 
 
                         # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
-                        cells=tableRecycle._cells
-                        ROWS=len(tableRecycle.rows)
-                        COLUMNS=len(tableRecycle.columns)
-                        data=[] #每一行的数据
-                        datas=[] #大列表，包含每一行的数据
+                        cells = tablequantify._cells
+                        ROWS = len(tablequantify.rows)
+                        COLUMNS = len(tablequantify.columns)
+                        rowdatalist = []  # 每一行的数据列表
+                        rowdatagatherlist = []  # 每一行的数据列表汇总列表
+
                         for i in range(ROWS*COLUMNS):
-                            text=cells[i].text.replace("\n","")
-                            text=text.strip() #去除空白符
-                            if i % 12 != 0 or i == 0:  #docx文件固定为12列
-                                data.append(text)
+                            text = cells[i].text.replace("\n", "")
+                            text = text.strip()  # 去除空白符
+                            if i % COLUMNS != 0 or i == 0:
+                                rowdatalist.append(text)
                             else:
-                                datas.append(data)
-                                data=[]
-                                data.append(text)
-                        datas.append(data)
+                                rowdatagatherlist.append(rowdatalist)
+                                rowdatalist = []
+                                rowdatalist.append(text)
+                        rowdatagatherlist.append(rowdatalist)
+
+                        nameindex = 0
+                        concindex = 0  # 浓度索引，AB的数据格式决定每个化合物的浓度所在列一定是同一列
 
                         # 读取表格的第一行的单元格,判断实验号和浓度索引
-                        for i in range(len(datas[0])):
-                            if datas[0][i] == "Sample Name" :
-                                nameindex=i
-                            elif "Calculated Conc" in datas[0][i]:
-                                conindex=i
+                        for i in range(len(rowdatagatherlist[0])):
+                            if rowdatagatherlist[0][i] == "Sample Name":
+                                nameindex = i
+                            elif "Calculated Conc" in rowdatagatherlist[0][i]:
+                                concindex = i
                         
-                        # 确定本底数，含有"Recycle"及"background"
-                        background=[] #本底列表,长度/3即为本底数  
-                        for i in range(len(datas)): 
-                            if "Recycle" in datas[i][nameindex] and "background" in datas[i][nameindex]:
-                                background.append(datas[i][nameindex])
-        
-                        group_Recycle={} #每个化合物数据字典
-                        for j in range(int(len(background)/3)): #本底列表,长度/3即为本底数  
-                            background_conc=[] #本底浓度列表
-                            low=[] #本底加标后低浓度列表
-                            median=[] #本底加标后中浓度列表
-                            high=[] #本底加标后高浓度列表                 
-                            for i in range(len(datas)):                 
-                                if "background" in datas[i][nameindex] and Recycle_background[j] in datas[i][nameindex]:  # 如果实验号命名方式匹配上，则在相应列表中添加相应数据
-                                    background_conc.append(effectnum(datas[i][conindex],digits)) 
-                                elif "low" in datas[i][nameindex] and Recycle_background[j] in datas[i][nameindex]:
-                                    low.append(effectnum(datas[i][conindex],digits))
-                                elif "median" in datas[i][nameindex] and Recycle_background[j] in datas[i][nameindex]:
-                                    median.append(effectnum(datas[i][conindex],digits))
-                                elif "high" in datas[i][nameindex] and Recycle_background[j] in datas[i][nameindex]:
-                                    high.append(effectnum(datas[i][conindex],digits))
+                        # 确定本底数(含有"RecB")
+                        RecBlist=[] #本底列表,长度/3即为本底数  
+                        for i in range(len(rowdatagatherlist)): # 循环原始数据中的每一行,并避免重复添加 
+                            # 加标回收率本底实验号命名“RecB-1-1”                
+                            if "RecB" in rowdatagatherlist[i][nameindex][0:6] and rowdatagatherlist[i][nameindex][0:6] not in RecBlist: 
+                                RecBlist.append(rowdatagatherlist[i][nameindex][0:6])
 
-                            group_Recycle[Recycle_background[j]]=[]
-                            for i in background_conc:
-                                group_Recycle[Recycle_background[j]].append(i)
-                            for i in low:
-                                group_Recycle[Recycle_background[j]].append(i)
-                            for i in median:
-                                group_Recycle[Recycle_background[j]].append(i)
-                            for i in high:
-                                group_Recycle[Recycle_background[j]].append(i) 
-                        Recycle_enddict[norm[k]]=group_Recycle
+                        # 匹配原始数据中与加标回收相关的行  
+                        for k in range(len(norm)):
+                            Recycle_enddict_show[norm[k]]={} # 数据展示字典
+                            Recycle_enddict_savedata[norm[k]]={} # 数据保存字典
+
+                            for j in range(len(RecBlist)): #本底列表 
+                                RecB_conc=[] #本底浓度列表
+                                low=[] #本底加标后低浓度列表
+                                median=[] #本底加标后中浓度列表
+                                high=[] #本底加标后高浓度列表                 
+                                for i in range(len(rowdatagatherlist)): # 循环原始数据中的每一行                   
+                                    if RecBlist[j] in rowdatagatherlist[i][nameindex]: 
+                                        RecB_conc.append(effectnum(rowdatagatherlist[i][concindex],digits)) 
+                                    elif "L" in rowdatagatherlist[i][nameindex] and Reclist[j] in rowdatagatherlist[i][nameindex]:
+                                        low.append(effectnum(rowdatagatherlist[i][concindex],digits))
+                                    elif "M" in rowdatagatherlist[i][nameindex] and Reclist[j] in rowdatagatherlist[i][nameindex]:
+                                        median.append(effectnum(rowdatagatherlist[i][concindex],digits))
+                                    elif "H" in rowdatagatherlist[i][nameindex] and Reclist[j] in rowdatagatherlist[i][nameindex]:
+                                        high.append(effectnum(rowdatagatherlist[i][concindex],digits))
+
+                                # 数据展示字典
+                                Recycle_enddict_show[norm[k]][RecBlist[j]]=[]               
+                                Recycle_enddict_show[norm[k]][RecBlist[j]].extend(RecB_conc)
+                                Recycle_enddict_show[norm[k]][RecBlist[j]].extend(low)
+                                Recycle_enddict_show[norm[k]][RecBlist[j]].extend(median)
+                                Recycle_enddict_show[norm[k]][RecBlist[j]].extend(high)
+
+                                if Rec_dict!={}:
+                                    Recycle_enddict_show[norm[k]][RecBlist[j]].extend(Rec_dict[Reclist[j]])
+                                else:
+                                    Recycle_enddict_show[norm[k]][RecBlist[j]].extend(["","","","","","","","",""])
+
+                                # 数据保存字典
+                                Recycle_enddict_savedata[norm[k]][RecBlist[j]]=[]               
+                                Recycle_enddict_savedata[norm[k]][RecBlist[j]].extend(RecB_conc)
+                                Recycle_enddict_savedata[norm[k]][RecBlist[j]].extend(low)
+                                Recycle_enddict_savedata[norm[k]][RecBlist[j]].extend(median)
+                                Recycle_enddict_savedata[norm[k]][RecBlist[j]].extend(high)                            
 
             elif platform=="液相":
                 if manufacturers =="Agilent":
@@ -876,15 +906,13 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
                                 group_Recycle[Recycle_background[j]].append(i)
                             for i in high:
                                 group_Recycle[Recycle_background[j]].append(i) 
-                        Recycle_enddict[norm[k]]=group_Recycle
+                        Recycle_enddict_show[norm[k]]=group_Recycle
 
                     print(Recycle_enddict)
 
-    print(Recycle_enddict)
-
-
-                
-    return {"Recycle_enddict":Recycle_enddict,"Unit":Unit,"lowvalue":lowvalue,"upvalue":upvalue}
+    print(Recycle_enddict_show)
+               
+    return {"Recycle_enddict_show":Recycle_enddict_show,"Recycle_enddict_savedata":Recycle_enddict_savedata,"Unit":Unit,"lowvalue":lowvalue,"upvalue":upvalue}
 
 # PT数据关联进入最终报告
 def related_PT(id): 

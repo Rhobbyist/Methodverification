@@ -21,15 +21,70 @@
     <body>
         <div class="container">
             <form action="{% url 'AMR_conclusionsave' %}" method="POST" >
-                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                <input hidden = "hidden" value="{{group}}" name="group">
-                <input hidden = "hidden" value="{{project}}" name="project">
-                <input hidden = "hidden" value="{{platform}}" name="platform">
-                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
-                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <!-- 1 验证基本信息展示 -->
+                <div class="basicinfo">
+                    <!-- 标题 -->
+                    <h2>验证基本信息</h2>
+                    <br>
+
+                    <!-- 仪器型号及验证时机 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器型号</label>
+                                <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">验证时机</label>
+                                <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                            </div> 
+                        </div>
+                    </div>
+
+                    <!-- 检测平台及检测项目 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测平台</label>
+                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测项目</label>
+                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                            </div> 
+                        </div>
+                    </div>
+                    
+                    <!-- 仪器平台及仪器厂家 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器平台</label>
+                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器厂家</label>
+                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <input hidden = "hidden" value="{{AMRid}}" name="id">
-                <h2>AMR最终结论表格</h2>
+                
+                 <!-- 2 分界线 -->
+                 <h1 class="page-header"></h1>
+
+                <!-- 3 验证结果展示 -->
+                <h2>验证指标：AMR最终结论</h2>
                 <br>
+                <div class="row">
                     <table border="1" cellpadding="16"  id="table" >
                         <tr>
                             <th>化合物</th>
@@ -59,11 +114,11 @@
                     <input class="btn btn-primary" type="button" value="点击添加另一个化合物" onclick="add()" /> <!--在添加按钮上添加点击事件 -->
                     <br><br><br>
                     <input class="btn btn-danger" type="submit" value="保存"/>
+                </div>             
             </form>
         </div>
     </body>
     
-    <center>
     <script type="text/javascript">
 
         window.onload = function(){
@@ -87,35 +142,34 @@
         // 编写一个函数，供添加按钮调用，动态在表格的最后一行添加子节点；
         var num=1;
         function add(){
-        num++;
-        var tr=document.createElement("tr");
-        var name=document.createElement("td");
-        var lod=document.createElement("td");
-        var loq=document.createElement("td");
-        var amr=document.createElement("td");
-        name.setAttribute('align', 'center');
-        lod.setAttribute('align', 'center');
-        loq.setAttribute('align', 'center');
-        amr.setAttribute('align', 'center');
-        name.innerHTML='<input class="compound" type="text" style="width:70px;" name="compound">';
-        lod.innerHTML='<input class="lod" type="text" style="width:70px;" name="lod">';
-        loq.innerHTML='<input class="loq" type="text" style="width:70px;" name="loq">';
-        amr.innerHTML='<input class="amr" type="text" style="width:100px;" name="amr">';
-        var del=document.createElement("td");
-        del.setAttribute('align', 'center');
-        del.innerHTML="<a href='javascript:;' onclick='del(this)' >删除</a>";
-        var tab=document.getElementById("table");
-        tab.appendChild(tr);
-        tr.appendChild(name);
-        tr.appendChild(lod);
-        tr.appendChild(loq);
-        tr.appendChild(amr);
-        tr.appendChild(del);
-        var tr = document.getElementsByTagName("tr");
-        for(var i= 0;i<tr.length;i++)
-        {
-        bgcChange(tr[i]);
-        }
+            num++;
+            var tr=document.createElement("tr");
+            var name=document.createElement("td");
+            var lod=document.createElement("td");
+            var loq=document.createElement("td");
+            var amr=document.createElement("td");
+            name.setAttribute('align', 'center');
+            lod.setAttribute('align', 'center');
+            loq.setAttribute('align', 'center');
+            amr.setAttribute('align', 'center');
+            name.innerHTML='<input class="compound" type="text" style="width:70px;" name="compound">';
+            lod.innerHTML='<input class="lod" type="text" style="width:70px;" name="lod">';
+            loq.innerHTML='<input class="loq" type="text" style="width:70px;" name="loq">';
+            amr.innerHTML='<input class="amr" type="text" style="width:100px;" name="amr">';
+            var del=document.createElement("td");
+            del.setAttribute('align', 'center');
+            del.innerHTML="<a href='javascript:;' onclick='del(this)' >删除</a>";
+            var tab=document.getElementById("table");
+            tab.appendChild(tr);
+            tr.appendChild(name);
+            tr.appendChild(lod);
+            tr.appendChild(loq);
+            tr.appendChild(amr);
+            tr.appendChild(del);
+            var tr = document.getElementsByTagName("tr");
+            for(var i= 0;i<tr.length;i++){
+                bgcChange(tr[i]);
+            }
         }
         
         // 创建删除函数
@@ -126,7 +180,6 @@
         }
  
         </script>
-        </center>
 {% endblock %}
 
 

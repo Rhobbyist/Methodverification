@@ -77,8 +77,9 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
 
     # 各仪器平台及各仪器厂家数据读取
     for file in files:
+        print(file.name)
         # 文件为图片(.png或.JPG)
-        if '.png' in file.name or ".JPG" in file.name:    
+        if '.png' in file.name or ".JPG" in file.name:   
             picturenum+=1
             picturelist.append(file)
             if AMRpicture.objects.filter(reportinfo = reportinfo,img = "img/"+file.name):
@@ -146,7 +147,12 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
                         if "AMR-" in lines[j][nameindex] and lines[j][nameindex][0:6] not in AMR_STD:
                             AMR_STD.append(lines[j][nameindex][0:6])
 
-                    print("AMR_STD:%s" % (AMR_STD))
+                    # 按顺序重新排列AMR_STD
+                    AMR_STD_sort=[]
+                    for i in S:
+                        for j in AMR_STD:
+                            if i in j:
+                                AMR_STD_sort.append(j)
 
                     # 从原始数据表格中抓取数据
                     for k in range(len(norm)): # 循环化合物列表
@@ -164,7 +170,7 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
 
                             normdict[AMR_STD[j]]=[]
                             normdict[AMR_STD[j]].append(theoryconc[0]) #理论浓度列表有重复，只添加第一个值
-                            for i in len(calconc):
+                            for i in range(len(calconc)):
                                 normdict[AMR_STD[j]].append(calconc[i])
                                 normdict[AMR_STD[j]].append(Accuracy[i])
 
@@ -512,8 +518,7 @@ def LOQgeneral_singlefileread(files,reportinfo,project,platform,manufacturers,Un
                                 normdict[AMR_STD_sort[j]].append(Accuracy[i])
 
                         AMR_dict[norm[k]]=normdict # 第一个化合物的数据列表normdict循环完成，放入最终字典AMR_dict中，开始循环下一个化合物
-
-            
+           
             elif platform=="液相":
                 if manufacturers =="Agilent":           
                     data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
@@ -1099,8 +1104,6 @@ def LODfileread(files,reportinfo,project,platform,manufacturers,Unit,digits,ZP_M
                     if isinstance(LOD_dict[key][i], str)!=True:
                         LOD_dict[key][i]=effectnum(LOD_dict[key][i],digits)
 
-            print(LOD_dict)
-
             Experimentnum=["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","X","SD","LOD(3 SD)","LOD(10 SD)"]
 
             insert_list =[]
@@ -1334,14 +1337,20 @@ def related_LOD(id):
 
 # AMR最终结论表格进入最终报告
 def related_AMRconclusion(id): 
-    data_AMRconclusiontable = AMRconsluion.objects.filter(reportinfo_id=id)
-    AMRconclusiontabledict={}
+    # 定义需要生成的字典
+    AMRconclusion_dict = {}  # 最终需要的字典
 
-    if data_AMRconclusiontable: 
-        for i in data_AMRconclusiontable:
-            AMRconclusiontabledict[i.name]=[]
-            AMRconclusiontabledict[i.name].append(i.lodconclusion)
-            AMRconclusiontabledict[i.name].append(i.loqconclusion)
-            AMRconclusiontabledict[i.name].append(i.amrconclusion)
+    try:
+        # 1 基础数据抓取
+        AMRconclusion_data = AMRconsluion.objects.filter(reportinfo_id=id)
+
+        for i in AMRconclusion_data:
+            AMRconclusion_dict[i.name]=[]
+            AMRconclusion_dict[i.name].append(i.lodconclusion)
+            AMRconclusion_dict[i.name].append(i.loqconclusion)
+            AMRconclusion_dict[i.name].append(i.amrconclusion)
     
-        return {"AMRconclusiontabledict":AMRconclusiontabledict}
+        return {"AMRconclusion_dict":AMRconclusion_dict}
+
+    except:
+        pass

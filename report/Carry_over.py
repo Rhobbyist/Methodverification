@@ -1,3 +1,4 @@
+from random import SystemRandom
 import numpy as np
 import xlrd
 from docx import Document
@@ -46,16 +47,17 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
     #  第二步:开始文件读取
 
     '''
-    注释1:csv,txt,xlsx,docx 4种格式数据读取完毕后,需要生成一个列表Carryover_list,数据格式如下：
-    print(Carryover_list):
-    [   [[6.92, 7.3, 7.1], [219.59, 215.44, 212.08], [7.25, 7.61, 7.32]], 
-    [[7.08, 7.02, 6.97], [237.74, 229.57, 228.31], [6.94, 6.85, 6.75]]   ] 两个化合物，两个子列表
+    注释1:csv,txt,xlsx,docx 4种格式数据读取完毕后,需要生成一个字典Carryover_dict,数据格式如下：
+    {"s1系统":{"化合物1":[C1,C2,C3,C1,C2,C3],"化合物2":[C1,C2,C3,C1,C2,C3]},
+    "s2系统":{"化合物1":[C1,C2,C3,C1,C2,C3],"化合物2":[C1,C2,C3,C1,C2,C3]}}
     '''
 
     # 创建第二步需要生成的结果容器
-    Carryover_list=[] 
+    Carryover_dict={}
+    Systermlist=["S1系统","S2系统","S3系统","S4系统"] #目前最多支持4个系统
 
-    for file in files:
+    for index,file in enumerate(files):
+        Carryover_dict[Systermlist[index]]={}
         if platform=="液质":
             if manufacturers =="Agilent":
                 # 1 读取csv文件（Agilent）
@@ -85,22 +87,17 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
                         conindex.append(j)
 
                 for j in range(len(norm)):
-                    C1=[] 
-                    C2=[] 
-                    C3=[]
                     normlist=[]
+                    
                     for i in range(len(lines)): # 循环原始数据中的每一行
                         if "Carryover-C1" in lines[i][nameindex]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据 
-                            C1.append(effectnum(lines[i][conindex[j]],digits))
+                            normlist.append(effectnum(lines[i][conindex[j]],digits))
                         elif "Carryover-C2" in lines[i][nameindex]:
-                            C2.append(effectnum(lines[i][conindex[j]],digits))
+                            normlist.append(effectnum(lines[i][conindex[j]],digits))
                         elif "Carryover-C3" in lines[i][nameindex]:
-                            C3.append(effectnum(lines[i][conindex[j]],digits))
+                            normlist.append(effectnum(lines[i][conindex[j]],digits))
                     
-                    normlist.append(C1)
-                    normlist.append(C2)
-                    normlist.append(C3)
-                    Carryover_list.append(normlist)
+                    Carryover_dict[Systermlist[index]][norm[j]]=normlist
 
             elif manufacturers =="Waters":
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
@@ -307,24 +304,16 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
                         elif "Calculated Conc" in rowdatagatherlist[0][i]:
                             concindex=i
                     
-                    C1=[] 
-                    C2=[] 
-                    C3=[]
                     normlist=[]
                     for i in range(len(rowdatagatherlist)): 
                         if "Carryover-C1" in rowdatagatherlist[i][nameindex]:
-                            C1.append(effectnum(rowdatagatherlist[i][concindex],digits))
+                            normlist.append(effectnum(rowdatagatherlist[i][concindex],digits))
                         elif "Carryover-C2" in rowdatagatherlist[i][nameindex]:
-                            C2.append(effectnum(rowdatagatherlist[i][concindex],digits))
+                            normlist.append(effectnum(rowdatagatherlist[i][concindex],digits))
                         elif "Carryover-C3" in rowdatagatherlist[i][nameindex]:
-                            C3.append(effectnum(rowdatagatherlist[i][concindex],digits))
-                
-                    normlist.append(C1)
-                    normlist.append(C2)
-                    normlist.append(C3)
-                    Carryover_list.append(normlist)
+                            normlist.append(effectnum(rowdatagatherlist[i][concindex],digits))
 
-                print(Carryover_list)
+                    Carryover_dict[Systermlist[index]][norm[k]]=normlist
 
         elif platform=="液相":
             if manufacturers =="Agilent":
@@ -376,53 +365,68 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
                     group_Carryover.append(C3)
                     Carryover_list.append(group_Carryover)
 
+    
     ########文件读取完毕#######
                 
 
-    #  第三步:文件读取完毕后的操作
-
+    #  第三步:文件读取完毕后的操作(添加:C1mean,C3mean,(C3mean-C1mean)/C1mean)
     '''
-    注释2:最终需要生成一个字典Carryover_dict,数据格式如下：
-    print(Carryover_dict):
-    {"化合物1":[C1,C2,C3,C1,C2,C3,C1,C2,C3,C1mean,C3mean,(C3mean-C1mean)/C1mean],
-    "化合物2":[C1,C2,C3,C1,C2,C3,C1,C2,C3,C1mean,C3mean,(C3mean-C1mean)/C1mean]}
+    注释2:第三步,需要生成一个字典Carryover_enddict,数据格式如下：
+    {"化合物1":{"s1系统":[C1,C2,C3,C1,C2,C3],"s2系统":[C1,C2,C3,C1,C2,C3]},
+    "化合物2":{"s1系统":[C1,C2,C3,C1,C2,C3],"s2系统":[C1,C2,C3,C1,C2,C3]}
+    }
     '''
 
-    # 创新第三步需要生成的结果容器
-    Carryover_dict={}
+    # 创建第三步需要生成的结果容器
+    Carryover_enddict={}
 
-    for i in range(len(Carryover_list)):
-        middle_list=[]
-        for k in range(3): #3为[C1,C2,C3]...这个列表的个数
-            for j in Carryover_list[i]:
-                middle_list.append(j[k])
-        Carryover_dict[norm[i]]=middle_list
+    # Carryover_dict格式转换
+    for i in norm:
+        Carryover_enddict[i]={}
+        for key,value in Carryover_dict.items():
+            for r,c in value.items():
+                if r==i:
+                    Carryover_enddict[i][key]=c
 
     Carryover_judgenum=0
-    for value in Carryover_dict.values():
-        C1mean=new_round((float(value[0])+float(value[3])+float(value[6]))/3,2)
-        C3mean=new_round((float(value[2])+float(value[5])+float(value[8]))/3,2)
-        value.append(C1mean)
-        value.append(C3mean)
-        num=new_round(abs(float(C3mean)-float(C1mean))/float(C1mean)*100,2) #判断携带效应偏差，大于20%需要在后面备注不通过
-        if float(num)>maxaccept:
-            Carryover_judgenum+=1
-            value.append(num)
-        else:
-            value.append(num)
+
+    for key,value in Carryover_enddict.items():
+        for r,c in value.items():
+            c2 = list(map(float,c)) # 列表中的字符串转换为浮点数
+            C1mean=new_round((c2[0]+c2[3]+c2[6])/3,2)
+            C3mean=new_round((c2[2]+c2[5]+c2[8])/3,2)
+            bias=new_round(abs(float(C3mean)-float(C1mean))/float(C1mean)*100,2)
+            value[r].append(C1mean)
+            value[r].append(C3mean)
+            value[r].append(bias)
+
+            if float(bias)>maxaccept:
+                Carryover_judgenum+=1
 
     #  第四步:数据存入数据库
 
     # 如果Carryover_judgenum的值等于0才将数据存入数据库中
     if Carryover_judgenum==0:
-        insert_list =[]
-        for key,value in Carryover_dict.items():
-            insert_list.append(Carryover(reportinfo=reportinfo,norm=key,C1_1=value[0],C2_1=value[1],C3_1=value[2],C1_2=value[3],
-            C2_2=value[4],C3_2=value[5],C1_3=value[6],C2_3=value[7],C3_3=value[8],C1mean=value[9],C3mean=value[10],bias=value[11]))
-        
-        Carryover.objects.bulk_create(insert_list)
-    
-    return {"Carryover_dict":Carryover_dict,"Unit":Unit,"maxaccept":maxaccept}
+        if len(files)==1:
+            insert_list =[]
+            for key,value in Carryover_enddict.items():
+                for r,c in value.items():
+                    insert_list.append(Carryover(reportinfo=reportinfo,norm=key,systermnum=r,C1_1=c[0],C2_1=c[1],C3_1=c[2],C1_2=c[3],
+                    C2_2=c[4],C3_2=c[5],C1_3=c[6],C2_3=c[7],C3_3=c[8],C1mean=c[9],C3mean=c[10],bias=c[11]))
+            
+            Carryover.objects.bulk_create(insert_list)
+
+        else:
+            insert_list =[]
+            for key,value in Carryover_enddict.items():
+                for r,c in value.items():
+                    insert_list.append(Carryover(reportinfo=reportinfo,norm=key,systermnum=r,C1_1=c[0],C2_1=c[1],C3_1=c[2],C1_2=c[3],
+                    C2_2=c[4],C3_2=c[5],C1_3=c[6],C2_3=c[7],C3_3=c[8],C1mean=c[9],C3mean=c[10],bias=c[11]))
+            
+            Carryover.objects.bulk_create(insert_list)
+
+    print(Carryover_enddict)
+    return {"Carryover_dict":Carryover_enddict,"Systermnum":len(files),"Unit":Unit,"maxaccept":maxaccept}
 
 def Carryover_21sample_fileread(files,Detectionplatform,reportinfo,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB):
 
@@ -583,10 +587,10 @@ def related_Carryover(id):
     # 第二步：报告数据提取
 
     '''
-    注释:需要生成一个字典Carryover_endreport_dict,数据格式如下：
-    print(Carryover_endreport_dict):
-    {"化合物1":[C1,C2,C3,C1,C2,C3,C1,C2,C3,C1mean,C3mean,(C3mean-C1mean)/C1mean],
-    "化合物2":[C1,C2,C3,C1,C2,C3,C1,C2,C3,C1mean,C3mean,(C3mean-C1mean)/C1mean]}
+    注释:需要生成一个字典Carryover_dict,数据格式如下：
+    {"化合物1":{"s1系统":[C1,C2,C3,C1,C2,C3],"s2系统":[C1,C2,C3,C1,C2,C3]},
+    "化合物2":{"s1系统":[C1,C2,C3,C1,C2,C3],"s2系统":[C1,C2,C3,C1,C2,C3]}
+    }
     '''
 
     # 1 9个样本的做法
@@ -598,97 +602,122 @@ def related_Carryover(id):
         # 1 基础数据抓取
         Carryover_data = Carryover.objects.filter(reportinfo_id=id)
 
+        # 化合物列表
         Carryover_norm=[]
         for i in Carryover_data:
             if i.norm not in Carryover_norm:
                 Carryover_norm.append(i.norm)
 
+        # 携带效应系统编号列表
+        Carryover_systermnum=[]
+        for i in Carryover_data:
+            if i.systermnum not in Carryover_systermnum:
+                Carryover_systermnum.append(i.systermnum)
+        
+
         for i in Carryover_norm:
-            middle_list = []  # 每个化合物的数据列表
-            middle_table = Carryover.objects.filter(reportinfo_id=id,norm=i)
-            for item in middle_table:
-                # 没有为每个化合物单独设置有效位数，则调用通用性设置
-                if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
-                    middle_list.append(item.C1_1)
-                    middle_list.append(item.C2_1)
-                    middle_list.append(item.C3_1)
-                    middle_list.append(item.C1_2)
-                    middle_list.append(item.C2_2)
-                    middle_list.append(item.C3_2)
-                    middle_list.append(item.C1_3)
-                    middle_list.append(item.C2_3)
-                    middle_list.append(item.C3_3)
-                    middle_list.append(item.C1mean)
-                    middle_list.append(item.C3mean)
-                    middle_list.append(new_round(item.bias,2))
-                #为每个化合物单独设置了有效位数，则调用每个化合物的设置
-                else:
-                    middle_list.append(effectnum(item.C1_1,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C2_1,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C3_1,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C1_2,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C2_2,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C3_2,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C1_3,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C2_3,Digitsdict[i]))
-                    middle_list.append(effectnum(item.C3_3,Digitsdict[i]))
-                    middle_list.append(item.C1mean)
-                    middle_list.append(item.C3mean)
-                    middle_list.append(new_round(item.bias,2))
-            Carryover_dict[i]=middle_list
-    
+            middle_dict = {}  # 每个化合物的数据字典
+            for j in Carryover_systermnum:
+                middle_list=[] # 每个化合物下每个系统编号的数据列表
+                middle_table = Carryover.objects.filter(reportinfo_id=id,norm=i,systermnum=j)
+                for item in middle_table:
+                    # 没有为每个化合物单独设置有效位数，则调用通用性设置
+                    if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
+                        middle_list.append(item.C1_1)
+                        middle_list.append(item.C2_1)
+                        middle_list.append(item.C3_1)
+                        middle_list.append(item.C1_2)
+                        middle_list.append(item.C2_2)
+                        middle_list.append(item.C3_2)
+                        middle_list.append(item.C1_3)
+                        middle_list.append(item.C2_3)
+                        middle_list.append(item.C3_3)
+                        middle_list.append(item.C1mean)
+                        middle_list.append(item.C3mean)
+                        middle_list.append(new_round(item.bias,2))
+                    #为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                    else:
+                        middle_list.append(effectnum(item.C1_1,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C2_1,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C3_1,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C1_2,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C2_2,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C3_2,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C1_3,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C2_3,Digitsdict[i]))
+                        middle_list.append(effectnum(item.C3_3,Digitsdict[i]))
+                        middle_list.append(item.C1mean)
+                        middle_list.append(item.C3mean)
+                        middle_list.append(new_round(item.bias,2))
+                
+                middle_dict[j]=middle_list
+            Carryover_dict[i]=middle_dict
+
+            
         Carryover_conclusion="(C3mean-C1mean)/C1mean均小于20%，说明系统无携带效应，满足检测要求。"
 
-        #每行最多排列7个化合物，如超过7个，需拆分表格
-        d=Carryover_dict
-        if len(d)<=7:
-            d_reshape={}
-            d_reshape["table1"]=d
+        # 单系统,每行最多排列7个化合物，如超过7个，需拆分表格
+        if len(Carryover_systermnum)==1:
+            d=Carryover_dict
+            if len(Carryover_norm)<=7:
+                d_reshape={}
+                d_reshape["table1"]=d
 
-        elif len(d)>7 and len(d)<=14: #7-14，拆分为两个table
-            d_reshape={}
-            if len(d)%2==0: #如果是奇数，第一个表格多一个
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//2+1])
-                d_reshape["table2"]=dict(list(d.items())[len(d)//2+1:])            
-            else: #如果是偶数，两个表格平分
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//2])
-                d_reshape["table2"]=dict(list(d.items())[len(d)//2:])
-                
-        elif len(d)>14 and len(d)<=21: #14-21，拆分为三个table
-            d_reshape={}
-            if len(d)==15 or len(d)==18 or len(d)==21:
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//3]) 
-                d_reshape["table2"]=dict(list(d.items())[len(d)//3:len(d)//3*2])      
-                d_reshape["table3"]=dict(list(d.items())[len(d)//3*2:])         
-            elif len(d)==16 or len(d)==19: 
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//3+1])
-                d_reshape["table2"]=dict(list(d.items())[len(d)//3+1:len(d)//3*2+1])
-                d_reshape["table3"]=dict(list(d.items())[len(d)//3*2+1:]) 
-            elif len(d)==17 or len(d)==20: 
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//3+1])
-                d_reshape["table2"]=dict(list(d.items())[len(d)//3+1:len(d)//3*2+2])
-                d_reshape["table3"]=dict(list(d.items())[len(d)//3*2+2:])  
+            elif len(d)>7 and len(d)<=14: #7-14，拆分为两个table
+                d_reshape={}
+                if len(d)%2==0: #如果是奇数，第一个表格多一个
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//2+1])
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//2+1:])            
+                else: #如果是偶数，两个表格平分
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//2])
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//2:])
+                    
+            elif len(d)>14 and len(d)<=21: #14-21，拆分为三个table
+                d_reshape={}
+                if len(d)==15 or len(d)==18 or len(d)==21:
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//3]) 
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//3:len(d)//3*2])      
+                    d_reshape["table3"]=dict(list(d.items())[len(d)//3*2:])         
+                elif len(d)==16 or len(d)==19: 
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//3+1])
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//3+1:len(d)//3*2+1])
+                    d_reshape["table3"]=dict(list(d.items())[len(d)//3*2+1:]) 
+                elif len(d)==17 or len(d)==20: 
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//3+1])
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//3+1:len(d)//3*2+2])
+                    d_reshape["table3"]=dict(list(d.items())[len(d)//3*2+2:])  
 
-        elif len(d)>21 and len(d)<=28: #21-28，拆分为四个table
-            d_reshape={}
-            if len(d)==24 or len(d)==28:
-                d_reshape["table1"]=dict(list(d.items())[:len(d)//4]) 
-                d_reshape["table2"]=dict(list(d.items())[len(d)//4:len(d)//4*2])      
-                d_reshape["table3"]=dict(list(d.items())[len(d)//4*2:len(d)//4*3]) 
-                d_reshape["table4"]=dict(list(d.items())[len(d)//4*3:])        
+            elif len(d)>21 and len(d)<=28: #21-28，拆分为四个table
+                d_reshape={}
+                if len(d)==24 or len(d)==28:
+                    d_reshape["table1"]=dict(list(d.items())[:len(d)//4]) 
+                    d_reshape["table2"]=dict(list(d.items())[len(d)//4:len(d)//4*2])      
+                    d_reshape["table3"]=dict(list(d.items())[len(d)//4*2:len(d)//4*3]) 
+                    d_reshape["table4"]=dict(list(d.items())[len(d)//4*3:])        
 
-        colspan_num=[] 
-        for key,value in d_reshape.items():
-            colspan_num.append(len(value))
+            colspan_num=[] 
+            for key,value in d_reshape.items():
+                colspan_num.append(len(value))
+            
+            print(Carryover_dict)
+            print(d_reshape)
 
-        print(textlist_special)
+            if len(textlist_special)!=0:
+                return {"Carryover_dict":Carryover_dict,"d_reshape":d_reshape,"Systermnum":len(Carryover_systermnum),"textlist":textlist_special,"serial":len(textlist_special)+1,
+                "Carryover_conclusion":Carryover_conclusion,"colspan_num":colspan_num}
+            else:
+                return {"Carryover_dict":Carryover_dict,"d_reshape":d_reshape,"Systermnum":len(Carryover_systermnum),"textlist":textlist_general,"serial":len(textlist_general)+1,
+                "Carryover_conclusion":Carryover_conclusion,"colspan_num":colspan_num}
 
-        if len(textlist_special)!=0:
-            return {"Carryover_dict":Carryover_dict,"d_reshape":d_reshape,"textlist":textlist_special,"serial":len(textlist_special)+1,
-            "Carryover_conclusion":Carryover_conclusion,"colspan_num":colspan_num}
+        # 多系统,先不做判断
         else:
-            return {"Carryover_dict":Carryover_dict,"d_reshape":d_reshape,"textlist":textlist_general,"serial":len(textlist_general)+1,
-            "Carryover_conclusion":Carryover_conclusion,"colspan_num":colspan_num}
+            if len(textlist_special)!=0:
+                return {"Carryover_dict":Carryover_dict,"normnum":len(Carryover_norm),"Systermnum":len(Carryover_systermnum),"textlist":textlist_special,"serial":len(textlist_special)+1,
+                "Carryover_conclusion":Carryover_conclusion}
+            else:
+                return {"Carryover_dict":Carryover_dict,"normnum":len(Carryover_norm),"Systermnum":len(Carryover_systermnum),"textlist":textlist_general,"serial":len(textlist_general)+1,
+                "Carryover_conclusion":Carryover_conclusion}
+
 
     except:
         pass

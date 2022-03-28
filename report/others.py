@@ -9,7 +9,7 @@ def related_testmethod(id):
     manufacturers=ReportInfo.objects.get(id=id).manufacturers
 
     # 定义相关列表
-    zp_method_list=[]
+    zp_method_list=[] # 质谱方法表格
     zp_method_texts_list=[]
     yx_method_list=[]
     yx_method_texts_list=[]
@@ -26,10 +26,19 @@ def related_testmethod(id):
             group.append(i.norm)
             group.append(i.precursor_ion)
             group.append(i.product_ion)
-            group.append(i.Times)
-            group.append(i.ConeV)
-            group.append(i.CollisionV)
+            if i.Col4!="":
+                group.append(i.Col4)
+            if i.Col5!="":
+                group.append(i.Col5)
+            if i.Col6!="":
+                group.append(i.Col6)
+            if i.Col7!="":
+                group.append(i.Col7)
+            if i.Col8!="":
+                group.append(i.Col8)
             zp_method_list.append(group)
+        
+        print(zp_method_list)
       
         for i in zp_method_texts:
             zp_method_texts_list.append(i.text)
