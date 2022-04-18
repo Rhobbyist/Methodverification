@@ -6,7 +6,7 @@ from report.effectnum import *
 import re
 
 def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
-
+   
     # 第一步 后台数据抓取（待测物质,可接受标准，单位）
     zqd = Special.objects.get(project=project) 
     pt_special = PTspecial.objects.get(special=zqd)
@@ -90,43 +90,106 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                                 PT_dict[PTnorm[j]].append([lines[i][sampleindex],effectnum(lines[i][concindex[j]],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
 
             elif manufacturers =="Waters":
+                # 内标标识
+                ISlist=["D3","D4","D5","D6","D7","D8"]
+
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
                 nrows=file_data.nrows
                 ncols=file_data.ncols
 
-                norm=[] #化合物列表
-                norm_row=[] #化合物所在行
-                for j in range(nrows):
-                    for i in PTnorm:
-                        if i in str(file_data.row_values(j)[0]):
-                            norm.append(i)
-                            norm_row.append(j)
+                norm = []  # 化合物列表
+                Compound_row =[] # 含有“Compound”关键词的所在行(包含内标)
+                norm_row = []  # 实际化合物所在行(不包含内标)
+                for i in range(nrows):
+                    if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):
+                        Compound_row.append(i)  
+
+                    # 判断是否含有内标标识
+                    if all(j not in str(file_data.row_values(i)[0]) for j in ISlist):
+                        if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
+                            norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
+                            norm_row.append(i) 
+
+                # 第一种情况，不含有内标
+                if len(Compound_row) == len(norm_row):
+                    pass
+
+                # 第二种情况，含有内标
+                else:
+                    nrows = Compound_row[len(norm_row)]
 
                 nameindex=0
-                conindex=0
+                concindex=0
                 for i in range(len(file_data.row_values(norm_row[0]+2))):  #第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                    if file_data.row_values(norm_row[0]+2)[i]=="Name":
+                    if file_data.row_values(norm_row[0]+2)[i]=="ID":
                         nameindex=i
-                    elif "实际浓度" in file_data.row_values(norm_row[0]+2)[i]:
-                        conindex=i
+                    elif "nmol/L" in file_data.row_values(norm_row[0]+2)[i]:
+                        concindex=i
 
-                for j in range(len(norm)):
-                    if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
-                        for i in range(norm_row[j],norm_row[j+1]): 
-                            if "PT" in file_data.row_values(i)[nameindex]:
-                                if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
-                                elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
-                    else:
-                        for i in range(norm_row[j],nrows): 
-                            if "PT" in file_data.row_values(i)[nameindex]:
-                                if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
-                                elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+                # 判断是否在后台管理系统中设置了可接受标准
+
+                # 第一种情况，未设置，前端调用可接受区间模板
+                if all(i is None for i in PTrange1):
+                    templates = 1
+                    for j in range(len(norm)):
+                        if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
+                            for i in range(norm_row[j],norm_row[j+1]): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[concindex],digits)])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits)])
+
+                        else:
+                            for i in range(norm_row[j],nrows): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[concindex],digits)])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits)])
+
+                # 第二种情况，已设置，前端调用可接受标准模板
+                else:
+                    templates = 2
+                    for j in range(len(norm)):
+                        if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
+                            for i in range(norm_row[j],norm_row[j+1]): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
+                                        elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+
+                                        if float(actualconc)<PTrange1[j]:
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
+                                        elif float(actualconc)>=PTrange2[j]:
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
 
             elif manufacturers =="Thermo":
                 Thermo = Special.objects.get(project=project) 
@@ -206,8 +269,6 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                                     PT_dict[PTnorm[j]].append([content[i][nameindex],effectnum(content[i][conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
             
             elif manufacturers =="AB":
-                print(normAB)
-                print(PTnorm)
                 # 获取上传的文件
                 file_data = Document(file)
 
@@ -265,31 +326,52 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
                             nameindex = i
                         elif "Calculated Conc" in rowdatagatherlist[0][i]:
                             concindex = i
-
+                    
                     # 判断是否在后台管理系统中设置了可接受标准
-
                     # 第一种情况，未设置，前端调用可接受区间模板
                     if all(i is None for i in PTrange1):
                         templates = 1
                         for i in range(len(rowdatagatherlist)): 
                             if "PT" in rowdatagatherlist[i][nameindex]:
-                                PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits)])
+
+                                # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                if "times" not in rowdatagatherlist[i][nameindex]:
+                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits)])
+
+                                # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                else:
+                                    dilute = int(rowdatagatherlist[i][nameindex][3:4])
+                                    actualconc = float(rowdatagatherlist[i][concindex])*dilute
+                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(actualconc,digits)])
 
                     # 第二种情况，已设置，前端调用可接受标准模板
                     else:
                         templates = 2
                         for i in range(len(rowdatagatherlist)): 
-                            if "PT" in rowdatagatherlist[i][nameindex]:                       
-                                if float(rowdatagatherlist[i][concindex])<PTrange1[k]:
-                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
-                                elif float(rowdatagatherlist[i][concindex])>=PTrange2[k]:
-                                    PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
-                
-            # 判断每个指标有几个样本
-            PT_num = len(PT_dict[PTnorm[0]])
+                            if "PT" in rowdatagatherlist[i][nameindex]:  
+
+                                # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                if "times" not in rowdatagatherlist[i][nameindex]:                     
+                                    if float(rowdatagatherlist[i][concindex])<PTrange1[k]:
+                                        PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
+                                    elif float(rowdatagatherlist[i][concindex])>=PTrange2[k]:
+                                        PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(rowdatagatherlist[i][concindex],digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
+
+                                # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                else:
+                                    dilute = int(rowdatagatherlist[i][nameindex][3:4])
+                                    actualconc = float(rowdatagatherlist[i][concindex])*dilute
+
+                                    if float(actualconc)<PTrange1[k]:
+                                        PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
+                                    elif float(actualconc)>=PTrange2[k]:
+                                        PT_dict[PTnorm[k]].append([rowdatagatherlist[i][nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
+
 
         elif platform=="液相":
             if manufacturers =="Agilent":
+
+                # .xlsx格式
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
                 nrows=file_data.nrows
@@ -304,31 +386,77 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
 
                 nameindex=0
                 conindex=0
-                for i in range(len(file_data.row_values(norm_row[0]+2))):  #第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                    if file_data.row_values(norm_row[0]+2)[i]=="样品名称":
-                        nameindex=i
-                    elif "含量" in file_data.row_values(norm_row[0]+2)[i]:
-                        conindex=i
 
-                for j in range(len(norm)):
-                    if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
-                        for i in range(norm_row[j],norm_row[j+1]): 
-                            if "PT" in file_data.row_values(i)[nameindex]:
-                                if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
-                                elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+1是该化合物表格位于该化合物所在行的下一行
+                for i in range(len(file_data.row_values(norm_row[0]+1))):
+                    if "样品名称" in file_data.row_values(norm_row[0]+1)[i]:
+                        nameindex = i
+                    elif "含量" in file_data.row_values(norm_row[0]+1)[i]:
+                        concindex = i
 
-                    else:
-                        for i in range(norm_row[j],nrows): 
-                            if "PT" in file_data.row_values(i)[nameindex]:
-                                if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
-                                elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
-                                    PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
-            PT_num = len(PT_dict[PTnorm[0]])
-            print(PT_dict)
+                # 判断是否在后台管理系统中设置了可接受标准
+
+                # 第一种情况，未设置，前端调用可接受区间模板
+                if all(i is None for i in PTrange1):
+                    templates = 1
+                    for j in range(len(norm)):
+                        if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
+                            for i in range(norm_row[j],norm_row[j+1]): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[concindex],digits)])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits)])
+
+                        else:
+                            for i in range(norm_row[j],nrows): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[concindex],digits)])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+                                        PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits)])
+
+                # 第二种情况，已设置，前端调用可接受标准模板
+                else:
+                    templates = 2
+                    for j in range(len(norm)):
+                        if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
+                            for i in range(norm_row[j],norm_row[j+1]): 
+                                if "PT" in file_data.row_values(i)[nameindex]:
+
+                                    # 第一种情况：未稀释，结果不需要除以稀释倍数
+                                    if "times" not in file_data.row_values(i)[nameindex]:
+                                        if float(file_data.row_values(i)[conindex])<PTrange1[j]: # 小于range1,添加第一个可接受标准
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard1[j])+" "+PTunit])
+                                        elif float(file_data.row_values(i)[conindex])>=PTrange2[j]: # 大于range2,添加第二个可接受标准
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(file_data.row_values(i)[conindex],digits),"±"+" "+str(PTstandard2[j])+" "+"%"])
+
+                                    # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                                    else:
+                                        dilute = int(file_data.row_values(i)[nameindex][3:4])
+                                        actualconc = float(file_data.row_values(i)[concindex])*dilute
+
+                                        if float(actualconc)<PTrange1[j]:
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard1[0])+" "+PTunit])
+                                        elif float(actualconc)>=PTrange2[j]:
+                                            PT_dict[PTnorm[j]].append([file_data.row_values(i)[nameindex],effectnum(actualconc,digits),"±"+" "+str(PTstandard2[0])+" "+"%"])
 
         elif platform=="ICP-MS":
             if manufacturers =="Agilent":
@@ -364,8 +492,198 @@ def PTfileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_
 
             PT_num = len(PT_dict[PTnorm[0]])
 
+        # 判断每个指标有几个样本
+        PT_num = len(PT_dict[PTnorm[0]])
         print(PT_dict)
-        return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"templates":templates}
+
+        return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"templates":templates,"project":project}
+
+def PT_25OHD_fileread(files,Detectionplatform,project,platform,manufacturers,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
+
+    # 第一步 后台数据抓取（待测物质,可接受标准，单位）
+    zqd = Special.objects.get(project=project) 
+    pt_special = PTspecial.objects.get(special=zqd)
+    pt_accept = PTspecialaccept.objects.filter(pTspecial=pt_special)
+    PTnorm=[] # 待测物质列表
+    PTrange1=[] # 可接受标准一适用范围，与待测物质列表一一对应
+    PTstandard1 = [] # 可接受标准一
+    PTrange2 = [] # 可接受标准二适用范围，与待测物质列表一一对应
+    PTstandard2 = [] # 可接受标准二
+    PTunit = Special.objects.get(project=project).unit #单位
+
+    for i in pt_accept:
+        PTnorm.append(i.norm)
+        PTrange1.append(i.range1) 
+        PTstandard1.append(i.accept1) 
+        PTrange2.append(i.range2) 
+        PTstandard2.append(i.accept2) 
+
+    # 如果没在后台管理系统中设置化合物名称直接返回并提示
+    if all(i is None for i in PTnorm):
+        error_message="尚未在后台管理系统中设置PT的化合物名称,请设置后重新提交数据!"
+        return {"error_message":error_message}
+
+    # Python判断列表中是否为空，包括None
+    # if all(i is None for i in PTrange1):
+    #     error_message="尚未在后台管理系统中设置PT的可接受标准,请设置后重新提交数据!"
+    #     return {"error_message":error_message}
+
+    # AB厂家,未在后台管理系统里规范设置定量离子对数值,直接返回并提示
+    if manufacturers=="AB":
+        if len(normAB)!= Number_of_compounds:
+            error_message="未在后台管理系统里规范设置定量离子对数值，请检查并规范设置后重新提交数据!"  
+            return {"error_message":error_message}
+
+    #  第二步:开始文件读取
+    '''
+    注释:csv,txt,xlsx,docx 4种格式数据读取完毕后,需要生成一个字典PT_dict,数据格式如下：
+    print(PT_dict):
+    {'MN': [['PT1', 0.49, '±0.075nmol/L'], ['PT10', 3.32, '±15.0%'], ['PT19', 3.31, '±15.0%'], ['PT28', 3.29, '±15.0%']],
+    'NMN': [['PT4', 5.96, '±20.0%'], ['PT13', 4.37, '±20.0%'], ['PT22', 4.38, '±20.0%'], ['PT31', 4.25, '±20.0%']], 
+    '3-MT': [['PT7', 8.78, '±30.0%'], ['PT16', 1.38, '±30.0%'], ['PT25', 1.38, '±30.0%'], ['PT34', 1.37, '±30.0%']]}
+    '''
+
+    # 头部定义相关需要提取生成的结果
+    PT_dict={"25-OH-D2":[],"25-OH-D3":[]}
+    
+    # 各仪器平台及各仪器厂家数据读取
+    for file in files:
+        if platform=="液质":
+            if manufacturers =="AB":
+                # 获取上传的文件
+                file_data = Document(file)
+
+                # 每个表格最上方的标题内容列表，含有母离子和子离子的信息。需依此及母离子和子离子列表判断table索引
+                paragraphs = [] 
+
+                # 若标题长度为0或为换行等，不添加进入标题内容列表
+                for p in file_data.paragraphs:
+                    if len(p.text) != 0 and p.text != "\n" and len(p.text.strip()) != 0:
+                        paragraphs.append(p.text.strip())
+
+                print(paragraphs)
+
+                # 确定table索引，母离子和子离子都与后台管理系统中设置的数值相同才证明是需要读取的定量表格
+                tableindex = []
+                for i in range(len(paragraphs)):
+                    for j in range(len(ZP_Method_precursor_ion)):
+                        if ZP_Method_precursor_ion[j] in paragraphs[i] and ZP_Method_product_ion[j] in paragraphs[i]:
+                            tableindex.append(2*i+1)
+
+                print(tableindex)
+
+                tables = file_data.tables  # 获取文件中的表格集
+
+                # 循环定量表格的索引
+                for k in range(len(tableindex)): 
+                    tablequantify = tables[tableindex[k]] #获取文件中的相关表格
+                    nameindex=0
+                    conindex=0
+
+                    # 先把表格里的所有数据取出来放进一个列表中，读取速度会比直接读表格快很多
+                    cells = tablequantify._cells
+                    ROWS = len(tablequantify.rows)
+                    COLUMNS = len(tablequantify.columns)
+                    rowdatalist = []  # 每一行的数据列表
+                    rowdatagatherlist = []  # 每一行的数据列表汇总列表
+
+                    for i in range(ROWS*COLUMNS):
+                        text = cells[i].text.replace("\n", "")
+                        text = text.strip()  # 去除空白符
+                        if i % COLUMNS != 0 or i == 0:
+                            rowdatalist.append(text)
+                        else:
+                            rowdatagatherlist.append(rowdatalist)
+                            rowdatalist = []
+                            rowdatalist.append(text)
+                    rowdatagatherlist.append(rowdatalist)
+
+                    nameindex = 0
+                    concindex = 0  # 浓度索引，AB的数据格式决定每个化合物的浓度所在列一定是同一列
+                    
+                    # 读取表格的第一行的单元格,判断实验号和浓度索引
+                    for i in range(len(rowdatagatherlist[0])):
+                        if rowdatagatherlist[0][i] == "Sample Name":
+                            nameindex = i
+                        elif "Calculated Conc" in rowdatagatherlist[0][i]:
+                            concindex = i
+                    
+                    # 判断是否在后台管理系统中设置了可接受标准
+                    # 第一种情况，未设置，前端调用可接受区间模板
+                    if all(i is None for i in PTrange1):
+                        templates = 1
+
+                    # 第二种情况，已设置，前端调用可接受标准模板
+                    else:
+                        templates = 2
+
+                    for i in range(len(rowdatagatherlist)): 
+                        if "PT" in rowdatagatherlist[i][nameindex]:
+
+                            # 第一种情况：未稀释，结果不需要除以稀释倍数
+                            if "times" not in rowdatagatherlist[i][nameindex]:
+                                PT_dict[normAB[k]].append([rowdatagatherlist[i][nameindex],rowdatagatherlist[i][concindex]])
+
+                            # 第二种情况：进行稀释，结果需要除以稀释倍数(实验号命名规则：PT-2times-1）
+                            else:
+                                dilute = int(rowdatagatherlist[i][nameindex][3:4])
+                                actualconc = float(rowdatagatherlist[i][concindex])*dilute
+                                PT_dict[normAB[k]].append([rowdatagatherlist[i][nameindex],actualconc])
+
+                # 判断每个指标有几个样本
+                PT_num = len(PT_dict[normAB[0]])
+
+        print(PT_dict)
+        print(PTnorm)
+
+        # 25OHD项目需计算总D，目前D2和D3的实验号顺序必须一致，否则计算会出错
+
+        # 判断后台管理系统中设置了几个化合物
+        # 第一种情况：只设置了25OHD，前端只显示一个化合物
+        if len(PTnorm)==1:
+            PT_dict2 = {"25-OH-D":[]}
+            for index,value in enumerate(PT_dict['25-OH-D2']):
+                middle_list=[]  # 每个实验号的列表
+
+                value_D2 = PT_dict['25-OH-D2'][index][1] # 每个实验号列表的第二位为结果
+                value_D3 = PT_dict['25-OH-D3'][index][1]
+
+                # D2小于定量限(5.33)的值不需要加和
+                if float(value_D2)<5.33:  # 定量限5.33，目前先写死
+                    value_D2 ="<5.33"
+                    value_D3 = effectnum(value_D3,digits)
+                    value_D = effectnum(value_D3,digits)
+
+                else:
+                    # 先再取有效位数，再加和，再取有效位数
+                    value_D2 = effectnum(value_D2,digits)
+                    value_D3 = effectnum(value_D3,digits)
+                    value_D = effectnum((float(value_D2)+float(value_D3)),digits)
+
+                middle_list.append(PT_dict['25-OH-D2'][index][0]) # 添加实验号
+                middle_list.append(value_D2) # 添加D2结果
+                middle_list.append(value_D3) # 添加D3结果
+                middle_list.append(value_D) # 添加总D结果
+
+                # 判断是否设置了可接受标准
+                if templates == 1:
+                    pass
+                else:
+                    # 添加可接受标准
+                    if float(value_D)<PTrange1[0]:
+                        middle_list.append("±"+" "+str(PTstandard1[0])+" "+PTunit)
+                    elif float(value_D)>=PTrange2[0]:
+                        middle_list.append("±"+" "+str(PTstandard2[0])+" "+"%")
+                PT_dict2['25-OH-D'].append(middle_list)
+
+        # 第二种情况：同时设置了D2,D3和总D，前端显示三个化合物
+        if len(PTnorm)==3:
+            pass
+
+        print(PT_dict2)
+        PT_dict = PT_dict2
+                
+        return {"PT_dict":PT_dict,"PT_num":PT_num,"PTunit":PTunit,"templates":templates,"project":project}
 
 def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_precursor_ion,ZP_Method_product_ion,normAB,Number_of_compounds):
 
@@ -413,7 +731,7 @@ def Recyclefileread(files,project,platform,manufacturers,Unit,digits,ZP_Method_p
         if file.name=="加标回收率-加标数据.csv":
             # 读取csv文件
             file.seek(0)  # 此网址查找到的答案:https://www.jianshu.com/p/0d15ed85df2b
-            file_data = file.read().decode('gbk')
+            file_data = file.read().decode('utf-8')
             lines = file_data.split('\r\n')
             for i in range(len(lines)): 
                 if len(lines[i])!=0:
@@ -972,35 +1290,101 @@ def related_PT(id):
         for i in PT_data:
             if i.norm not in PT_norm:
                 PT_norm.append(i.norm)
-        
+
+        # 判断是模板1(可接受区间)还是模板2(可接受标准)
+        PT_templates=[]
+        for i in PT_data:
+            if int(i.templates) not in PT_templates:
+                PT_templates.append(int(i.templates))
+
         for i in PT_norm:
             middle_list=[]  # 每个化合物的数据列表
             middle_table = PT.objects.filter(reportinfo_id=id,norm=i)
-            for j in middle_table:
-                #没有为每个化合物单独设置有效位数，则调用通用性设置
-                if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
-                    rowlist = []  # 每一行的小列表
-                    rowlist.append(j.Experimentnum)
-                    rowlist.append(j.value)
-                    rowlist.append(j.target)
-                    rowlist.append(j.received)
-                    rowlist.append(j.bias)
-                    middle_list.append(rowlist)
-                #为每个化合物单独设置了有效位数，则调用每个化合物的设置
+            if PT_templates[0]==1:
+
+                # 判断是否为25OHD项目
+                if "25OHD" not in project:
+                    for j in middle_table:
+                        #没有为每个化合物单独设置有效位数，则调用通用性设置
+                        if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
+                            rowlist = []  # 每一行的小列表
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(j.value)
+                            rowlist.append(j.accept1)
+                            rowlist.append(j.accept2)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                        #为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                        else:
+                            rowlist=[]
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(effectnum(j.value,Digitsdict[i]))                   
+                            rowlist.append(j.accept1)
+                            rowlist.append(j.accept2)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                    PT_dict[i]=middle_list
+
                 else:
-                    rowlist=[]
-                    rowlist.append(j.Experimentnum)
-                    rowlist.append(effectnum(j.value,Digitsdict[i]))                   
-                    rowlist.append(j.target)
-                    rowlist.append(j.received)
-                    rowlist.append(j.bias)
-                    middle_list.append(rowlist)
-            PT_dict[i]=middle_list
-        
+                    pass
+            
+            else:
+                # 判断是否为25OHD项目
+                if "25OHD" not in project:
+                    for j in middle_table:
+                        #没有为每个化合物单独设置有效位数，则调用通用性设置
+                        if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
+                            rowlist = []  # 每一行的小列表
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(j.value)
+                            rowlist.append(j.target)
+                            rowlist.append(j.received)
+                            rowlist.append(j.bias)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                        #为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                        else:
+                            rowlist=[]
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(effectnum(j.value,Digitsdict[i]))                   
+                            rowlist.append(j.target)
+                            rowlist.append(j.received)
+                            rowlist.append(j.bias)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                    PT_dict[i]=middle_list
+
+                else: 
+                    for j in middle_table:
+                        #没有为每个化合物单独设置有效位数，则调用通用性设置
+                        if Digitsdict=={} or list(Digitsdict.values())[0]==None: 
+                            rowlist = []  # 每一行的小列表
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(j.value.split("-")[0]) # 添加D2结果
+                            rowlist.append(j.value.split("-")[1]) # 添加D3结果
+                            rowlist.append(j.value.split("-")[2]) # 添加总D结果
+                            rowlist.append(j.target)
+                            rowlist.append(j.received)
+                            rowlist.append(j.bias)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                        #为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                        else:
+                            rowlist=[]
+                            rowlist.append(j.Experimentnum)
+                            rowlist.append(effectnum(j.value,Digitsdict[i]))                   
+                            rowlist.append(j.target)
+                            rowlist.append(j.received)
+                            rowlist.append(j.bias)
+                            rowlist.append(j.PT_pass)
+                            middle_list.append(rowlist)
+                    PT_dict[i]=middle_list
+        print(PT_dict)
+
         if len(textlist_special)!=0:
-            return {"PT_dict":PT_dict,"textlist":textlist_special,"serial":len(textlist_special)+1}
+            return {"PT_dict":PT_dict,"PT_templates":PT_templates,"textlist":textlist_special,"serial":len(textlist_special)+1}
         else:
-            return {"PT_dict":PT_dict,"textlist":textlist_general,"serial":len(textlist_general)+1}
+            return {"PT_dict":PT_dict,"PT_templates":PT_templates,"textlist":textlist_general,"serial":len(textlist_general)+1}
 
     except:
         pass

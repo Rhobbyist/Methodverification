@@ -13,6 +13,7 @@ class ReportInfo(models.Model):
     project = models.CharField(max_length=32)  # 检测项目
     platform = models.CharField(max_length=32)  # 仪器平台
     manufacturers = models.CharField(max_length=32)  # 仪器厂家
+    verifyoccasion = models.CharField(max_length=32)  # 验证时机
     verifytime = models.DateField(auto_now_add=True)  # 验证时间
 
 # 2 验证原因表
@@ -37,10 +38,25 @@ class PT(models.Model):
     Experimentnum = models.CharField(max_length=32)  # 实验号
     norm = models.CharField(max_length=32)  # 指标：MN,NMN,3-MT
     value = models.CharField(max_length=32)  # 结果
+
+    templates = models.CharField(max_length=32)  # 模板
+
+    # 模板1:可接受区间 需要用到的字段
+    accept1 = models.CharField(max_length=32)  # 可接受区间下限
+    accept2 = models.CharField(max_length=32)  # 可接收区间上限
+
+    # 模板2:可接受标准 需要用到的字段
     target = models.CharField(max_length=32)  # 靶值(需手动输入)
     received = models.CharField(max_length=32)  # 可接受标准
     bias = models.CharField(max_length=32)  # 偏倚
+
+    # 通用字段
     PT_pass = models.CharField(max_length=32)  # 是否通过
+
+# 3.3 仪器比对
+class InstrumentCompare(models.Model):
+    reportinfo = models.ForeignKey(ReportInfo, on_delete=models.CASCADE)  # 外键
+    textarea = models.CharField(max_length=32)  # 文字输入框
 
 # 3.3 加标回收率
 class RECYCLE(models.Model):

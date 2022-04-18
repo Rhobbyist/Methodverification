@@ -114,7 +114,7 @@
         border: 2px solid #000;
         border-left: none;
         border-right: none;
-        width: 580px;
+        width: 700px;
         margin: 0 auto; /*居中 */ 
     }
 
@@ -166,7 +166,8 @@
     }
 
     /* 每个验证指标二级标题 */
-    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title,.LOQ_title,.Dilution_title{
+    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title,.InstrumentCompare_title,
+    .LOQ_title,.Dilution_title{
         font-size: 16px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -183,7 +184,7 @@
         border: 2px solid #000;
         border-left: none;
         border-right: none;
-        width: 580px;
+        width: 700px;
         margin: 0 auto; /*居中 */ 
     }
 
@@ -697,27 +698,78 @@
                                 {% for r in PT_data.textlist %}
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="maintext">{{PT_data.serial}}) PT实验结果如表{{tablePTindex_start}}-{{tablePTindex_end}}所示,结果表明检测结果均在可接受范围内,说明该方法的正确度满足要求。</div>
-                                {%for key,value in PT_data.PT_dict.items %}
-                                    <table class="PT_Table" cellpadding="4">
-                                        <caption>表{{forloop.counter|add:tablePTindex_start|add:"-1"}}. {{key}}室间质量评价实验数据</caption>
-                                        <tr class="PT_Tabletr">
-                                            <th width="20%">样本编号</th>
-                                            <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                            <th width="20%">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                            <th width="20%">可接受标准</th>
-                                            <th width="20%">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                        </tr>
-                                        {%for r in value %}
-                                            <tr>
-                                                {%for c in r %}
-                                                    <td class="tablemaintext">{{c}}</td>
-                                                {% endfor %}
+                                <div class="maintext">{{PT_data.serial}}) PT实验结果如表{{tablePTindex_start}}-{{tablePTindex_end}}所示，结果表明检测结果均在可接受范围内，说明该方法的正确度满足要求。</div>
+                                {% if PT_data.PT_templates.0 == 1 %}
+                                    {%for key,value in PT_data.PT_dict.items %}
+                                        <table class="PT_Table" cellpadding="4">
+                                            <caption>表{{forloop.counter|add:tablePTindex_start|add:-1}}. {{key}}室间质量评价实验数据</caption>
+                                            <tr class="PT_Tabletr">
+                                                <th width="20%">样本编号</th>
+                                                <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受区间下限<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受区间上限<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">是否通过<br />({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
+                                            {%for r in value %}
+                                                <tr>
+                                                    {%for c in r %}
+                                                        <td class="tablemaintext">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                {% else %}
+                                    {% if project == "25OHD" %}
+                                        {%for key,value in PT_data.PT_dict.items %}        
+                                            <table class="PT_Table" cellpadding="4">
+                                                <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
+                                                <tr class="PT_Tabletr">
+                                                    <th rowspan="2">样本编号</th>
+                                                    <th colspan="3">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th rowspan="2">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th rowspan="2">可接受标准</th>
+                                                    <th rowspan="2">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th rowspan="2">是否通过</th>
+                                                </tr>
+                                                <tr class="PT_Tabletr">
+                                                    <th>25-OH-D2</th>
+                                                    <th>25-OH-D3</th>
+                                                    <th>25-OH-D</th>
+                                                {%for r in value %}
+                                                    <tr class="PT_Tabletr">
+                                                        {%for c in r %}
+                                                            <td class="tablemaintext">{{c}}</td>
+                                                        {% endfor %}
+                                                    </tr>
+                                                {% endfor %}
+                                            </table>
+                                        {% endfor %} 
+                                    {% else %}
+                                        {%for key,value in PT_data.PT_dict.items %}
+                                            <table class="PT_Table" cellpadding="4">
+                                                <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
+                                                <tr class="PT_Tabletr">
+                                                    <th width="20%">样本编号</th>
+                                                    <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th width="20%">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th width="20%">可接受标准</th>
+                                                    <th width="20%">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                    <th width="20%">是否通过</th>
+                                                </tr>
+                                                {%for r in value %}
+                                                    <tr>
+                                                        {%for c in r %}
+                                                            <td class="tablemaintext">{{c}}</td>
+                                                        {% endfor %}
+                                                    </tr>
+                                                {% endfor %}
+                                            </table>
+                                            <br>
                                         {% endfor %}
-                                    </table>
-                                    <br>
-                                {% endfor %}
+                                    {% endif %}
+                                {% endif %}
                                 <br>
                             </div>
                             {% endif %}
@@ -729,22 +781,22 @@
                                 {% for r in Recycle_data.textlist %}
                                     <div class="five"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
-                                <div class="picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px" /></div>
+                                <div class="Recycle_picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px" /></div>
                                 <div class="maintext">{{Recycle_data.serial}})
-                                    加标回收率实验结果表{{tableRecycleindex_start}}-{{tableRecycleindex_end}}所示,由结果可知,
+                                    加标回收率实验结果表{{tableRecycleindex}}所示,由结果可知,
                                     方法的回收率:{{Recycle_data.Recycle_endconclusion}}满足检测要求。
                                 </div>
 
                                 {%for key,value in Recycle_data.Recycle_endreport_dict.items %}
                                     <table class="Recycle_Table" cellpadding="4">
-                                        <caption>表{{forloop.counter|add:tableRecycleindex_start|add:"-1"}}.{{key}}加标回收率实验数据</caption>
+                                        <caption>表{{tableRecycleindex}}.{{key}}加标回收率实验数据</caption>
                                         <tr class="Recycle_Tabletr">
                                             <th colspan="3" width="43%">病人基质样本</th>
-                                            <th rowspan="2" width="17%">加标理论值({{Unitdict|get_item:key|default:unit}})</th>
+                                            <th rowspan="2" width="17%">加标理论值<br />({{Unitdict|get_item:key|default:unit}})</th>
                                             <th colspan="2" width="28%">加标后样本</th>
                                             <th rowspan="2" width="12%">回收率(%)</th>
                                         </tr>
-                                        <tr>
+                                        <tr class="Recycle_Tabletr">
                                             <th width="15%">样本编号</th>
                                             <th width="15%">平行检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
                                             <th width="15%">均值<br />({{Unitdict|get_item:key|default:unit}})</th>
@@ -752,8 +804,7 @@
                                             <th width="15%">平行检测浓度<br />({{Unitdict|get_item:key|default:unit}})</th>
                                         </tr>
                                         {%for c,r in value.items %}
-                                        <tbody border="1">
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td rowspan="9">{{c}}</td>
                                                 <td rowspan="3">{{r.0}}</td>
                                                 <td rowspan="9">{{r.27}}</td>
@@ -762,51 +813,58 @@
                                                 <td>{{r.3}}</td>
                                                 <td>{{r.6}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.4}}</td>
                                                 <td>{{r.7}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.5}}</td>
                                                 <td>{{r.8}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td rowspan="3">{{r.9}}</td>
                                                 <td rowspan="3">{{r.10}}</td>
                                                 <td rowspan="3">{{r.11}}</td>
                                                 <td>{{r.12}}</td>
                                                 <td>{{r.15}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.13}}</td>
                                                 <td>{{r.16}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.14}}</td>
                                                 <td>{{r.17}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td rowspan="3">{{r.18}}</td>
                                                 <td rowspan="3">{{r.19}}</td>
                                                 <td rowspan="3">{{r.20}}</td>
                                                 <td>{{r.21}}</td>
                                                 <td>{{r.24}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.22}}</td>
                                                 <td>{{r.25}}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="Recycle_Tabletr">
                                                 <td>{{r.23}}</td>
                                                 <td>{{r.26}}</td>
                                             </tr>
-                                        </tbody>
                                         {% endfor %}
                                     </table>
                                     <br>
                                 {% endfor %}
                                 <br>
                             </div>                      
+                            {% endif %}
+
+                            <!-- 2.3 仪器比对 -->
+                            {% if InstrumentCompare_text %}
+                            <div class="InstrumentCompare_data">
+                                <div class="InstrumentCompare_title">{{ZQDindex}}.{{InstrumentCompareindex}} 仪器比对(Instrument Comparison)</div>
+                                <div class="maintext"> {{InstrumentCompare_text.0}}</div>
+                            </div>
                             {% endif %}
                         </td>
                     </tr>                     
@@ -1167,8 +1225,21 @@
                                     {% endfor %}
                                     <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
                                     <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
-                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
+                                        CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}可得表{{tableDilutionindex_end|add:1}}所示的临床可报告范围。
                                     </div>
+                                    <table class="Dilution_Table" cellpadding="4">
+                                        <caption>表{{tableDilutionindex_end|add:1}}.临床可报告范围</caption>
+                                        <tr class="Dilution_Tabletr">
+                                            <th width="40%">分析物</th>
+                                            <th width="60%">临床可报告范围({{unit}})</th>
+                                        </tr>
+                                        {%for key,value in Dilution_data.CRR_conclusion_dict.items %}
+                                            <tr class="Dilution_Tabletr">
+                                                <td>{{key}}</td>
+                                                <td>{{value.0}}～{{value.1}}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
                                     <br>
 
                                 <!-- 4.2 不进行稀释倍数验证 -->   

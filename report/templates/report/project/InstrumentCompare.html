@@ -1,0 +1,90 @@
+
+{% extends "report/layout.html" %} 
+{% block content %} 
+
+<style> 
+    textarea{
+        min-height: 200px;
+        min-width: 700px;
+        max-height: 200px;
+        max-width: 700px;
+    }
+
+</style>
+
+<body>
+    <div class="container">  
+        <form action="{% url 'InstrumentComparesave' %}" method="POST" >    
+            <!-- 1 验证基本信息展示 -->
+            <div class="basicinfo">
+                <!-- 标题 -->
+                <h2>验证基本信息</h2>
+                <br>
+
+                <!-- 仪器型号及验证时机 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器型号</label>
+                            <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">验证时机</label>
+                            <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                        </div> 
+                    </div>
+                </div>
+
+                <!-- 检测平台及检测项目 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测平台</label>
+                            <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">检测项目</label>
+                            <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                        </div> 
+                    </div>
+                </div>
+                
+                <!-- 仪器平台及仪器厂家 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器平台</label>
+                            <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                        </div> 
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">仪器厂家</label>
+                            <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+
+            <!-- 2 分界线 -->
+            <h1 class="page-header"></h1>
+
+            <!-- 3 验证结果展示 -->
+            <h2>验证指标:仪器比对</h2>
+            <textarea class="form-control" placeholder="请在此输入内容..." name="textarea"></textarea>
+            <br>
+            <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
+        </form>
+        
+    </div>
+
+</body> 
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

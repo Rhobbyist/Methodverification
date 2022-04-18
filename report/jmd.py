@@ -149,22 +149,22 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     normlist = []  # 一个化合物的低中高三个浓度合并列表
                     if j < len(norm)-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j], norm_row[j+1]):
-                            if "JMD-L" in content[i][nameindex]:
+                            if "IntraP-L" in content[i][nameindex]:
                                 if j < 1:  # 第一个化合物的样本量即为每个化合物的样本量
                                     jmdnum += 1
                                 low.append(effectnum(content[i][concindex], digits))
-                            elif "JMD-M" in content[i][nameindex]:
+                            elif "IntraP-M" in content[i][nameindex]:
                                 median.append(effectnum(content[i][concindex], digits))
-                            elif "JMD-H" in content[i][nameindex]:
+                            elif "IntraP-H" in content[i][nameindex]:
                                 high.append(effectnum(content[i][concindex], digits))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j], len(content)):
-                            if "JMD-L" in content[i][nameindex]:
+                            if "IntraP-L" in content[i][nameindex]:
                                 low.append(effectnum(content[i][concindex], digits))
-                            elif "JMD-M" in content[i][nameindex]:
+                            elif "IntraP-M" in content[i][nameindex]:
                                 median.append(effectnum(content[i][concindex], digits))
-                            elif "JMD-H" in content[i][nameindex]:
+                            elif "IntraP-H" in content[i][nameindex]:
                                 high.append(effectnum(content[i][concindex], digits))
 
                     normlist.append(low)
@@ -173,6 +173,9 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     jmdone.append(normlist)
 
             elif manufacturers == "Waters":
+                # 内标标识
+                ISlist=["D3","D4","D5","D6","D7","D8"]
+
                 # 若是最新的 2.0.1 版本的xlrd包，只支持 .xls 文件，读取.xlsx文件会报错。若要正常读取，需安装旧版本的xlrd：pip3 install xlrd==1.2.0
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
@@ -180,22 +183,39 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                 ncols = file_data.ncols
 
                 norm = []  # 化合物列表
-                norm_row = []  # 化合物所在行
+                Compound_row =[] # 含有“Compound”关键词的所在行(包含内标)
+                norm_row = []  # 实际化合物所在行(不包含内标)
                 for i in range(nrows):
-                    if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
-                        norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
-                        norm_row.append(i)    
+                    if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):
+                        Compound_row.append(i)  
 
-                print(norm_row)          
+                    # 判断是否含有内标标识
+                    if all(j not in str(file_data.row_values(i)[0]) for j in ISlist):
+                        if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
+                            norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
+                            norm_row.append(i) 
+
+                # 第一种情况，不含有内标
+                if len(Compound_row) == len(norm_row):
+                    pass
+
+                # 第二种情况，含有内标
+                else:
+                    nrows = Compound_row[len(norm_row)]                
 
                 nameindex = 0
                 concindex = 0
                 # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
                 for i in range(len(file_data.row_values(norm_row[0]+2))):
-                    if file_data.row_values(norm_row[0]+2)[i] == "Name":
+                    if file_data.row_values(norm_row[0]+2)[i] == "ID":
                         nameindex = i
-                    elif "实际浓度" in file_data.row_values(norm_row[0]+2)[i]:
+                    elif "nmol/L" in file_data.row_values(norm_row[0]+2)[i]:
                         concindex = i
+
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
                 for j in range(len(norm)):
                     low = []
@@ -204,22 +224,22 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     normlist = []
                     if j < len(norm)-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j], norm_row[j+1]):
-                            if "JMD-L" in file_data.row_values(i)[nameindex]:
+                            if "IntraP-L" in file_data.row_values(i)[nameindex]:
                                 if j < 1:  # 第一个化合物的样本量即为每个化合物的样本量
                                     jmdnum += 1
                                 low.append(effectnum(file_data.row_values(i)[concindex], digits))
-                            elif "JMD-M" in file_data.row_values(i)[nameindex]:
+                            elif "IntraP-M" in file_data.row_values(i)[nameindex]:
                                 median.append(effectnum(file_data.row_values(i)[concindex], digits))
-                            elif "JMD-H" in file_data.row_values(i)[nameindex]:
+                            elif "IntraP-H" in file_data.row_values(i)[nameindex]:
                                 high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j], nrows):
-                            if "JMD-L" in file_data.row_values(i)[nameindex]:
+                            if "IntraP-L" in file_data.row_values(i)[nameindex]:
                                 low.append(effectnum(file_data.row_values(i)[concindex], digits))
-                            elif "JMD-M" in file_data.row_values(i)[nameindex]:
+                            elif "IntraP-M" in file_data.row_values(i)[nameindex]:
                                 median.append(effectnum(file_data.row_values(i)[concindex], digits))
-                            elif "JMD-H" in file_data.row_values(i)[nameindex]:
+                            elif "IntraP-H" in file_data.row_values(i)[nameindex]:
                                 high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
                     normlist.append(low)
@@ -258,13 +278,13 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     high = []
                     normlist = []
                     for i in range(nrows):
-                        if "JMD-L" in file_data.row_values(i)[nameindex]:
+                        if "IntraP-L" in file_data.row_values(i)[nameindex]:
                             if index < 1:  # 如有多个化合物，只循环添加第一个化合物的样本量，否则样本量数目会重复添加
                                 jmdnum += 1  # 样本量加1
                             low.append(effectnum(file_data.row_values(i)[concindex],digits))
-                        elif "JMD-M" in file_data.row_values(i)[nameindex]:
+                        elif "IntraP-M" in file_data.row_values(i)[nameindex]:
                             median.append(effectnum(file_data.row_values(i)[concindex],digits))
-                        elif "JMD-H" in file_data.row_values(i)[nameindex]:
+                        elif "IntraP-H" in file_data.row_values(i)[nameindex]:
                             high.append(effectnum(file_data.row_values(i)[concindex],digits))
 
                     normlist.append(low)
@@ -363,6 +383,8 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
 
         elif platform == "液相":
             if manufacturers == "Agilent":
+
+                # .xlsx格式
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]  # 默认只读取第一个工作簿
                 nrows = file_data.nrows
@@ -379,12 +401,17 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                 nameindex = 0
                 concindex = 0
 
-                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                for i in range(len(file_data.row_values(norm_row[0]+2))):
-                    if file_data.row_values(norm_row[0]+2)[i] == "样品名称":
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+1是该化合物表格位于该化合物所在行的下一行
+                for i in range(len(file_data.row_values(norm_row[0]+1))):
+                    if "样品名称" in file_data.row_values(norm_row[0]+1)[i]:
                         nameindex = i
-                    elif "含量" in file_data.row_values(norm_row[0]+2)[i]:
+                    elif "含量" in file_data.row_values(norm_row[0]+1)[i]:
                         concindex = i
+
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
                 for j in range(len(norm)):
                     low = []  # 低浓度列表
@@ -393,28 +420,33 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     normlist = []  # 一个化合物的低中高三个浓度合并列表
                     if j < len(norm)-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j], norm_row[j+1]):
-                            if "JMD-L" in file_data.row_values(i)[nameindex]:
+                            if "IntraP-L" in file_data.row_values(i)[nameindex]:
                                 if j < 1:  # 第一个化合物的样本量即为每个化合物的样本量
                                     jmdnum += 1
-                                low.append(effectnum(file_data.row_values(i)[concindex],digits))
-                            elif "JMD-M" in file_data.row_values(i)[nameindex]:
-                                median.append(effectnum(file_data.row_values(i)[concindex],digits))
-                            elif "JMD-H" in file_data.row_values(i)[nameindex]:
-                                high.append(effectnum(file_data.row_values(i)[concindex],digits))
+                                low.append(effectnum(file_data.row_values(i)[concindex], digits))
+                            elif "IntraP-M" in file_data.row_values(i)[nameindex]:
+                                median.append(effectnum(file_data.row_values(i)[concindex], digits))
+                            elif "IntraP-H" in file_data.row_values(i)[nameindex]:
+                                high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j], nrows):
-                            if "JMD-L" in file_data.row_values(i)[nameindex]:
-                                low.append(effectnum(file_data.row_values(i)[concindex],digits))
-                            elif "JMD-M" in file_data.row_values(i)[nameindex]:
-                                median.append(effectnum(file_data.row_values(i)[concindex],digits))
-                            elif "JMD-H" in file_data.row_values(i)[nameindex]:
-                                high.append(effectnum(file_data.row_values(i)[concindex],digits))
+                            if "IntraP-L" in file_data.row_values(i)[nameindex]:
+                                low.append(effectnum(file_data.row_values(i)[concindex], digits))
+                            elif "IntraP-M" in file_data.row_values(i)[nameindex]:
+                                median.append(effectnum(file_data.row_values(i)[concindex], digits))
+                            elif "IntraP-H" in file_data.row_values(i)[nameindex]:
+                                high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
                     normlist.append(low)
                     normlist.append(median)
                     normlist.append(high)
                     jmdone.append(normlist)
+
+                print(norm)
+                print(norm_row)
+                print(nameindex)
+                print(concindex)
 
         elif platform == "ICP-MS":
             # ICP-MS平台Agilent厂家需先在后台管理系统中设置本项目的化合物名称，以便查找上传文件中相应化合物的表格
@@ -659,57 +691,72 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                             high.append(effectnum(lines[i][concindex[k]], digits))
 
                 elif manufacturers == "Waters":
-                    data = xlrd.open_workbook(
-                        filename=None, file_contents=file.read())  # 读取表格
+                    # 内标标识
+                    ISlist=["D3","D4","D5","D6","D7","D8"]
+
+                    data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                     file.seek(0, 0)  # 循环读取同一个文件两遍，需加此句代码移动文件读取指针到开头，否则会报错
                     file_data = data.sheets()[0]
                     nrows = file_data.nrows
                     ncols = file_data.ncols
 
-                    norm_row = []  # 化合物所在行
-                    for j in range(nrows):
-                        for i in PTnorm:
-                            if i in str(file_data.row_values(j)[0]):
-                                norm_row.append(j)
+                    norm = []  # 化合物列表
+                    Compound_row =[] # 含有“Compound”关键词的所在行(包含内标)
+                    norm_row = []  # 实际化合物所在行(不包含内标)
+                    for i in range(nrows):
+                        if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):
+                            Compound_row.append(i)  
+
+                        # 判断是否含有内标标识
+                        if all(j not in str(file_data.row_values(i)[0]) for j in ISlist):
+                            if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
+                                norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
+                                norm_row.append(i) 
+
+                    # 第一种情况，不含有内标
+                    if len(Compound_row) == len(norm_row):
+                        pass
+
+                    # 第二种情况，含有内标
+                    else:
+                        nrows = Compound_row[len(norm_row)]
 
                     nameindex = 0
                     concindex = 0
                     # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
                     for i in range(len(file_data.row_values(norm_row[0]+2))):
-                        if file_data.row_values(norm_row[0]+2)[i] == "Name":
+                        if file_data.row_values(norm_row[0]+2)[i] == "ID":
                             nameindex = i
-                        elif "实际浓度" in file_data.row_values(norm_row[0]+2)[i]:
+                        elif "nmol/L" in file_data.row_values(norm_row[0]+2)[i]:
                             concindex = i
+
+                    # 未准确设置表头列名,直接返回并提示!
+                    if nameindex==0 or concindex==0:
+                        error_message="未准确设置表头列名!"
+                        return {"error_message":error_message}
 
                     if k < norm_num-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[k], norm_row[k+1]):
-                            if "L-" in file_data.row_values(i)[nameindex]:
+                            if "InterP-L" in file_data.row_values(i)[nameindex]:
                                 if k < 1:  # 第一个化合物的样本量即为每个化合物的样本量
                                     jmdnum += 1
-                                low.append(
-                                    float(file_data.row_values(i)[concindex]))
-                            elif "M-" in file_data.row_values(i)[nameindex]:
-                                median.append(
-                                    float(file_data.row_values(i)[concindex]))
-                            elif "H-" in file_data.row_values(i)[nameindex]:
-                                high.append(
-                                    float(file_data.row_values(i)[concindex]))
+                                low.append(float(file_data.row_values(i)[concindex]))
+                            elif "InterP-M" in file_data.row_values(i)[nameindex]:
+                                median.append(float(file_data.row_values(i)[concindex]))
+                            elif "InterP-H" in file_data.row_values(i)[nameindex]:
+                                high.append(float(file_data.row_values(i)[concindex]))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[k], nrows):
-                            if "L-" in file_data.row_values(i)[nameindex]:
-                                low.append(
-                                    float(file_data.row_values(i)[concindex]))
-                            elif "M-" in file_data.row_values(i)[nameindex]:
-                                median.append(
-                                    float(file_data.row_values(i)[concindex]))
-                            elif "H-" in file_data.row_values(i)[nameindex]:
-                                high.append(
-                                    float(file_data.row_values(i)[concindex]))
+                            if "InterP-L" in file_data.row_values(i)[nameindex]:
+                                low.append(float(file_data.row_values(i)[concindex]))
+                            elif "InterP-M" in file_data.row_values(i)[nameindex]:
+                                median.append(float(file_data.row_values(i)[concindex]))
+                            elif "InterP-H" in file_data.row_values(i)[nameindex]:
+                                high.append(float(file_data.row_values(i)[concindex]))
 
                 elif manufacturers == "Thermo":
-                    data = xlrd.open_workbook(
-                        filename=None, file_contents=file.read())  # 读取表格
+                    data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                     file.seek(0, 0)  # 循环读取同一个文件两遍，需加此句代码移动文件读取指针到开头，否则会报错
 
                     # Thermo需要依据在后台管理系统里设置的化合物名称判断需要抓取的化合物表格
@@ -760,8 +807,7 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     # 读取txt文件
                     content = []
                     for line in file:
-                        content.append(line.decode("GB2312").replace(
-                            "\r\n", "").split("\t"))
+                        content.append(line.decode("GB2312").replace("\r\n", "").split("\t"))
 
                     nameindex = 0
                     concindex = 0  # 浓度索引，岛津的数据格式决定每个化合物的浓度所在列一定是同一列
@@ -866,8 +912,7 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                             high.append(effectnum(rowdatagatherlist[i][concindex], digits))
 
             elif platform == "液相":
-                data = xlrd.open_workbook(
-                    filename=None, file_contents=file.read())  # 读取表格
+                data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file.seek(0, 0)  # 循环读取同一个文件两遍，需加此句代码移动文件读取指针到开头，否则会报错
                 file_data = data.sheets()[0]
                 nrows = file_data.nrows
@@ -877,44 +922,46 @@ def InterP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                 for j in range(nrows):
                     # 如果某一行的第一个元素为“化合物”，则添加第三个元素进入化合物列表
                     if file_data.row_values(j)[0] == "化合物:":
+
+                        # 中间精密度需循环多个文件，因此需避免重复添加
                         if file_data.row_values(j)[2] not in norm:
                             norm.append(file_data.row_values(j)[2])
                         norm_row.append(j)
 
                 nameindex = 0
                 concindex = 0
-                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                for i in range(len(file_data.row_values(norm_row[0]+2))):
-                    if file_data.row_values(norm_row[0]+2)[i] == "样品名称":
+
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+1是该化合物表格位于该化合物所在行的下两行
+                for i in range(len(file_data.row_values(norm_row[0]+1))):
+                    if "样品名称" in file_data.row_values(norm_row[0]+1)[i]:
                         nameindex = i
-                    elif "含量" in file_data.row_values(norm_row[0]+2)[i]:
+                    elif "含量" in file_data.row_values(norm_row[0]+1)[i]:
                         concindex = i
+
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
                 if k < norm_num-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                     for i in range(norm_row[k], norm_row[k+1]):
-                        if "L-" in file_data.row_values(i)[nameindex]:
+                        if "InterP-L" in file_data.row_values(i)[nameindex]:
                             if k < 1:  # 第一个化合物的样本量即为每个化合物的样本量
                                 jmdnum += 1
-                            low.append(
-                                float(file_data.row_values(i)[concindex]))
-                        elif "M-" in file_data.row_values(i)[nameindex]:
-                            median.append(
-                                float(file_data.row_values(i)[concindex]))
-                        elif "H-" in file_data.row_values(i)[nameindex]:
-                            high.append(
-                                float(file_data.row_values(i)[concindex]))
+                            low.append(effectnum(file_data.row_values(i)[concindex], digits))
+                        elif "InterP-M" in file_data.row_values(i)[nameindex]:
+                            median.append(effectnum(file_data.row_values(i)[concindex], digits))
+                        elif "InterP-H" in file_data.row_values(i)[nameindex]:
+                            high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
                 else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                     for i in range(norm_row[k], nrows):
-                        if "L-" in file_data.row_values(i)[nameindex]:
-                            low.append(
-                                float(file_data.row_values(i)[concindex]))
-                        elif "M-" in file_data.row_values(i)[nameindex]:
-                            median.append(
-                                float(file_data.row_values(i)[concindex]))
-                        elif "H-" in file_data.row_values(i)[nameindex]:
-                            high.append(
-                                float(file_data.row_values(i)[concindex]))
+                        if "InterP-L" in file_data.row_values(i)[nameindex]:
+                            low.append(effectnum(file_data.row_values(i)[concindex], digits))
+                        elif "InterP-M" in file_data.row_values(i)[nameindex]:
+                            median.append(effectnum(file_data.row_values(i)[concindex], digits))
+                        elif "InterP-H" in file_data.row_values(i)[nameindex]:
+                            high.append(effectnum(file_data.row_values(i)[concindex], digits))
 
             elif platform == "ICP-MS":
                 data = xlrd.open_workbook(

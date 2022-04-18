@@ -100,54 +100,70 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
                     Carryover_dict[Systermlist[index]][norm[j]]=normlist
 
             elif manufacturers =="Waters":
+                # 内标标识
+                ISlist=["D3","D4","D5","D6","D7","D8"]
+
                 data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
                 nrows=file_data.nrows
                 ncols=file_data.ncols
 
-                norm=[] #化合物列表
-                norm_row=[] #化合物所在行
-                for j in range(nrows):
-                    for i in PTnorm:
-                        if i in str(file_data.row_values(j)[0]):
-                            norm.append(i)
-                            norm_row.append(j)
+                norm = []  # 化合物列表
+                Compound_row =[] # 含有“Compound”关键词的所在行(包含内标)
+                norm_row = []  # 实际化合物所在行(不包含内标)
+                for i in range(nrows):
+                    if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):
+                        Compound_row.append(i)  
 
-                nameindex=0
-                conindex=0
-                for i in range(len(file_data.row_values(norm_row[0]+2))):  #第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                    if file_data.row_values(norm_row[0]+2)[i]=="Name":
-                        nameindex=i
-                    elif "实际浓度" in file_data.row_values(norm_row[0]+2)[i]:
-                        conindex=i
+                    # 判断是否含有内标标识
+                    if all(j not in str(file_data.row_values(i)[0]) for j in ISlist):
+                        if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
+                            norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
+                            norm_row.append(i) 
+
+                # 第一种情况，不含有内标
+                if len(Compound_row) == len(norm_row):
+                    pass
+
+                # 第二种情况，含有内标
+                else:
+                    nrows = Compound_row[len(norm_row)]                
+
+                nameindex = 0
+                concindex = 0
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
+                for i in range(len(file_data.row_values(norm_row[0]+2))):
+                    if file_data.row_values(norm_row[0]+2)[i] == "ID":
+                        nameindex = i
+                    elif "nmol/L" in file_data.row_values(norm_row[0]+2)[i]:
+                        concindex = i
+
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
 
                 for j in range(len(norm)):
-                    C1=[] 
-                    C2=[] 
-                    C3=[]
-                    group_Carryover=[]
+                    normlist=[]
                     if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j],norm_row[j+1]):
                             if "Carryover-C1" in file_data.row_values(i)[nameindex]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据 
-                                C1.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C2" in file_data.row_values(i)[nameindex]:
-                                C2.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C3" in file_data.row_values(i)[nameindex]:
-                                C3.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                     
                     else: #如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j],nrows): 
                             if "Carryover-C1" in file_data.row_values(i)[nameindex]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据 
-                                C1.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C2" in file_data.row_values(i)[nameindex]:
-                                C2.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C3" in file_data.row_values(i)[nameindex]:
-                                C3.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist=[].append(effectnum(file_data.row_values(i)[conindex],digits))
                     
-                    group_Carryover.append(C1)
-                    group_Carryover.append(C2)
-                    group_Carryover.append(C3)
-                    Carryover_list.append(group_Carryover)
+                    Carryover_dict[Systermlist[index]][norm[j]]=normlist
             
             elif manufacturers =="Thermo":
                 Thermo = Special.objects.get(project=project) 
@@ -331,41 +347,36 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
 
                 nameindex=0
                 conindex=0
-                for i in range(len(file_data.row_values(norm_row[0]+2))):  #第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                    if file_data.row_values(norm_row[0]+2)[i]=="样品名称":
-                        nameindex=i
-                    elif "含量" in file_data.row_values(norm_row[0]+2)[i]:
-                        conindex=i
+
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+1是该化合物表格位于该化合物所在行的下一行
+                for i in range(len(file_data.row_values(norm_row[0]+1))):
+                    if "样品名称" in file_data.row_values(norm_row[0]+1)[i]:
+                        nameindex = i
+                    elif "含量" in file_data.row_values(norm_row[0]+1)[i]:
+                        conindex = i
 
                 for j in range(len(norm)):
-                    C1=[] 
-                    C2=[] 
-                    C3=[]
-                    group_Carryover=[]
+                    normlist=[] 
                     if j<len(norm)-1: #如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j],norm_row[j+1]):
                             if "Carryover-C1" in file_data.row_values(i)[nameindex]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据 
-                                C1.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C2" in file_data.row_values(i)[nameindex]:
-                                C2.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C3" in file_data.row_values(i)[nameindex]:
-                                C3.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                     
                     else: #如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j],nrows): 
                             if "Carryover-C1" in file_data.row_values(i)[nameindex]: # 如果实验号命名方式匹配上，则在相应列表中添加相应数据 
-                                C1.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C2" in file_data.row_values(i)[nameindex]:
-                                C2.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                             elif "Carryover-C3" in file_data.row_values(i)[nameindex]:
-                                C3.append(effectnum(file_data.row_values(i)[conindex],digits))
+                                normlist.append(effectnum(file_data.row_values(i)[conindex],digits))
                     
-                    group_Carryover.append(C1)
-                    group_Carryover.append(C2)
-                    group_Carryover.append(C3)
-                    Carryover_list.append(group_Carryover)
+                    Carryover_dict[Systermlist[index]][norm[j]]=normlist
 
-    
     ########文件读取完毕#######
                 
 

@@ -1,0 +1,671 @@
+{% extends "report/layout.html" %} 
+{% block content %}
+
+<style>
+    /*table表格宽度固定，同时td内容过长也不会被撑开*/
+    table{
+        table-layout:fixed;
+        word-break:break-all;
+    } 
+
+    th{
+        text-align: center;
+        font-size: 14px;
+    }
+
+    td{
+        text-align: center;
+        font-size: 14px;
+    }
+
+    input{
+        outline-style: none ;
+        border: 1.5px solid #ccc; 
+        border-radius: 3px;
+    }
+
+    input:focus{
+        border-color: #66afe9;
+        outline: 0;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+    }
+
+    /* input框设置为number类型时,去除右侧的箭头 */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+    }
+
+    /* 设置表格各列宽度一致 */
+    .LOQ_Tabletr th{
+        width: 16.67%;
+    }
+
+    .AMRpicture{
+        text-align: center;
+    }
+
+    /* 验证结果样式 */
+    #verifyresult{
+        font-weight: 700;
+        color:green;
+    }
+
+</style>
+
+    <body>
+        <div class="container">
+            {% if not Result.error_message %}
+                <form action="{% url 'LOQsave' %}" method="POST" >
+                    <!-- 1 验证基本信息展示 -->
+                    <div class="basicinfo">
+                        <!-- 标题 -->
+                        <h2>验证基本信息</h2>
+                        <br>
+
+                        <!-- 仪器型号及验证时机 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器型号</label>
+                                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">验证时机</label>
+                                    <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                                </div> 
+                            </div>
+                        </div>
+    
+
+                        <!-- 检测平台及检测项目 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测平台</label>
+                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">检测项目</label>
+                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                                </div> 
+                            </div>
+                        </div>
+                        
+                        <!-- 仪器平台及仪器厂家 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器平台</label>
+                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                                </div> 
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">仪器厂家</label>
+                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input hidden = "hidden" value="{{Result.judgenum}}" name="judgenum">
+                    <input hidden = "hidden" value="{{Result.id}}" name="id">  
+
+                    <!-- 回收率下限 -->
+                    <input hidden = "hidden" value="{{Result.lowvalue}}" name="lowvalue" id="lowvalue">
+
+                    <!-- 回收率上限 -->
+                    <input hidden = "hidden" value="{{Result.upvalue}}" name="upvalue" id="upvalue">
+
+                    <!-- 最大允许CV -->
+                    <input hidden = "hidden" value="{{Result.maxCV}}" name="maxCV" id="maxCV"> 
+
+                    <!-- 平台 -->
+                    <input hidden = "hidden" value="{{Result.platform}}" name="platform" id="platform">
+
+                    <!-- 原始数据 -->
+                    <input hidden = "hidden" value="{{Result.AMR_dict}}" name="AMR_dict" id="AMR_dict">
+
+                    <!-- 曲线点个数 -->
+                    <input hidden = "hidden" value="{{Result.LOQ_num}}" name="LOQ_num" id="LOQ_num">
+
+                    <!-- 图片个数 -->
+                    <input hidden = "hidden" value="{{Result.picturenum}}" name="picturenum" id="picturenum">
+
+                    <!--验证结果 -->
+                    <input hidden = "hidden" value="" name="LOQ_judge" id="LOQ_judge">
+                    
+                    <!-- 2 分界线 -->
+                    <h1 class="page-header"></h1>
+
+                    <!-- 3 验证结果展示 -->
+                    <h2>验证指标：方法定量限与线性范围(LOQ)</h2>
+                    <h2>验证结果：<span id="verifyresult">通过!</span></h2>
+                    <br>
+
+                    <!-- 液质平台，理论浓度显示具体结果 -->
+                    {% if Result.platform == "液质" %}
+
+                        <div class="row">
+                            {%for key,value in Result.AMR_dict.items %}               
+                                <table border="1" cellpadding="8" align="center">
+                                    <caption><h4>{{key}}验证结果</h4></caption>
+                                    <tr class="LOQ_Tabletr">
+                                        <th>浓度序号</th>
+                                        <th>理论浓度({{Result.Unit}})</th>
+                                        <th>检测值({{Result.Unit}})</th>
+                                        <th>回收率(%)</th>
+                                        <th>平均回收率（%)</th>
+                                        <th>检测值CV(%)</th>
+                                    </tr>
+                                    {%for c,r in value.items %}
+                                    <tr>
+                                        <td rowspan="6">{{c}}</td> 
+                                        <td rowspan="6">{{r.0}}</td>
+                                        <td>{{r.1}}</td>
+                                        <td class="recycle">{{r.2}}</td>
+                                        <td class="meanrecycle" rowspan="6">{{r.13}}</td>
+                                        <td class="CV" rowspan="6">{{r.14}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{r.3}}</td>
+                                        <td class="recycle">{{r.4}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{r.5}}</td>
+                                        <td class="recycle">{{r.6}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{r.7}}</td>
+                                        <td class="recycle">{{r.8}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{r.9}}</td>
+                                        <td class="recycle">{{r.10}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{{r.11}}</td>
+                                        <td class="recycle">{{r.12}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                                <br>
+                            {% endfor %} 
+                        </div>
+                                                
+                        <div class="row">
+                            {% for obj in Result.AMRpicture_table %}
+                                <div class="AMRpicture"><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></div>
+                                <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
+                                    <textarea rows="1" cols="120" name = "picturename">
+                                    </textarea>
+                                </div>
+                                <br> 
+                            {% endfor %}        
+                        </div>
+
+                        <!-- 未上传图片，无需显示保存按钮，因为数据在传入html前已保存 -->
+                        {% if Result.picturenum == 0 %}
+                        
+                        <!-- 上传图片，需显示保存按钮，用来保存图片名称 -->
+                        {% else %}
+                            <div><input type="submit" class="btn btn-danger" value="保存"></div> 
+                        {% endif %}
+                    
+                    <!-- 非液质平台，理论浓度由用户自行输入 -->
+                    {% else %}
+                        <div class="row">
+                            {%for key,value in Result.AMR_dict.items %}               
+                                <table border="1" cellpadding="8" align="center">
+                                    <caption><h4>{{key}}验证结果</h4></caption>
+                                    <tr class="LOQ_Tabletr">
+                                        <th>浓度序号</th>
+                                        <th>理论浓度({{dicAMR.Unit}})</th>
+                                        <th>检测值({{dicAMR.Unit}})</th>
+                                        <th>回收率（%）</th>
+                                        <th>平均回收率（%）</th>
+                                        <th>检测值CV（%）</th>
+                                    </tr>
+                                    {%for c,r in value.items %}
+                                    <tr>
+                                        <td rowspan="6">{{c}}</td> 
+                                        <!-- 小数点后最多输入6位 -->
+                                        <td rowspan="6"><input class="theoryconc" type="text" style="width:80px;" name="theoryconc{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,6})?).*$/g, '$1')" onkeyup="myFunction()"></td>
+                                        <td><span class="calconc1">{{r.0}}</span></td>
+                                        <td><input class="recycle1" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_one{{forloop.counter}}" readonly></td>
+                                        <td rowspan="6"><input class="meanrecycle" type="text" style="width:80px;border-style:none;text-align:center;" name="meanrecycle{{forloop.counter}}" readonly></td>
+                                        <td rowspan="6"><input class="CV" type="text" style="width:80px;border-style:none;text-align:center;" name="CV{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="calconc2">{{r.1}}</span></td>
+                                        <td><input class="recycle2" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_two{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="calconc3">{{r.2}}</span></td>
+                                        <td><input class="recycle3" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_three{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="calconc4">{{r.3}}</span></td>
+                                        <td><input class="recycle4" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_four{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="calconc5">{{r.4}}</span></td>
+                                        <td><input class="recycle5" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_five{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="calconc6">{{r.5}}</span></td>
+                                        <td><input class="recycle6" type="text" style="width:80px;border-style:none;text-align:center;" name="recycle_six{{forloop.counter}}" readonly></td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                                <br>
+                            {% endfor %} 
+                        </div>
+                                                
+                        <div class="row">
+                            {% for obj in Result.AMRpicture_table %}
+                                <div class="AMRpicture"><img src="/media/{{ obj.img }}" alt="" width="600px" height="350px"></div>
+                                <div style="font-size:16px;font-weight:900;font-family:Times New Roman,宋体;text-align: center;"> 请输入图名: 
+                                    <textarea rows="1" cols="120" name = "picturename">
+                                    </textarea>
+                                </div>
+                                <br> 
+                            {% endfor %}        
+                        </div>
+                        
+                        <div><input type="submit" class="btn btn-danger" value="保存"></div> 
+                    {% endif %}
+                </form>
+
+                {% if Result.picturenum == 0 and Result.platform == "液质" %}
+                    <form action="{% url 'verifyagain' %}" method="POST" > 
+                        <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                        <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                        <input hidden = "hidden" value="{{project}}" name="project">
+                        <input hidden = "hidden" value="{{platform}}" name="platform">
+                        <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                        <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                        <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                    </form>
+                    <br>
+                    <form action="{% url 'returnback' %}" method="POST">
+                        <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                    </form>
+                {% else %}
+                    
+                {% endif %}
+            {% else %}
+                <h2 class="alert alert-danger">{{Result.error_message}}</h2>
+                <form action="{% url 'verifyagain' %}" method="POST" > 
+                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                    <input hidden = "hidden" value="{{project}}" name="project">
+                    <input hidden = "hidden" value="{{platform}}" name="platform">
+                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                    <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+                </form>
+                <br>
+                <form action="{% url 'returnback' %}" method="POST">
+                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+                </form> 
+            {% endif %} 
+        </div>
+
+    </body>
+
+    <script type="text/javascript">
+
+        // 计算均值的函数
+        function Average(arr) {
+            return arr.reduce((a, b) => a + b) / arr.length;
+        }
+
+        // 计算标准差的函数
+        function SD(arr){
+            var avg = 0;
+            var length = arr.length; 
+            var len = arr.length;
+            var sum = 0;
+
+            for(var i = 0; i < len ; i++){
+                sum += arr[i];
+            }
+            avg = sum / len; 
+            var temp = [];
+
+            for (var i = 0; i < length; i++) {
+                var dev =  (arr[i]) - avg ; //计算数组元素与平均值的差
+                temp[i] = Math.pow(dev, 2); //计算差的平方
+            }
+            var powSum = 0; //用来存储差的平方总和
+
+            for (var j = 0; j < temp.length; j++) {
+                if (temp[j]) {
+                    powSum += temp[j]; //计算差的平方总和
+                }
+            }
+            //用差的平方总和除以数组长度即可得到标准差
+            // return parseFloat( Math.sqrt(powSum / length).toFixed(2));
+            return Math.sqrt(powSum / length).toFixed(2);
+        }
+
+        // 判断是否为数字（包含正负整数，0以及正负浮点数）的函数
+        function isNumber(val){
+
+            var regPos = /^[0-9]+.?[0-9]*/; //判断是否是数字。
+
+            if(regPos.test(val) ){
+                return true;
+            }else{
+                return false;
+            }
+
+        }
+        
+        // 页面加载时的操作
+        window.onload = function(){
+
+            // 平台
+            var platform = document.getElementById("platform");
+            
+            // 液质平台，无需做数据计算，只需做结果判断
+            if ( platform == "液质" ){
+
+                // 回收率下限
+                var lowvalue = document.getElementById("lowvalue");
+
+                // 回收率上限
+                var upvalue = document.getElementById("upvalue");
+
+                // 最大允许CV
+                var maxCV = document.getElementById("maxCV");
+
+                // 回收率
+                var recyclelist = document.getElementsByClassName("recycle");
+
+                // 平均回收率
+                var meanrecyclelist = document.getElementsByClassName("meanrecycle");
+
+                // CV
+                var CVlist = document.getElementsByClassName("CV");
+
+                // 验证结果
+                var verifyresult = document.getElementById("verifyresult");
+
+                // js中，th通过.innerText获取元素的值，input框通过.value获取元素的值
+                for(let i=0; i<recyclelist.length; i++){
+                    if(parseFloat(recyclelist[i].innerText) < parseFloat(lowvalue.value) || parseFloat(recyclelist[i].innerText) > parseFloat(upvalue.value)){
+                        recyclelist[i].style.color="red";
+                        recyclelist[i].style.fontWeight=700;
+                        verifyresult.innerHTML="不通过!";
+                        verifyresult.style.color= "red";
+                        verifyresult.style.fontWeight=700
+                    }    
+                }
+
+                for(let i=0; i<meanrecyclelist.length; i++){
+                    if(parseFloat(meanrecyclelist[i].innerText) < parseFloat(lowvalue.value) || parseFloat(meanrecyclelist[i].innerText) > parseFloat(upvalue.value)){
+                        meanrecyclelist[i].style.color="red";
+                        meanrecyclelist[i].style.fontWeight=700;
+                        verifyresult.innerHTML="不通过!";
+                        verifyresult.style.color= "red";
+                        verifyresult.style.fontWeight=700
+                    }    
+                }
+
+                for(let i=0; i<CVlist.length; i++){
+                    if(parseFloat(CVlist[i].innerText) > parseFloat(maxCV.value)){
+                        CVlist[i].style.color="red";
+                        CVlist[i].style.fontWeight=700;
+                        verifyresult.innerHTML="不通过!";
+                        verifyresult.style.color= "red";
+                        verifyresult.style.fontWeight=700
+                    }    
+                }
+
+            }
+
+            // 非液质平台，页面加载时先计算CV
+            else{
+
+                // 检测值1列表
+                var calconc1list = document.getElementsByClassName("calconc1");
+
+                // 检测值2列表
+                var calconc2list = document.getElementsByClassName("calconc2");
+
+                // 检测值3列表
+                var calconc3list = document.getElementsByClassName("calconc3");
+
+                // 检测值4列表
+                var calconc4list = document.getElementsByClassName("calconc4");
+
+                // 检测值5列表
+                var calconc5list = document.getElementsByClassName("calconc5");
+
+                // 检测值6列表
+                var calconc6list = document.getElementsByClassName("calconc6");
+
+                // CV列表
+                var CVlist = document.getElementsByClassName("CV");
+
+                // 最大允许CV
+                var maxCV = document.getElementById("maxCV");
+
+                // 验证结果
+                var verifyresult = document.getElementById("verifyresult");
+                
+
+                for(let i=0; i<CVlist.length; i++){ 
+                    var middlearr = [];
+                    middlearr.push(parseFloat(calconc1list[i].innerHTML))
+                    middlearr.push(parseFloat(calconc2list[i].innerHTML))
+                    middlearr.push(parseFloat(calconc3list[i].innerHTML))
+                    middlearr.push(parseFloat(calconc4list[i].innerHTML))
+                    middlearr.push(parseFloat(calconc5list[i].innerHTML))
+                    middlearr.push(parseFloat(calconc6list[i].innerHTML))
+
+                    CVlist[i].value = SD(middlearr)
+                    if(CVlist[i].value > parseFloat(maxCV.value)){
+                        CVlist[i].style.color="red";
+                        CVlist[i].style.fontWeight=700;
+                        verifyresult.innerHTML="不通过!";
+                        verifyresult.style.color= "red";
+                        verifyresult.style.fontWeight=700
+                    }    
+                    
+                }
+            }       
+        }
+        
+        // 用户输入理论值时的计算函数
+        function myFunction(){
+
+            // 理论浓度列表
+            var theoryconclist = document.getElementsByClassName("theoryconc");
+
+            // 检测值1列表
+            var calconc1list = document.getElementsByClassName("calconc1");
+
+            // 检测值2列表
+            var calconc2list = document.getElementsByClassName("calconc2");
+
+            // 检测值3列表
+            var calconc3list = document.getElementsByClassName("calconc3");
+
+            // 检测值4列表
+            var calconc4list = document.getElementsByClassName("calconc4");
+
+            // 检测值5列表
+            var calconc5list = document.getElementsByClassName("calconc5");
+
+            // 检测值6列表
+            var calconc6list = document.getElementsByClassName("calconc6");
+
+            // 回收率1列表
+            var recycle1list = document.getElementsByClassName("recycle1");
+
+            // 回收率2列表
+            var recycle2list = document.getElementsByClassName("recycle2");
+
+            // 回收率3列表
+            var recycle3list = document.getElementsByClassName("recycle3");
+
+            // 回收率4列表
+            var recycle4list = document.getElementsByClassName("recycle4");
+
+            // 回收率5列表
+            var recycle5list = document.getElementsByClassName("recycle5");
+
+            // 回收率6列表
+            var recycle6list = document.getElementsByClassName("recycle6");
+
+            // 平均回收率列表
+            var meanrecyclelist = document.getElementsByClassName("meanrecycle");
+
+            // CV列表
+            var CVlist = document.getElementsByClassName("CV");
+
+            // 回收率下限
+            var lowvalue = document.getElementById("lowvalue");
+
+            // 回收率上限
+            var upvalue = document.getElementById("upvalue");
+
+            // 验证结果
+            var verifyresult = document.getElementById("verifyresult");
+            for(let i=0; i<theoryconclist.length; i++){ 
+                var middlearr = [];
+
+                // 计算回收率
+                recycle1list[i].value = (parseFloat(calconc1list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                recycle2list[i].value = (parseFloat(calconc2list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                recycle3list[i].value = (parseFloat(calconc3list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                recycle4list[i].value = (parseFloat(calconc4list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                recycle5list[i].value = (parseFloat(calconc5list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                recycle6list[i].value = (parseFloat(calconc6list[i].innerHTML)/parseFloat(theoryconclist[i].value)*100).toFixed(2)
+                
+                if(parseFloat(recycle1list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle1list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle1list[i].value))){
+                    recycle1list[i].style.color="red";
+                    recycle1list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle1list[i].style.color="black";
+                    recycle1list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                }    
+                
+                if(parseFloat(recycle2list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle2list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle2list[i].value))){
+                    recycle2list[i].style.color="red";
+                    recycle2list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle2list[i].style.color="black";
+                    recycle2list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                if(parseFloat(recycle3list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle3list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle3list[i].value))){
+                    recycle3list[i].style.color="red";
+                    recycle3list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle3list[i].style.color="black";
+                    recycle3list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                if(parseFloat(recycle4list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle4list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle4list[i].value))){
+                    recycle4list[i].style.color="red";
+                    recycle4list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle4list[i].style.color="black";
+                    recycle4list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                if(parseFloat(recycle5list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle5list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle5list[i].value))){
+                    recycle5list[i].style.color="red";
+                    recycle5list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle5list[i].style.color="black";
+                    recycle5list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                if(parseFloat(recycle6list[i].value) < parseFloat(lowvalue.value) || parseFloat(recycle6list[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(recycle6list[i].value))){
+                    recycle6list[i].style.color="red";
+                    recycle6list[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    recycle6list[i].style.color="black";
+                    recycle6list[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                middlearr.push(parseFloat(recycle1list[i].value))
+                middlearr.push(parseFloat(recycle2list[i].value))
+                middlearr.push(parseFloat(recycle3list[i].value))
+                middlearr.push(parseFloat(recycle4list[i].value))
+                middlearr.push(parseFloat(recycle5list[i].value))
+                middlearr.push(parseFloat(recycle6list[i].value))
+
+                // 计算平均回收率
+                meanrecyclelist[i].value = Average(middlearr).toFixed(2)
+
+                if(parseFloat(meanrecyclelist[i].value) < parseFloat(lowvalue.value) || parseFloat(meanrecyclelist[i].value) > parseFloat(upvalue.value) || !isNumber(parseFloat(meanrecyclelist[i].value))){
+                    meanrecyclelist[i].style.color="red";
+                    meanrecyclelist[i].style.fontWeight=700;
+                    verifyresult.innerHTML="不通过!";
+                    verifyresult.style.color= "red";
+                    verifyresult.style.fontWeight=700
+                } else{
+                    meanrecyclelist[i].style.color="black";
+                    meanrecyclelist[i].style.fontWeight=400;
+                    verifyresult.innerHTML="通过!";
+                    verifyresult.style.color= "green";
+                    verifyresult.style.fontWeight=700
+                } 
+
+                // 更新LOQ_judge
+                var LOQ_judge = document.getElementById("LOQ_judge");
+
+                LOQ_judge.value = verifyresult.innerHTML
+            }
+        }
+    </script>
+    {% endblock %}
+

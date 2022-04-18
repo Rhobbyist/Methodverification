@@ -40,6 +40,9 @@ urlpatterns=[
     # 加标回收率数据保存
     path('Recyclesave', report.views.Recyclesave, name="Recyclesave"),
 
+    # 仪器比对数据保存
+    path('InstrumentComparesave', report.views.InstrumentComparesave, name="InstrumentComparesave"),
+
     # 方法定量限与线性范围(LOQ)数据保存
     path('LOQsave', report.views.LOQsave, name="LOQsave"),
     

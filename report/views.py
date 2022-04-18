@@ -88,9 +88,11 @@ def get_verification_page(request):
 
             # 三 判断此份报告是否已被创建
             if ReportInfo.objects.filter(number=instrument_num, project=project):
-                reportinfo = ReportInfo.objects.get(number=instrument_num,Detectionplatform=Detectionplatform,project=project,platform=platform,manufacturers=manufacturers)
+                reportinfo = ReportInfo.objects.get(number=instrument_num,Detectionplatform=Detectionplatform,project=project,
+                platform=platform,manufacturers=manufacturers,verifyoccasion=verifyoccasion)
             else:
-                reportinfo = ReportInfo.objects.create(number=instrument_num,Detectionplatform=Detectionplatform,project=project,platform=platform,manufacturers=manufacturers)
+                reportinfo = ReportInfo.objects.create(number=instrument_num,Detectionplatform=Detectionplatform,project=project,
+                platform=platform,manufacturers=manufacturers,verifyoccasion=verifyoccasion)
 
             # 四 验证原因关联
             if verifyoccasion == "新项目开发":
@@ -147,7 +149,13 @@ def get_verification_page(request):
                 # 2.1 PT
                 if request.POST["zqd"] == "PT":
                     files = request.FILES.getlist('fileuploads')
-                    Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
+
+                    # 判断是否为25OHD项目
+                    if "25OHD" not in project:
+                        Result = zqd.PTfileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
+                    else:
+                        Result = zqd.PT_25OHD_fileread(files, Detectionplatform, project, platform, manufacturers,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB,Number_of_compounds)
+                    
                     return render(request, 'report/project/PT.html', locals())
 
                 # 2.2 加标回收率
@@ -158,7 +166,7 @@ def get_verification_page(request):
 
                 # 2.3 仪器比对
                 elif request.POST["zqd"] == "仪器比对":
-                    pass
+                    return render(request, 'report/project/InstrumentCompare.html', locals())
             
             # 3 分析灵敏度与分析测量范围(Analytical Sensitivity and Analytical Measurement Range)
             
@@ -171,21 +179,14 @@ def get_verification_page(request):
                     # 判断上传的数据文件(不是图片文件)是1个还是多个
                     data_uploadfile_num = 0 
                     for file in files:
-                        if '.png' not in file.name and ".JPG" not in file.name:
+                        if '.png' not in file.name and ".JPG" not in file.name and ".PNG" not in file.name:
                             data_uploadfile_num +=1
                     
-                    # 3.1.1 液质平台(理论浓度从原始文件中读取)
-                    if platform == "液质": 
-                        if data_uploadfile_num == 1:
-                            Result = amr.LOQgeneral_singlefileread(files, reportinfo, project, platform, manufacturers, Unit,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)  
-                        else:
-                            Result = amr.LOQgeneral_multiplefileread(files, reportinfo, project, platform, manufacturers, Unit,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)       
-                        return render(request, 'report/project/LOQgeneral.html', locals())
-                    
-                    # 3.1.2 非液质平台(上传多个数据文件,且理论浓度需由用户自行输入) 
+                    if data_uploadfile_num == 1:
+                        Result = amr.LOQfileread(files, reportinfo, project, platform, manufacturers, Unit,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)  
                     else:
-                        Result = amr.LOQspecial_fileread(files, reportinfo, project, platform, manufacturers, Unit, digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)
-                        return render(request, 'report/project/LOQspecial.html', locals())
+                        Result = amr.LOQgeneral_multiplefileread(files, reportinfo, project, platform, manufacturers, Unit,digits, ZP_Method_precursor_ion, ZP_Method_product_ion, normAB, Number_of_compounds)       
+                    return render(request, 'report/project/LOQ.html', locals())
 
                 # 3.2 方法检出限(Limit of Detection,LOD)
                 elif request.POST["amr"] == "方法检出限":
@@ -390,6 +391,7 @@ def get_reportpreview_page(request, id):
                 JMDconclusionindex += 1  # 精密度结论副标题索引+1 -- 6.3
                 tableindex += 1
 
+        # 4 判断总标题索引是否需要自增
         if PNjmd_data["JMD_dict"] or PJjmd_data["JMD_dict"]:   # 如果有重复性精密度和中间精密度,总标题索引+1
             titleindex += 1 # -- 7
 
@@ -418,6 +420,19 @@ def get_reportpreview_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
+        # 3 仪器比对
+        InstrumentCompareindex = Recycleindex
+
+        # 仪器比对描述性文字
+        InstrumentCompare_data = InstrumentCompare.objects.filter(reportinfo_id=id)
+        InstrumentCompare_text = []
+        for i in InstrumentCompare_data:
+            InstrumentCompare_text.append(i.textarea)
+        
+        if InstrumentCompare_data:
+            InstrumentCompareindex += 1
+
+        # 4 判断总标题索引是否需要自增
         if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
@@ -566,6 +581,12 @@ def get_reportpreview_page(request, id):
         if not PT_data["PT_dict"] and not Recycle_data:
             Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
 
+        if not PT_data["PT_dict"]:
+            Endconclusion = Endconclusion.replace('PT，', '')
+
+        if not Recycle_data:
+            Endconclusion = Endconclusion.replace('，加标回收率', '')
+
         if not Carryover_data["Carryover_dict"]:
             Endconclusion = Endconclusion.replace('携带效应、', '')
 
@@ -574,8 +595,6 @@ def get_reportpreview_page(request, id):
 
         if not Reference_Interval_data["Referenceinterval_dict"]:
             Endconclusion = Endconclusion.replace('、参考区间', '')
-
-        
 
         return render(request, 'report/reportpreview-single.html', locals())
 
@@ -657,6 +676,18 @@ def get_reportpreview_page(request, id):
             Recycleindex += 1 # --7.2
             tableindex += Number_of_compounds
 
+        # 3 仪器比对
+        InstrumentCompareindex = Recycleindex
+
+        # 仪器比对描述性文字
+        InstrumentCompare_data = InstrumentCompare.objects.filter(reportinfo_id=id)
+        InstrumentCompare_text = []
+        for i in InstrumentCompare_data:
+            InstrumentCompare_text.append(i.textarea)
+        
+        if InstrumentCompare_data:
+            InstrumentCompareindex += 1
+
         if PT_data["PT_dict"] or Recycle_data:
             titleindex += 1  # 8
 
@@ -706,7 +737,7 @@ def get_reportpreview_page(request, id):
         tableAMRconclusionindex = tableindex
 
         AMRconclusion_data = amr.related_AMRconclusion(id)
-        if AMRconclusion_data:
+        if AMRconclusion_data["AMRconclusion_dict"]:
             AMRconclusionindex += 1
             tableindex += 1
 
@@ -730,7 +761,9 @@ def get_reportpreview_page(request, id):
         if Dilution_data["CRR_dict"]:
             Dilutionindex += 1
             titleindex += 1
-            tableindex += Number_of_compounds
+
+            # 多指标项目，稀释倍数结论需要单独占一个表格
+            tableindex += Number_of_compounds+1
 
         print("CRR tableindex:%s" % (tableindex))
         print("CRR titleindex:%s" % (titleindex))
@@ -794,7 +827,7 @@ def get_reportpreview_page(request, id):
         Reagents_Consumables_data = others.related_Reagents_Consumables(id)
         Sample_Preparation_data = others.related_Sample_Preparation(id)
         
-        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应、样品稳定性（样本储存稳定性和样本处理后稳定性）、参考区间均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
+        Endconclusion = "由以上各参数验证可知，本方法的分析灵敏度、分析测量范围、基质特异性、基质效应、临床可报告范围（稀释倍数）、精密度（重复性精密度和中间精密度）、正确度（PT，加标回收率）、携带效应均满足临床开展要求，本方法可以在FXS-YZ26（Thermo TSQ Altis LC-MS/MS）仪器上进行血清雌二醇、雌酮项目临床样本的日常检测。"
 
         Endconclusion = Endconclusion.replace('FXS-YZ26', Instrument_number)
         Endconclusion = Endconclusion.replace('Thermo TSQ Altis LC-MS/MS', Instrument_model)
@@ -826,8 +859,14 @@ def get_reportpreview_page(request, id):
         if not PT_data["PT_dict"] and not Recycle_data:
             Endconclusion = Endconclusion.replace('正确度（PT，加标回收率）、', '')
 
+        if not PT_data["PT_dict"]:
+            Endconclusion = Endconclusion.replace('PT，', '')
+
+        if not Recycle_data:
+            Endconclusion = Endconclusion.replace('，加标回收率', '')
+
         if not Carryover_data["Carryover_dict"]:
-            Endconclusion = Endconclusion.replace('携带效应、', '')
+            Endconclusion = Endconclusion.replace('、携带效应', '')
 
         if not Stability_data["Room_conclevel_list"]:
             Endconclusion = Endconclusion.replace('样品稳定性（样本储存稳定性和样本处理后稳定性）、', '')
@@ -1410,7 +1449,7 @@ def get_verifyagain_page(request, id):
     project_verifyagain = ReportInfo.objects.get(id=id).project  # 找到项目
     platform_verifyagain = ReportInfo.objects.get(id=id).platform
     manufacturers_verifyagain = ReportInfo.objects.get(id=id).manufacturers
-    verifyoccasion_verifyagain = "新项目开发"
+    verifyoccasion_verifyagain = ReportInfo.objects.get(id=id).verifyoccasion
     return render(request, 'report/verification.html', locals())
 
 # PT数据保存
@@ -1428,6 +1467,7 @@ def PTsave(request):
     
     # 提取PT.html中的数据，并存入数据库
     if request.method == 'POST':
+        print(request.POST)
         '''
         <QueryDict: {'Result': ["{'25OHD2': [['PT561', 3.06, '± 25.0 %'], ['PT562', 1.13, '± 25.0 %'], ['PT563', 1.58, '± 25.0 %'], 
         ['PT564', 1.15, '± 25.0 %'], ['PT565', 22.96, '± 25.0 %']], '25OHD3': [['PT561', 68.45, '± 25.0 %'], ['PT562', 46.59, '± 25.0 %'],
@@ -1446,52 +1486,120 @@ def PTsave(request):
         manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
         verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
 
-        # 2 提取html中的字典
-        PT_dict = eval(str(request.POST.getlist("PT_dict")[0]))
+        # 2 模板信息提取
+        templates = request.POST["templates"]  # 模板
 
-        PTtarget = []  # 靶值列表
-        PTbias = []  # 偏移或绝对差值列表
-        PTpass = []  # 是否通过列表
-        PT_num = int(request.POST.getlist("PT_num")[0])  # PT样本数
+        # 3 数据抓取
+        if templates=="1":
+            PT_dict = eval(str(request.POST.getlist("PT_dict")[0]))
+            lowaccept = []  # 可接受区间下限列表
+            upaccept = []  # 可接受区间上限列表
+            PTpass = []  # 是否通过列表
+            PT_num = int(request.POST.getlist("PT_num")[0])  # PT样本数
 
-        for i in range(1, PT_num+1):
-            string_target = "PTtarget"+str(i)
-            string_bias = "bias"+str(i)
-            string_pass = "pass"+str(i)
-            PTtarget.append(request.POST.getlist(string_target))
-            PTbias.append(request.POST.getlist(string_bias))
-            PTpass.append(request.POST.getlist(string_pass))
+            for i in range(1, PT_num+1):
+                string_lowaccept = "lowaccept"+str(i)
+                string_upaccept = "upaccept"+str(i)
+                string_pass = "pass"+str(i)
+                lowaccept.append(request.POST.getlist(string_lowaccept))
+                upaccept.append(request.POST.getlist(string_upaccept))
+                PTpass.append(request.POST.getlist(string_pass))
 
-        PT_norm = []  # 待测物质列表
-        for i in PT_dict.keys():
-            PT_norm.append(i)
+            PT_norm = []  # 待测物质列表
+            for i in PT_dict.keys():
+                PT_norm.append(i)
 
-        PT_judgenum = 0
-        for i in range(PT_num):
-            for j in range(len(PT_norm)):
-                PT_dict[PT_norm[j]][i].append(PTtarget[i][j])
-                PT_dict[PT_norm[j]][i].append(PTbias[i][j])
-                PT_dict[PT_norm[j]][i].append(PTpass[i][j])
-                if PTpass[i][j] == "不通过":
-                    PT_judgenum += 1
+            PT_judgenum = 0
+            for i in range(PT_num):
+                for j in range(len(PT_norm)):
+                    PT_dict[PT_norm[j]][i].append(lowaccept[i][j])
+                    PT_dict[PT_norm[j]][i].append(upaccept[i][j])
+                    PT_dict[PT_norm[j]][i].append(PTpass[i][j])
+                    if PTpass[i][j] == "不通过":
+                        PT_judgenum += 1
 
-        reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
+            reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
 
-        if PT_judgenum == 0:
-            insert_list = []
-            for i in PT_norm:
-                for j in range(len(PT_dict[i])):
-                    insert_list.append(PT(reportinfo=reportinfo, norm=i, Experimentnum=PT_dict[i][j][0], value=PT_dict[i][j][1],
-                                          target=PT_dict[i][j][3], received=PT_dict[i][j][2], bias=PT_dict[i][j][4], PT_pass=PT_dict[i][j][5]))
+            if PT_judgenum == 0:
+                insert_list = []
+                for i in PT_norm:
+                    for j in range(len(PT_dict[i])):
+                        insert_list.append(PT(reportinfo=reportinfo, norm=i, templates="1",Experimentnum=PT_dict[i][j][0], value=PT_dict[i][j][1],
+                                            accept1=PT_dict[i][j][2], accept2=PT_dict[i][j][3], PT_pass=PT_dict[i][j][4], target="",received="",bias=""))
 
-            PT.objects.bulk_create(insert_list)
-            HttpResponse = "PT数据保存成功!"
-            return render(request, 'report/Datasave.html', locals())
+                PT.objects.bulk_create(insert_list)
+                HttpResponse = "PT数据保存成功!"
+                return render(request, 'report/Datasave.html', locals())
 
-        else:
-            HttpResponse = "PT验证结果中含有不通过数据,请核对后重新提交!"
-            return render(request, 'report/Warning.html', locals())
+            else:
+                HttpResponse = "PT验证结果中含有不通过数据,请核对后重新提交!"
+                return render(request, 'report/Warning.html', locals())
 
+        else:       
+            PT_dict = eval(str(request.POST.getlist("PT_dict")[0]))
+
+            PTtarget = []  # 靶值列表
+            PTbias = []  # 偏移或绝对差值列表
+            PTpass = []  # 是否通过列表
+            PT_num = int(request.POST.getlist("PT_num")[0])  # PT样本数
+
+            for i in range(1, PT_num+1):
+                string_target = "PTtarget"+str(i)
+                string_bias = "bias"+str(i)
+                string_pass = "pass"+str(i)
+                PTtarget.append(request.POST.getlist(string_target))
+                PTbias.append(request.POST.getlist(string_bias))
+                PTpass.append(request.POST.getlist(string_pass))
+
+            PT_norm = []  # 待测物质列表
+            for i in PT_dict.keys():
+                PT_norm.append(i)
+
+            PT_judgenum = 0
+            for i in range(PT_num):
+                for j in range(len(PT_norm)):
+                    PT_dict[PT_norm[j]][i].append(PTtarget[i][j])
+                    PT_dict[PT_norm[j]][i].append(PTbias[i][j])
+                    PT_dict[PT_norm[j]][i].append(PTpass[i][j])
+                    if PTpass[i][j] == "不通过":
+                        PT_judgenum += 1
+
+            reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
+
+            print(PT_dict)
+
+            if PT_judgenum == 0:
+                # 判断是否为25-OH-D项目
+
+                # 1 不是25-OH-D项目
+                if project!="25OHD":
+                    insert_list = []
+                    for i in PT_norm:
+                        for j in range(len(PT_dict[i])):
+                            insert_list.append(PT(reportinfo=reportinfo, norm=i, templates="2",Experimentnum=PT_dict[i][j][0], value=PT_dict[i][j][1],
+                                                target=PT_dict[i][j][3], received=PT_dict[i][j][2], bias=PT_dict[i][j][4], PT_pass=PT_dict[i][j][5],
+                                                accept1="",accept2=""))
+
+                    PT.objects.bulk_create(insert_list)
+
+                # # 2 是25-OH-D项目
+                else:
+                    insert_list = []
+                    for i in PT_norm:
+                        for j in range(len(PT_dict[i])):
+                        
+                            # 2 只显示总D结果,D2和D3结果不显示
+                            insert_list.append(PT(reportinfo=reportinfo, norm=i, templates="2",Experimentnum=PT_dict[i][j][0], 
+                                                    value=PT_dict[i][j][1]+"-"+PT_dict[i][j][2]+"-"+PT_dict[i][j][3],target=PT_dict[i][j][5], received=PT_dict[i][j][4], bias=PT_dict[i][j][6], PT_pass=PT_dict[i][j][7],
+                                                    accept1="",accept2=""))
+
+                    PT.objects.bulk_create(insert_list)
+                HttpResponse = "PT数据保存成功!"
+                return render(request, 'report/Datasave.html', locals())
+
+            else:
+                HttpResponse = "PT验证结果中含有不通过数据,请核对后重新提交!"
+                return render(request, 'report/Warning.html', locals())
 
 def Recyclesave(request):
 
@@ -1609,8 +1717,33 @@ def Recyclesave(request):
             HttpResponse = "加标回收率验证结果中含有不通过数据,请核对后重新提交!"
             return render(request, 'report/HttpResponse-danger.html', locals())
 
+def InstrumentComparesave(request):
+    try:
+        name = User.objects.get(username=request.user).first_name
+    except:
+        pass
+    if isinstance(request.user, auth.models.AnonymousUser):  # 判断是否为未登录用户
+        User_class = 0
+    else:
+        User_class = 1
+    if request.method == 'POST':
+        # 接收验证基本信息，点击继续验证按钮时需用到
+        instrument_num = request.POST["instrument_num"]
+        Detectionplatform = request.POST["Detectionplatform"]  # 项目组
+        project = request.POST["project"]  # 项目
+        platform = request.POST["platform"]  # 仪器平台(液质,液相,ICP-MS...)
+        manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
+        verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
+        
+        textarea = request.POST["textarea"]
 
-# 接收验证界面LOQ指标传递过来的参数(图片名称)
+        reportinfo = ReportInfo.objects.get(number=instrument_num, project=project)
+        InstrumentCompare.objects.create(reportinfo=reportinfo, textarea=textarea)
+
+        HttpResponse = "仪器比对数据保存成功!"
+        return render(request, 'report/Datasave.html', locals())
+
+# LOQ数据保存
 def LOQsave(request):
     try:
         name = User.objects.get(username=request.user).first_name
@@ -1629,21 +1762,124 @@ def LOQsave(request):
         manufacturers = request.POST["manufacturers"]  # 仪器厂家(AB,Agilent...)
         verifyoccasion = request.POST["verifyoccasion"]  # 验证时机
 
-        judgenum = int(request.POST.getlist("judgenum")[0])  # 判断验证结果是否通过
-        picturename = request.POST.getlist("picturename")
-        AMR_id = int(request.POST.getlist("id")[0])
-        objs = AMRpicture.objects.filter(reportinfo_id=AMR_id)
+        if platform == "液质":
+            judgenum = int(request.POST.getlist("judgenum")[0])  # 判断验证结果是否通过
+            picturename = request.POST.getlist("picturename")
+            AMR_id = int(request.POST.getlist("id")[0])
+            objs = AMRpicture.objects.filter(reportinfo_id=AMR_id)
 
-        if judgenum == 0:
-            for index, i in enumerate(objs):
-                AMRpicture.objects.filter(img=i.img).update(name=picturename[index])  # 更新数据库中的图片名称
-            HttpResponse = "方法定量限与线性范围数据保存成功!"
-            return render(request, 'report/Datasave.html', locals())
+            if judgenum == 0:
+                for index, i in enumerate(objs):
+                    AMRpicture.objects.filter(img=i.img).update(name=picturename[index])  # 更新数据库中的图片名称
+                HttpResponse = "方法定量限与线性范围数据保存成功!"
+                return render(request, 'report/Datasave.html', locals())
+            else:
+                for index, i in enumerate(objs):
+                    AMRpicture.objects.filter(img=i.img).delete()  # 删除数据库中的图片
+                HttpResponse = "方法定量限与线性范围验证结果中含有不通过数据,请核对后重新提交!"
+                return render(request, 'report/Warning.html', locals())
+        
         else:
-            for index, i in enumerate(objs):
-                AMRpicture.objects.filter(img=i.img).delete()  # 删除数据库中的图片
-            HttpResponse = "方法定量限与线性范围验证结果中含有不通过数据,请核对后重新提交!"
-            return render(request, 'report/Warning.html', locals())
+            print(request.POST)
+            AMR_dict = eval(str(request.POST.getlist("AMR_dict")[0]))
+            LOQ_num = int(request.POST.getlist("LOQ_num")[0])  # PT样本数
+            LOQ_judge = request.POST["LOQ_judge"]  # 是否通过判断
+            picturenum = request.POST["picturenum"]  # 图片个数
+
+            # 预定义曲线点标识列表
+            S=["AMR-S1","AMR-S2","AMR-S3","AMR-S4","AMR-S5","AMR-S6","AMR-S7","AMR-S8",
+            "AMR-S9","AMR-S10","AMR-S11","AMR-S12","AMR-S13","AMR-S14","AMR-S15"] 
+
+            # 获取AMR_dict中的key
+            LOQ_norm = []
+            for key in AMR_dict.keys():
+                LOQ_norm.append(key)
+
+            # 添加理论浓度
+            theoryconclist = []
+            for i in range(1, LOQ_num+1):
+                theoryconc_string = "theoryconc"+str(i)
+                theoryconclist.append(request.POST.getlist(theoryconc_string))
+
+            for i in range(LOQ_num):
+                for j in range(len(LOQ_norm)):
+                    # 理论浓度添加到首位
+                    AMR_dict[LOQ_norm[j]][S[i]].insert(0, theoryconclist[i][j])
+
+            # 添加回收率
+            recycle_one = []
+            recycle_two = []
+            recycle_three = []
+            recycle_four = []
+            recycle_five = []
+            recycle_six = []
+
+            for i in range(1, LOQ_num+1):
+                recycle_one_string = "recycle_one"+str(i)
+                recycle_two_string = "recycle_two"+str(i)
+                recycle_three_string = "recycle_three"+str(i)
+                recycle_four_string = "recycle_four"+str(i)
+                recycle_five_string = "recycle_five"+str(i)
+                recycle_six_string = "recycle_six"+str(i)
+                recycle_one.append(request.POST.getlist(recycle_one_string))
+                recycle_two.append(request.POST.getlist(recycle_two_string))
+                recycle_three.append(request.POST.getlist(recycle_three_string))
+                recycle_four.append(request.POST.getlist(recycle_four_string))
+                recycle_five.append(request.POST.getlist(recycle_five_string))
+                recycle_six.append(request.POST.getlist(recycle_six_string))
+
+            for i in range(LOQ_num):
+                for j in range(len(LOQ_norm)):
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_one[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_two[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_three[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_four[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_five[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(recycle_six[i][j])
+
+            # 添加平均回收率,检测值CV
+            meanrecycle = []
+            CV = []
+            for i in range(1, LOQ_num+1):
+                meanrecycle_string = "meanrecycle"+str(i)
+                CV_string = "CV"+str(i)
+                meanrecycle.append(request.POST.getlist(meanrecycle_string))
+                CV.append(request.POST.getlist(CV_string))
+
+            for i in range(LOQ_num):
+                for j in range(len(LOQ_norm)):
+                    AMR_dict[LOQ_norm[j]][S[i]].append(meanrecycle[i][j])
+                    AMR_dict[LOQ_norm[j]][S[i]].append(CV[i][j])
+
+            # 数据保存
+            reportinfo = ReportInfo.objects.get(number=request.POST["instrument_num"], project=request.POST["project"])
+
+            print(LOQ_judge)
+            if LOQ_judge == "通过!":
+                insert_list =[]
+                for key,value in AMR_dict.items():
+                    for r,c in value.items():
+                        insert_list.append(AMR(reportinfo=reportinfo,Experimentnum=r,norm=key,therory_conc=c[0],test_conc1=c[1],test_conc2=c[2],
+                        test_conc3=c[3],test_conc4=c[4],test_conc5=c[5],test_conc6=c[6],recycle1=c[7],recycle2=c[8],recycle3=c[9],recycle4=c[10],
+                        recycle5=c[11],recycle6=c[12],meanrecycle=c[13],cvtest_conc=c[14]))
+
+                AMR.objects.bulk_create(insert_list)
+
+                # 图片保存
+                if picturenum!=0:
+                    picturename = request.POST.getlist("picturename")
+                    AMR_id = int(request.POST.getlist("id")[0])
+                    objs = AMRpicture.objects.filter(reportinfo_id=AMR_id)
+
+                    for index, i in enumerate(objs):
+                        AMRpicture.objects.filter(img=i.img).update(name=picturename[index])  # 更新数据库中的图片名称
+
+                HttpResponse = "方法定量限与线性范围数据保存成功!"
+                return render(request, 'report/Datasave.html', locals())
+
+            else:
+                HttpResponse = "方法定量限与线性范围验证结果中含有不通过数据,请核对后重新提交!"
+                return render(request, 'report/Warning.html', locals())
 
 
 def AMR2save(request):
@@ -2100,7 +2336,6 @@ def Sample_Stability_Save(request):
 
 def verifyagain(request):
     if request.method == 'POST':
-        print(request.POST)
         instrument_num_verifyagain = request.POST["instrument_num"]
         # 项目组
         Detectionplatform_verifyagain = request.POST["Detectionplatform"]

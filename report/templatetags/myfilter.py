@@ -1,5 +1,6 @@
 from django import template
 register = template.Library()
+
 @register.filter
 def get_item(dictionary, key):
     """
@@ -9,5 +10,11 @@ def get_item(dictionary, key):
     :return:
     """
     return dictionary.get(key)
+
+def split(value, key):
+    """
+        Returns the value turned into a list.
+    """
+    return value.split(key)
 
 

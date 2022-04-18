@@ -39,74 +39,147 @@
 
 </style>
 
-    <body>
-        <div class="container">  
-            <!-- 未返回报错信息  -->
-            {% if not Result.error_message %} 
-                <form action="{% url 'PTsave' %}" method="POST" >    
-                    <!-- 1 验证基本信息展示 -->
-                    <div class="basicinfo">
-                        <!-- 标题 -->
-                        <h2>验证基本信息</h2>
-                        <br>
+<body>
+    <div class="container">  
+        <!-- 未返回报错信息  -->
+        {% if not Result.error_message %} 
+            <form action="{% url 'PTsave' %}" method="POST" >    
+                <!-- 1 验证基本信息展示 -->
+                <div class="basicinfo">
+                    <!-- 标题 -->
+                    <h2>验证基本信息</h2>
+                    <br>
 
-                        <!-- 仪器型号及验证时机 -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">仪器型号</label>
-                                    <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
-                                </div> 
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">验证时机</label>
-                                    <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
-                                </div> 
+                    <!-- 仪器型号及验证时机 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器型号</label>
+                                <input type="email" class="form-control" value="{{instrument_num}}" name="instrument_num" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">验证时机</label>
+                                <input type="email" class="form-control" value="{{verifyoccasion}}" name="verifyoccasion" readonly>
+                            </div> 
+                        </div>
+                    </div>
+
+                    <!-- 检测平台及检测项目 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测平台</label>
+                                <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">检测项目</label>
+                                <input type="email" class="form-control" value="{{project}}" name="project" readonly>
+                            </div> 
+                        </div>
+                    </div>
+                    
+                    <!-- 仪器平台及仪器厂家 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器平台</label>
+                                <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
+                            </div> 
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">仪器厂家</label>
+                                <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
                             </div>
                         </div>
+                    </div>
+                </div> 
 
-                        <!-- 检测平台及检测项目 -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">检测平台</label>
-                                    <input type="email" class="form-control" value="{{Detectionplatform}}" name="Detectionplatform" readonly>
-                                </div> 
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">检测项目</label>
-                                    <input type="email" class="form-control" value="{{project}}" name="project" readonly>
-                                </div> 
-                            </div>
-                        </div>
-                        
-                        <!-- 仪器平台及仪器厂家 -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">仪器平台</label>
-                                    <input type="email" class="form-control" value="{{platform}}" name="platform" readonly>
-                                </div> 
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="exampleInputEmail1">仪器厂家</label>
-                                    <input type="email" class="form-control" value="{{manufacturers}}" name="manufacturers" readonly>
-                                </div>
-                            </div>
-                        </div>
-                    </div> 
+                <input hidden = "hidden" value="{{Result.PT_dict}}" name="PT_dict">
+                <input hidden = "hidden" value="{{Result.PT_num}}" name="PT_num">
 
-                    <input hidden = "hidden" value="{{Result.PT_dict}}" name="PT_dict">
-                    <input hidden = "hidden" value="{{Result.PT_num}}" name="PT_num">
+                <input hidden = "hidden" value="{{Result.templates}}" name="templates">
 
-                    <!-- 2 分界线 -->
-                    <h1 class="page-header"></h1>
+                <!-- 2 分界线 -->
+                <h1 class="page-header"></h1>
 
-                    <!-- 3 验证结果展示 -->
-                    <h2>验证指标:PT</h2>
+                <!-- 3 验证结果展示 -->
+                <h2>验证指标:PT</h2>
+
+                <!-- 25OHD模板 -->
+                {% if Result.project == "25OHD" %}
+                    <!-- 第一种情况，未在后台管理系统设置可接受标准，调用模板1（可接受区间模板） -->  
+                    {% if Result.templates == 1 %} 
+                        {%for key,value in Result.PT_dict.items %}        
+                            <table border="1" cellpadding="8">
+                                <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th rowspan="2">样本编号</th>
+                                    <th colspan="3">检测值({{Result.PTunit}})</th>
+                                    <th rowspan="2">可接受区间下限<br/>({{Result.PTunit}})</th>
+                                    <th rowspan="2">可接受区间上限<br/>({{Result.PTunit}})</th>
+                                    <th rowspan="2">是否通过</th>
+                                </tr>
+                                <tr>
+                                    <th>25-OH-D2</th>
+                                    <th>25-OH-D3</th>
+                                    <th>25-OH-D</th>
+                                {%for r in value %}
+                                <tr>
+                                    <td>{{r.0}}</td> 
+                                    <td><span class="concD2">{{r.1}}</span></td>
+                                    <td><span class="concD3">{{r.2}}</span></td>
+                                    <td><span class="conc">{{r.3}}</span></td>
+                                    <td><input class="lowaccept" type="text" style="width:80px;" name="lowaccept{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates1()"></td>
+                                    <td><input class="upaccept" type="text" style="width:80px;" name="upaccept{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates1()"></td>
+                                    <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
+                                </tr>
+                            {% endfor %}
+                            </table>
+                            <br>
+                        {% endfor %} 
+
+                    <!-- 第二种情况，在后台管理系统设置了可接受标准，调用模板2（可接受标准模板） -->
+                    {% else %} 
+                        {%for key,value in Result.PT_dict.items %}        
+                            <table border="1" cellpadding="8">
+                                <caption><h4>{{key}}验证结果</h4></caption>
+                                <tr>
+                                    <th rowspan="2">样本编号</th>
+                                    <th colspan="3">检测值({{Result.PTunit}})</th>
+                                    <th rowspan="2">靶值<br/>({{Result.PTunit}})</th>
+                                    <th rowspan="2">可接受<br/>标准</th>
+                                    <th rowspan="2">偏倚(%)或<br/>绝对差值({{Result.PTunit}})</th>
+                                    <th rowspan="2">是否通过</th>
+                                </tr>
+                                <tr>
+                                    <th>25-OH-D2</th>
+                                    <th>25-OH-D3</th>
+                                    <th>25-OH-D</th>
+                                {%for r in value %}
+                                <tr>
+                                    <td>{{r.0}}</td> 
+                                    <td><span class="concD2">{{r.1}}</span></td>
+                                    <td><span class="concD3">{{r.2}}</span></td>
+                                    <td><span class="conc">{{r.3}}</span></td>
+                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates2()"></td>     
+                                    <td><span class="rule">{{r.4}}</span></td>                 
+                                    <td><input class="bias" type="text" style="border-style:none;text-align:center;" name="bias{{forloop.counter}}" readonly></td>  
+                                    <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            <br>
+                        {% endfor %} 
+                    {% endif %}   
+
+                <!-- 非25OHD模板 -->    
+                {% else %}  
+                    <!-- 第一种情况，未在后台管理系统设置可接受标准，调用模板1（可接受区间模板） -->  
                     {% if Result.templates == 1 %} 
                         {%for key,value in Result.PT_dict.items %}        
                             <table border="1" cellpadding="8">
@@ -114,22 +187,24 @@
                                 <tr>
                                     <th>样本编号</th>
                                     <th>检测值({{Result.PTunit}})</th>
-                                    <th>可接受区间上限({{Result.PTunit}})</th>
                                     <th>可接受区间下限({{Result.PTunit}})</th>
+                                    <th>可接受区间上限({{Result.PTunit}})</th>
                                     <th>是否通过</th>
                                 </tr>
                                 {%for r in value %}
                                 <tr>
                                     <td>{{r.0}}</td> 
                                     <td><span class="conc">{{r.1}}</span></td>
-                                    <td><input class="accept1" type="text" style="width:80px;" name="accept1{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
-                                    <td><input class="accept2" type="text" style="width:80px;" name="accept2{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
+                                    <td><input class="lowaccept" type="text" style="width:80px;" name="lowaccept{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates1()"></td>
+                                    <td><input class="upaccept" type="text" style="width:80px;" name="upaccept{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates1()"></td>
                                     <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
                                 </tr>
-                                {% endfor %}
+                            {% endfor %}
                             </table>
                             <br>
                         {% endfor %} 
+
+                    <!-- 第二种情况，在后台管理系统设置了可接受标准，调用模板2（可接受标准模板） -->
                     {% else %} 
                         {%for key,value in Result.PT_dict.items %}        
                             <table border="1" cellpadding="8">
@@ -146,7 +221,7 @@
                                 <tr>
                                     <td>{{r.0}}</td> 
                                     <td><span class="conc">{{r.1}}</span></td>
-                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="myFunction()"></td>
+                                    <td><input class="target" type="text" style="width:80px;" name="PTtarget{{forloop.counter}}" onkeydown="value=value.replace(/^\D*(\d*(?:\.\d{0,2})?).*$/g, '$1')" onkeyup="Templates2()"></td>
                                     <td><span class="rule">{{r.2}}</span></td>
                                     <td><input class="bias" type="text" style="border-style:none;text-align:center;" name="bias{{forloop.counter}}" readonly></td>
                                     <td><input class="pass" type="text" style="border-style:none;text-align:center;" name="pass{{forloop.counter}}" readonly></td>
@@ -155,77 +230,99 @@
                             </table>
                             <br>
                         {% endfor %} 
-                    {% endif %}       
-                    <br>
-                    <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
-                </form>
-            
-            <!-- 返回报错信息  --> 
-            {% else %}
-                <h2 class="alert alert-danger">{{Result.error_message}}</h2>
-                <form action="{% url 'verifyagain' %}" method="POST" > 
-                    <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
-                    <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
-                    <input hidden = "hidden" value="{{project}}" name="project">
-                    <input hidden = "hidden" value="{{platform}}" name="platform">
-                    <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
-                    <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
-                    <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
-                </form>
+                    {% endif %}  
+                {% endif %}      
                 <br>
-                <form action="{% url 'returnback' %}" method="POST">
-                    <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
-                </form> 
-            {% endif %} 
-        </div>
+                <div><input class="btn btn-primary" id="submit" type="submit" value="保存" /></div>     
+            </form>
+        
+        <!-- 返回报错信息  --> 
+        {% else %}
+            <h2 class="alert alert-danger">{{Result.error_message}}</h2>
+            <form action="{% url 'verifyagain' %}" method="POST" > 
+                <input hidden = "hidden" value="{{instrument_num}}" name="instrument_num">
+                <input hidden = "hidden" value="{{Detectionplatform}}" name="Detectionplatform">
+                <input hidden = "hidden" value="{{project}}" name="project">
+                <input hidden = "hidden" value="{{platform}}" name="platform">
+                <input hidden = "hidden" value="{{manufacturers}}" name="manufacturers">
+                <input hidden = "hidden" value="{{verifyoccasion}}" name="verifyoccasion">
+                <div><input class="btn btn-primary" id="submit" type="submit" value="继续验证" /></div>
+            </form>
+            <br>
+            <form action="{% url 'returnback' %}" method="POST">
+                <div><input class="btn btn-danger" id="submit" type="submit" value="返回" /></div>
+            </form> 
+        {% endif %} 
+    </div>
 
-    </body> 
-    {% endblock %}
+</body> 
+{% endblock %}
 
-    {% block scripts %}
-    <script>
-        function myFunction() {
-            conc = document.getElementsByClassName("conc")
-            target = document.getElementsByClassName("target")
-            rule = document.getElementsByClassName("rule")
-            bias = document.getElementsByClassName("bias")
-            pass = document.getElementsByClassName("pass")
-            for(let i=0; i<target.length; i++)
-            {   
-                if (rule[i].innerText.includes("%"))
+{% block scripts %}
+<script>
+    function Templates1() {
+        conc = document.getElementsByClassName("conc")
+        lowaccept = document.getElementsByClassName("lowaccept")
+        upaccept = document.getElementsByClassName("upaccept")
+        pass = document.getElementsByClassName("pass")
+        for(let i=0; i<pass.length; i++)
+        {   
+            if (parseFloat(conc[i].innerHTML)>=lowaccept[i].value & parseFloat(conc[i].innerHTML)<=upaccept[i].value)
+            {
+                pass[i].value = "通过"
+                pass[i].style.color="green"
+                pass[i].style.fontWeight=700
+            }
+            else
+            {
+                pass[i].value = "不通过" 
+                pass[i].style.color="red"
+                pass[i].style.fontWeight=700     
+            }
+        }                
+    }
+
+    function Templates2() {
+        conc = document.getElementsByClassName("conc")
+        target = document.getElementsByClassName("target")
+        rule = document.getElementsByClassName("rule")
+        bias = document.getElementsByClassName("bias")
+        pass = document.getElementsByClassName("pass")
+        for(let i=0; i<target.length; i++)
+        {   
+            if (rule[i].innerText.includes("%"))
+            {
+                bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2))+"%"
+                if ((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
                 {
-                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2))+"%"
-                    if ((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)/target[i].value*100).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
-                    {
-                        pass[i].value = "通过"
-                        pass[i].style.color="green"
-                        pass[i].style.fontWeight=700
-                    }
-                    else
-                    {
-                        pass[i].value = "不通过"
-                        pass[i].style.color="red"
-                        pass[i].style.fontWeight=700
-                    }
+                    pass[i].value = "通过"
+                    pass[i].style.color="green"
+                    pass[i].style.fontWeight=700
                 }
                 else
                 {
-                    bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)).toFixed(2))+"{{Result.PTunit}}"
-                    if (Math.abs(parseFloat(conc[i].innerHTML)-target[i].value).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
-                    {
-                        pass[i].value = "通过"
-                        pass[i].style.color="green"
-                        pass[i].style.fontWeight=700
-                    }
-                    else
-                    {
-                        pass[i].value = "不通过!" 
-                        pass[i].style.color="red"
-                        pass[i].style.fontWeight=700                    
-                    }
+                    pass[i].value = "不通过"
+                    pass[i].style.color="red"
+                    pass[i].style.fontWeight=700
                 }
-            }         
-                       
-        }
-    </script>
-    {% endblock %}
+            }
+            else
+            {
+                bias[i].value = String((Math.abs(parseFloat(conc[i].innerHTML)-target[i].value)).toFixed(2))+"{{Result.PTunit}}"
+                if (Math.abs(parseFloat(conc[i].innerHTML)-target[i].value).toFixed(2) <= parseFloat(rule[i].innerText.split(" ")[1]))
+                {
+                    pass[i].value = "通过"
+                    pass[i].style.color="green"
+                    pass[i].style.fontWeight=700
+                }
+                else
+                {
+                    pass[i].value = "不通过!" 
+                    pass[i].style.color="red"
+                    pass[i].style.fontWeight=700                    
+                }
+            }
+        }                
+    }
+</script>
+{% endblock %}

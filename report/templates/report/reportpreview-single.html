@@ -166,7 +166,8 @@
     }
 
     /* 每个验证指标二级标题 */
-    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title,.LOQ_title,.AMRconclusion_title,.Dilution_title{
+    .PNJMD_title,.PJJMD_title,.JMDconclusion_title,.PT_title,.Recycle_title,.InstrumentCompare_title,
+    .LOQ_title,.AMRconclusion_title,.Dilution_title{
         font-size: 16px;
         font-weight: bold;
         font-family: Times New Roman, 宋体;
@@ -708,26 +709,50 @@
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
                                 <div class="maintext">{{PT_data.serial}}) PT实验结果如表{{tablePTindex}}所示，结果表明检测结果均在可接受范围内，说明该方法的正确度满足要求。</div>
-                                {%for key,value in PT_data.PT_dict.items %}
-                                    <table class="PT_Table" cellpadding="4">
-                                        <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
-                                        <tr class="PT_Tabletr">
-                                            <th width="20%">样本编号</th>
-                                            <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                            <th width="20%">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                            <th width="20%">可接受标准</th>
-                                            <th width="20%">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
-                                        </tr>
-                                        {%for r in value %}
-                                            <tr>
-                                                {%for c in r %}
-                                                    <td class="tablemaintext">{{c}}</td>
-                                                {% endfor %}
+                                {% if PT_data.PT_templates.0 == 1 %}
+                                    {%for key,value in PT_data.PT_dict.items %}
+                                        <table class="PT_Table" cellpadding="4">
+                                            <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
+                                            <tr class="PT_Tabletr">
+                                                <th width="20%">样本编号</th>
+                                                <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受区间下限<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受区间上限<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">是否通过<br />({{Unitdict|get_item:key|default:unit}})</th>
                                             </tr>
-                                        {% endfor %}
-                                    </table>
-                                    <br>
-                                {% endfor %}
+                                            {%for r in value %}
+                                                <tr>
+                                                    {%for c in r %}
+                                                        <td class="tablemaintext">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                {% else %}
+                                    {%for key,value in PT_data.PT_dict.items %}
+                                        <table class="PT_Table" cellpadding="4">
+                                            <caption>表{{tablePTindex}}. {{key}}室间质量评价实验数据</caption>
+                                            <tr class="PT_Tabletr">
+                                                <th width="20%">样本编号</th>
+                                                <th width="20%">检测值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">靶值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">可接受标准</th>
+                                                <th width="20%">偏倚(%)或<br />绝对差值<br />({{Unitdict|get_item:key|default:unit}})</th>
+                                                <th width="20%">是否通过</th>
+                                            </tr>
+                                            {%for r in value %}
+                                                <tr>
+                                                    {%for c in r %}
+                                                        <td class="tablemaintext">{{c}}</td>
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <br>
+                                    {% endfor %}
+                                {% endif %}
                                 <br>
                             </div>
                             {% endif %}
@@ -815,6 +840,14 @@
                                 {% endfor %}
                                 <br>
                             </div>                      
+                            {% endif %}
+
+                            <!-- 2.3 仪器比对 -->
+                            {% if InstrumentCompare_text %}
+                            <div class="InstrumentCompare_data">
+                                <div class="InstrumentCompare_title">{{ZQDindex}}.{{InstrumentCompareindex}} 仪器比对(Instrument Comparison)</div>
+                                <div class="maintext"> {{InstrumentCompare_text.0}}</div>
+                            </div>
                             {% endif %}
                         </td>
                     </tr>                     
@@ -1411,9 +1444,15 @@
                                         <br>
                                     {% endfor %}
                                 {% else %}
-                                    <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}-{{tableCarryoverindex|add:Carryover_data.normnum|add:-1}}所示，
-                                        (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
-                                    </div>
+                                    {% if Carryover_data.normnum == 1 %} 
+                                        <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}所示，
+                                            (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                        </div>
+                                    {% else %}
+                                        <div class="maintext"> {{Carryover_data.serial}}) 实验结果如表{{tableCarryoverindex}}-{{tableCarryoverindex|add:Carryover_data.normnum|add:-1}}所示，
+                                            (C3-C1)/C1均小于20%，说明系统无携带效应，满足检测要求。
+                                        </div>
+                                    {% endif %}
                                     {%for key,value in Carryover_data.Carryover_dict.items %}
                                         <table class="Carryover_Table" cellpadding="4">
                                             <caption>表{{tableCarryoverindex|add:forloop.counter|add:-1}}.{{key}}携带效应实验数据</caption>

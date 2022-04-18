@@ -364,5 +364,5 @@ def cv(lst):
 
     return new_round(cvresult)
 
-print(effectnum("<0",2))
 
+print("a"+"b")

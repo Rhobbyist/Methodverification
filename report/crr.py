@@ -109,52 +109,79 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
                     CRRconc.append(norm_conclist)
 
             elif manufacturers == "Waters":
-                data = xlrd.open_workbook(
-                    filename=None, file_contents=file.read())  # 读取表格
+                # 内标标识
+                ISlist=["D3","D4","D5","D6","D7","D8"]
+
+                data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
                 nrows = file_data.nrows
                 ncols = file_data.ncols
 
                 norm = []  # 化合物列表
-                norm_row = []  # 化合物所在行
-                for j in range(nrows):
-                    for i in PTnorm:
-                        if i in str(file_data.row_values(j)[0]):
-                            norm.append(i)
-                            norm_row.append(j)
+                Compound_row =[] # 含有“Compound”关键词的所在行(包含内标)
+                norm_row = []  # 实际化合物所在行(不包含内标)
+                for i in range(nrows):
+                    if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):
+                        Compound_row.append(i)  
+
+                    # 判断是否含有内标标识
+                    if all(j not in str(file_data.row_values(i)[0]) for j in ISlist):
+                        if "Compound" in str(file_data.row_values(i)[0]) and ":" in str(file_data.row_values(i)[0]):  # 如果某一行第一列含有关键词"Compound"，则该行中含有化合物名称，化合物名称在：后
+                            norm.append(file_data.row_values(i)[0].split(":")[1].strip()) # strip()的作用是去除前后空格
+                            norm_row.append(i) 
+
+                # 第一种情况，不含有内标
+                if len(Compound_row) == len(norm_row):
+                    pass
+
+                # 第二种情况，含有内标
+                else:
+                    nrows = Compound_row[len(norm_row)]       
 
                 nameindex = 0
                 concindex = 0
                 # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
                 for i in range(len(file_data.row_values(norm_row[0]+2))):
-                    if file_data.row_values(norm_row[0]+2)[i] == "Name":
+                    if file_data.row_values(norm_row[0]+2)[i] == "ID":
                         nameindex = i
-                    elif "实际浓度" in file_data.row_values(norm_row[0]+2)[i]:
+                    elif "nmol/L" in file_data.row_values(norm_row[0]+2)[i]:
                         concindex = i
 
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
+
                 for j in range(len(norm)):
-                    group = []  # 一个化合物的稀释倍数Sample Name列表
-                    conc = []  # 一个化合物的检测浓度列表
+                    norm_samplenamelist = []  # 一个化合物的稀释倍数Sample Name列表
+                    norm_conclist = []  # 一个化合物的检测浓度列表
                     if j < len(norm)-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j], norm_row[j+1]):
                             # nameindex为样品名称索引，concindex为浓度索引
                             if "times" in file_data.row_values(i)[nameindex]:
-                                group.append(
-                                    file_data.row_values(i)[nameindex])
-                                conc.append(
-                                    float(file_data.row_values(i)[concindex]))
+                                # 第一种情况：稀释倍数为个位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==5:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:10]) 
+                                # 第二种情况：稀释倍数为两位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==6:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:11]) 
+
+                                norm_conclist.append(float(file_data.row_values(i)[concindex]))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j], nrows):
                             # nameindex为样品名称索引，concindex为浓度索引
                             if "times" in file_data.row_values(i)[nameindex]:
-                                group.append(
-                                    file_data.row_values(i)[nameindex])
-                                conc.append(
-                                    float(file_data.row_values(i)[concindex]))
+                                # 第一种情况：稀释倍数为个位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==5:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:10]) 
+                                # 第二种情况：稀释倍数为两位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==6:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:11]) 
+                                norm_conclist.append(float(file_data.row_values(i)[concindex]))
 
-                    CRRsamplename.append(group)
-                    CRRconc.append(conc)
+                    CRRsamplename.append(norm_samplenamelist)
+                    CRRconc.append(norm_conclist)
 
             elif manufacturers == "Thermo":
                 Thermo = Special.objects.get(project=project)
@@ -304,7 +331,14 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
                     norm_conclist = []  # 一个化合物的检测浓度列表
                     for i in range(len(rowdatagatherlist)):
                         if "CRR" in rowdatagatherlist[i][nameindex]:
-                            norm_samplenamelist.append(rowdatagatherlist[i][nameindex][0:10]) # CRR实验号命名:"CRR-1times-1",[0:10]取出"CRR-1times"
+                            # CRR实验号命名:"CRR-1times-1"。若稀释倍数为个位,[0:10]取出"CRR-1times";若稀释倍数为两位,[0:11]取出"CRR-10times"
+
+                            # 第一种情况：稀释倍数为个位
+                            if len(rowdatagatherlist[i][nameindex].split("times")[0])==5:
+                                norm_samplenamelist.append(rowdatagatherlist[i][nameindex][0:10]) 
+                            # 第二种情况：稀释倍数为两位
+                            if len(rowdatagatherlist[i][nameindex].split("times")[0])==6:
+                                norm_samplenamelist.append(rowdatagatherlist[i][nameindex][0:11]) 
                             norm_conclist.append(rowdatagatherlist[i][concindex])
 
                     CRRsamplename.append(norm_samplenamelist)
@@ -312,8 +346,9 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
         elif platform == "液相":
             if manufacturers == "Agilent":
-                data = xlrd.open_workbook(
-                    filename=None, file_contents=file.read())  # 读取表格
+
+                # .xlsx格式
+                data = xlrd.open_workbook(filename=None, file_contents=file.read())  # 读取表格
                 file_data = data.sheets()[0]
                 nrows = file_data.nrows
                 ncols = file_data.ncols
@@ -328,36 +363,49 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
                 nameindex = 0
                 concindex = 0
+
                 # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
-                for i in range(len(file_data.row_values(norm_row[0]+2))):
-                    if file_data.row_values(norm_row[0]+2)[i] == "样品名称":
+                for i in range(len(file_data.row_values(norm_row[0]+1))):
+                    if file_data.row_values(norm_row[0]+1)[i] == "样品名称":
                         nameindex = i
-                    elif "含量" in file_data.row_values(norm_row[0]+2)[i]:
+                    elif "含量" in file_data.row_values(norm_row[0]+1)[i]:
                         concindex = i
 
+                # 未准确设置表头列名,直接返回并提示!
+                if nameindex==0 or concindex==0:
+                    error_message="未准确设置表头列名!"
+                    return {"error_message":error_message}
+
                 for j in range(len(norm)):
-                    group = []  # 一个化合物的稀释倍数Sample Name列表
-                    conc = []  # 一个化合物的检测浓度列表
+                    norm_samplenamelist = []  # 一个化合物的稀释倍数Sample Name列表
+                    norm_conclist = []  # 一个化合物的检测浓度列表
                     if j < len(norm)-1:  # 如果不是最后一个化合物，索引为该化合物所在行到后一个化合物所在行
                         for i in range(norm_row[j], norm_row[j+1]):
                             # nameindex为样品名称索引，concindex为浓度索引
                             if "times" in file_data.row_values(i)[nameindex]:
-                                group.append(
-                                    file_data.row_values(i)[nameindex])
-                                conc.append(
-                                    float(file_data.row_values(i)[concindex]))
+                                # 第一种情况：稀释倍数为个位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==5:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:10]) 
+                                # 第二种情况：稀释倍数为两位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==6:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:11]) 
+
+                                norm_conclist.append(float(file_data.row_values(i)[concindex]))
 
                     else:  # 如果是最后一个化合物，索引为该化合物所在行到总行数
                         for i in range(norm_row[j], nrows):
                             # nameindex为样品名称索引，concindex为浓度索引
                             if "times" in file_data.row_values(i)[nameindex]:
-                                group.append(
-                                    file_data.row_values(i)[nameindex])
-                                conc.append(
-                                    float(file_data.row_values(i)[concindex]))
+                                # 第一种情况：稀释倍数为个位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==5:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:10]) 
+                                # 第二种情况：稀释倍数为两位
+                                if len(file_data.row_values(i)[nameindex].split("times")[0])==6:
+                                    norm_samplenamelist.append(file_data.row_values(i)[nameindex][0:11]) 
+                                norm_conclist.append(float(file_data.row_values(i)[concindex]))
 
-                    CRRsamplename.append(group)
-                    CRRconc.append(conc)
+                    CRRsamplename.append(norm_samplenamelist)
+                    CRRconc.append(norm_conclist)
 
         ########文件读取完毕#######
 
@@ -446,8 +494,17 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
             else:
                 CRR_othertimes = []
-                # 稀释倍数实验号命名规则:CRR-1times-1,第4位即为稀释倍数的数值
-                times = CRRsamplename_distinct[j][i][4:5]
+                # 稀释倍数实验号命名规则:CRR-1times-1
+
+                # 第一种情况：稀释倍数为个位
+                if len(CRRsamplename_distinct[j][i].split("times")[0])==5:
+                    times = CRRsamplename_distinct[j][i][4:5]
+
+                # 第二种情况：稀释倍数为两位
+                if len(CRRsamplename_distinct[j][i].split("times")[0])==6:
+                    times = CRRsamplename_distinct[j][i][4:6]
+
+
                 CRR_othertimes.append(times)
                 CRR_othertimes_conc = []  # 单独检测浓度列表，方便计算均值和CV
                 for k1 in range(5*i, 5*(i+1)):
@@ -629,41 +686,60 @@ def related_CRR(id,unit):
 
         Dilution = []
 
-        # 需进行判断，否则如果CRR_range为空列表，其后所有代码均不执行
-        if len(CRR_range)!=0:
+        # 需进行判断，如果CRR_range或AMR_theoryconc为空列表，其后所有代码均不执行
+        if len(CRR_range)!=0 and len(AMR_theoryconc)!=0:
             for i in CRR_range[0]:
                 Dilution.append(str(int(i)))
             
             CRR_conclusion1 = "、".join(Dilution)
 
-            CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，" + "、" .join(list(CRR_norm))+"的临床可报告范围分别为"
+            CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，"
 
-
+            # 多指标项目，临床可报告范围结论需用表格展示
             if len(CRR_norm)>1:
-                for i in range(len(CRR_norm)):
-                    if i!=len(CRR_norm):
-                        CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
-                    else:
-                        CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+                
+                CRR_conclusion_dict={}
 
+                for i in range(len(CRR_norm)):
+                    middle_list=[]
+                    middle_list.append(str(min(AMR_theoryconc[i])))
+                    middle_list.append(str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])))
+                    CRR_conclusion_dict[CRR_norm[i]]=middle_list
+
+
+                    # 文字展示结果
+
+                    # # 最后一个化合物后无需加逗号
+                    # if i!=len(CRR_norm)-1:
+                    #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
+                    # else:
+                    #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+
+                print(CRR_conclusion_dict)
+
+                # return最终需要的结果
+                if len(textlist_special) != 0:
+                    return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
+
+                else:
+                    return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
+
+            # 单一指标项目，临床可报告范围结论用文字展示
             else:
                 for i in range(len(CRR_norm)):
                     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+
+                # return最终需要的结果
+                if len(textlist_special) != 0:
+                    return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
+
+                else:
+                    return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
         
-        else:
-            CRR_conclusion1 = ""
-            CRR_conclusion2 = ""
-
-        if AMR_theoryconc!= []:
-            if len(textlist_special) != 0:
-                print(textlist_special)
-                return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
-                        "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
-
-            else:
-                return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
-                        "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
-
         else:
             CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论"
             if len(textlist_special) != 0:
@@ -673,8 +749,6 @@ def related_CRR(id,unit):
             else:
                 return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                         "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
-
-
 
     except: 
         pass
