@@ -1275,7 +1275,7 @@ def related_PNjmd(id):
         for value in JMD_CV.values():
             JMD_CVrange.append(str(min(value))+"%"+"-"+str(max(value))+"%")
 
-        string = "," .join(list(JMD_CVrange))+"范围内，均小于20%，满足检测要求。"
+        string = "，" .join(list(JMD_CVrange))+"范围内，均小于20%，满足检测要求。"
 
         for i in string:
             JMD_CONCLUSION = JMD_CONCLUSION + i

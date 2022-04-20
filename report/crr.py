@@ -546,6 +546,7 @@ def CRRfileread(files, reportinfo, project, platform, manufacturers, Unit, digit
 
 # CRR数据关联进入最终报告
 def related_CRR(id,unit):
+
     # 第一步：后台描述性内容数据提取
     # 1 根据id找到项目
     project = ReportInfo.objects.get(id=id).project
@@ -571,6 +572,8 @@ def related_CRR(id,unit):
     text_general = CRRgeneraltexts.objects.filter(cRRgeneral=general_2)      
     for i in text_general:
         textlist_general.append(i.text)
+
+
 
     # 查找是否单独设置了每个化合物的有效位数
     DIGITS_TABLE = Special.objects.get(project=project)
@@ -671,7 +674,6 @@ def related_CRR(id,unit):
             CRR_range.append(Dilutionlist)
 
         # 第三步：临床可报告范围数据提取
-
         # 找到对应化合物AMR的上下限
         AMR_theoryconc = []  # AMR理论浓度列表，方便提取每个化合物AMR的上下限
         for i in CRR_norm:
@@ -741,6 +743,7 @@ def related_CRR(id,unit):
                             "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
         
         else:
+            CRR_conclusion1 = ""
             CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论"
             if len(textlist_special) != 0:
                 return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
@@ -749,6 +752,8 @@ def related_CRR(id,unit):
             else:
                 return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                         "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
+
+        
 
     except: 
         pass

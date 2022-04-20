@@ -1,6 +1,7 @@
 from re import *
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.db.models import Q
 from numpy import number
 from report import models
 from .forms import UploadFileForm
@@ -272,10 +273,11 @@ def get_generation_page(request):
     else:
         User_class = 1  # 页面右上方显示当前登录用户名(layout.html)
 
+    # 项目平台主管只能看到自己平台下的项目
     if name == "余木俊" or name == "陈文彬":
         data = ReportInfo.objects.filter(Detectionplatform="微量营养素检测平台")
     elif name == "李冰玲":
-        data = ReportInfo.objects.filter(Detectionplatform="治疗药物检测平台")
+        data = ReportInfo.objects.filter(Q(Detectionplatform="治疗药物检测平台") | Q(Detectionplatform="内分泌检测平台"))
     elif name == "陈秀茹":
         data = ReportInfo.objects.filter(Detectionplatform="遗传代谢病检测平台")
     else:
@@ -486,10 +488,11 @@ def get_reportpreview_page(request, id):
         tableDilutionindex = tableindex
 
         Dilution_data = crr.related_CRR(id,unit)
-        if Dilution_data["CRR_dict"]:
-            Dilutionindex += 1
-            titleindex += 1
-            tableindex += 1
+        if Dilution_data:
+            if Dilution_data["CRR_dict"]:
+                Dilutionindex += 1
+                titleindex += 1
+                tableindex += 1
 
         # ---------------------------------------------- 基质特异性 --------------------------------------------------
         MSindex = titleindex

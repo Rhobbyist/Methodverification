@@ -524,7 +524,7 @@
                                     <div class="maintext"> {{forloop.counter}}) {{r}}</div>
                                 {% endfor %}
                                 <div class="maintext">{{PNjmd_data.serial}})
-                                    表{{tablePNindex_start}}-{{tablePNindex_end}} 即为重复性精密度数据,{{PNjmd_data.JMD_CONCLUSION}}</div>
+                                    表{{tablePNindex_start}}-{{tablePNindex_end}} 即为重复性精密度数据，{{PNjmd_data.JMD_CONCLUSION}}</div>
                                 
                                 {%for key,value in PNjmd_data.JMD_dict.items %}
                                     <table class="PNjmd_Table" cellpadding="4">
@@ -783,8 +783,7 @@
                                 {% endfor %}
                                 <div class="Recycle_picture"><img src="/static/report/img/3.png" alt="" width="250px" height="45px" /></div>
                                 <div class="maintext">{{Recycle_data.serial}})
-                                    加标回收率实验结果表{{tableRecycleindex}}所示,由结果可知,
-                                    方法的回收率:{{Recycle_data.Recycle_endconclusion}}满足检测要求。
+                                    加标回收率实验结果表{{tableRecycleindex}}所示，由结果可知，方法的回收率：{{Recycle_data.Recycle_endconclusion}}满足检测要求。
                                 </div>
 
                                 {%for key,value in Recycle_data.Recycle_endreport_dict.items %}

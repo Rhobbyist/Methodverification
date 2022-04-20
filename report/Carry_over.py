@@ -131,7 +131,7 @@ def Carryover_9sample_fileread(files,Detectionplatform,reportinfo,project,platfo
 
                 nameindex = 0
                 concindex = 0
-                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+2是该化合物表格位于该化合物所在行的下两行
+                # 第一个化合物表格确定samplename和浓度所在列，norm_row[0]为第一个化合物所在行，+1是该化合物表格位于该化合物所在行的下一行
                 for i in range(len(file_data.row_values(norm_row[0]+2))):
                     if file_data.row_values(norm_row[0]+2)[i] == "ID":
                         nameindex = i
