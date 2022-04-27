@@ -868,6 +868,14 @@
                                     <br>
                                 </div>                      
                                 {% endif %}
+
+                                <!-- 2.3 仪器比对 -->
+                                {% if InstrumentCompare_text %}
+                                <div class="InstrumentCompare_data">
+                                    <div class="InstrumentCompare_title"><input type="checkbox" name="quota" value="仪器比对" unchecked>{{ZQDindex}}.{{InstrumentCompareindex}} 仪器比对(Instrument Comparison)</div>
+                                    <div class="maintext"> {{InstrumentCompare_text.0}}</div>
+                                </div>
+                                {% endif %}
                             </td>
                         </tr>                     
                     {% endif %}
@@ -1169,7 +1177,7 @@
                     {% if Dilution_data.CRR_dict %}
                         <tr class="crrtr">
                             <td class="crrtd">
-                                <div class="CRR_title">{{CRRindex}}. 临床可报告范围(Clinical Reportable Range)</div>
+                                <div class="CRR_title">{{CRRindex}}. 临床可报告范围(Clinical Reportable Range)</div> 
                                 <div class="CRR_data">
                                     <!-- 4.1 进行稀释倍数验证 -->
                                     {% if CRR2_True %}
@@ -1223,10 +1231,23 @@
                                         {% endfor %}
                                         <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex|add:1}} 临床可报告范围(Clinical Reportable Range)</div>
                                         <div class="maintext"> 按照线性范围(AMR)和稀释倍数验证结果，临床可报告范围(CRR)的下限即为AMR的下限,
-                                            CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}。
+                                            CRR的上限即为最大稀释倍数乘以AMR的上限。{{Dilution_data.CRR_conclusion2}}可得表{{tableDilutionindex_end|add:1}}所示的临床可报告范围。
                                         </div>
+                                        <table class="Dilution_Table" cellpadding="4">
+                                            <caption>表{{tableDilutionindex_end|add:1}}.临床可报告范围</caption>
+                                            <tr class="Dilution_Tabletr">
+                                                <th width="40%">分析物</th>
+                                                <th width="60%">临床可报告范围({{unit}})</th>
+                                            </tr>
+                                            {%for key,value in Dilution_data.CRR_conclusion_dict.items %}
+                                                <tr class="Dilution_Tabletr">
+                                                    <td>{{key}}</td>
+                                                    <td>{{value.0}}～{{value.1}}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
                                         <br>
-
+    
                                     <!-- 4.2 不进行稀释倍数验证 -->   
                                     {% else %}                       
                                     <div class="maintext"> 由于该方法分析测量范围能全面覆盖临床标本的浓度分布，充分满足临床检测的需求，

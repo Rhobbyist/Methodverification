@@ -573,8 +573,6 @@ def related_CRR(id,unit):
     for i in text_general:
         textlist_general.append(i.text)
 
-
-
     # 查找是否单独设置了每个化合物的有效位数
     DIGITS_TABLE = Special.objects.get(project=project)
     pt_special = PTspecial.objects.get(special=DIGITS_TABLE)
@@ -613,147 +611,170 @@ def related_CRR(id,unit):
         # 1 基础数据抓取
         CRR_data = CRR.objects.filter(reportinfo_id=id)
 
-        CRR_norm = []  # 待测物质列表
-        for i in CRR_data:
-            if i.norm not in CRR_norm:
-                CRR_norm.append(i.norm)
+        # 进行稀释倍数验证
+        if CRR_data:
+            CRR2_True = 0
 
-        CRR_range = []  # 稀释倍数列表，第三步要用，方便找到最大稀释倍数
-        for i in CRR_norm:
-            middle_list = []  # 每个化合物的数据列表
-            Dilutionlist = []  # 每个化合物的稀释倍数列表，需要加到CRR_range中
-            middle_table = CRR.objects.filter(reportinfo_id=id, norm=i)  # 每个待测物质的数据表          
-            for item in middle_table:
-                # 没有为每个化合物单独设置有效位数，则调用通用性设置
-                if Digitsdict == {} or list(Digitsdict.values())[0] == None:
-                    if item.Dilution != "原样":
-                        Dilutionlist.append(float(item.Dilution))
+            CRR_norm = []  # 待测物质列表
+            for i in CRR_data:
+                if i.norm not in CRR_norm:
+                    CRR_norm.append(i.norm)
 
-                    rowlist = []  # 每一行的小列表
-                    rowlist.append(item.Dilution)
-                    rowlist.append(item.test_conc1)
-                    rowlist.append(item.test_conc2)
-                    rowlist.append(item.test_conc3)
-                    rowlist.append(item.test_conc4)
-                    rowlist.append(item.test_conc5)
+            CRR_range = []  # 稀释倍数列表，第三步要用，方便找到最大稀释倍数
+            for i in CRR_norm:
+                middle_list = []  # 每个化合物的数据列表
+                Dilutionlist = []  # 每个化合物的稀释倍数列表，需要加到CRR_range中
+                middle_table = CRR.objects.filter(reportinfo_id=id, norm=i)  # 每个待测物质的数据表          
+                for item in middle_table:
+                    # 没有为每个化合物单独设置有效位数，则调用通用性设置
+                    if Digitsdict == {} or list(Digitsdict.values())[0] == None:
+                        if item.Dilution != "原样":
+                            Dilutionlist.append(float(item.Dilution))
 
-                    rowlist.append(item.calresults.split(',')[0])
-                    rowlist.append(item.calresults.split(',')[1])
-                    rowlist.append(item.calresults.split(',')[2])
-                    rowlist.append(item.calresults.split(',')[3])
-                    rowlist.append(item.calresults.split(',')[4])
+                        rowlist = []  # 每一行的小列表
+                        rowlist.append(item.Dilution)
+                        rowlist.append(item.test_conc1)
+                        rowlist.append(item.test_conc2)
+                        rowlist.append(item.test_conc3)
+                        rowlist.append(item.test_conc4)
+                        rowlist.append(item.test_conc5)
 
-                    rowlist.append(item.mean_conc)
-                    rowlist.append(item.cv_conc)
-                    middle_list.append(rowlist)
+                        rowlist.append(item.calresults.split(',')[0])
+                        rowlist.append(item.calresults.split(',')[1])
+                        rowlist.append(item.calresults.split(',')[2])
+                        rowlist.append(item.calresults.split(',')[3])
+                        rowlist.append(item.calresults.split(',')[4])
 
-                # 为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                        rowlist.append(item.mean_conc)
+                        rowlist.append(item.cv_conc)
+                        middle_list.append(rowlist)
+
+                    # 为每个化合物单独设置了有效位数，则调用每个化合物的设置
+                    else:
+                        if item.Dilution != "原样":
+                            Dilutionlist.append(float(item.Dilution))
+
+                        rowlist = []
+                        rowlist.append(item.Dilution)
+                        rowlist.append(effectnum(item.test_conc1, Digitsdict[i]))
+                        rowlist.append(effectnum(item.test_conc2, Digitsdict[i]))
+                        rowlist.append(effectnum(item.test_conc3, Digitsdict[i]))
+                        rowlist.append(effectnum(item.test_conc4, Digitsdict[i]))
+                        rowlist.append(effectnum(item.test_conc5, Digitsdict[i]))
+
+                        rowlist.append(item.calresults.split(',')[0])
+                        rowlist.append(item.calresults.split(',')[1])
+                        rowlist.append(item.calresults.split(',')[2])
+                        rowlist.append(item.calresults.split(',')[3])
+                        rowlist.append(item.calresults.split(',')[4])
+
+                        rowlist.append(item.mean_conc)
+                        rowlist.append(item.cv_conc)
+                        middle_list.append(rowlist)
+
+                CRR_dict[i] = middle_list
+                CRR_range.append(Dilutionlist)
+
+            # 第三步：临床可报告范围数据提取
+            # 找到对应化合物AMR的上下限
+            AMR_theoryconc = []  # AMR理论浓度列表，方便提取每个化合物AMR的上下限
+            for i in CRR_norm:
+                data_AMR = AMR.objects.filter(reportinfo_id=id, norm=i)  # AMR每个待测物质的数据表
+                if data_AMR.exists():
+                    Dilutionlist = []  # 每个化合物AMR理论浓度列表
+                    for item in data_AMR:
+                        Dilutionlist.append(float(item.therory_conc))
+                    AMR_theoryconc.append(Dilutionlist)
                 else:
-                    if item.Dilution != "原样":
-                        Dilutionlist.append(float(item.Dilution))
+                    pass
 
-                    rowlist = []
-                    rowlist.append(item.Dilution)
-                    rowlist.append(effectnum(item.test_conc1, Digitsdict[i]))
-                    rowlist.append(effectnum(item.test_conc2, Digitsdict[i]))
-                    rowlist.append(effectnum(item.test_conc3, Digitsdict[i]))
-                    rowlist.append(effectnum(item.test_conc4, Digitsdict[i]))
-                    rowlist.append(effectnum(item.test_conc5, Digitsdict[i]))
+            Dilution = []
 
-                    rowlist.append(item.calresults.split(',')[0])
-                    rowlist.append(item.calresults.split(',')[1])
-                    rowlist.append(item.calresults.split(',')[2])
-                    rowlist.append(item.calresults.split(',')[3])
-                    rowlist.append(item.calresults.split(',')[4])
-
-                    rowlist.append(item.mean_conc)
-                    rowlist.append(item.cv_conc)
-                    middle_list.append(rowlist)
-
-            CRR_dict[i] = middle_list
-            CRR_range.append(Dilutionlist)
-
-        # 第三步：临床可报告范围数据提取
-        # 找到对应化合物AMR的上下限
-        AMR_theoryconc = []  # AMR理论浓度列表，方便提取每个化合物AMR的上下限
-        for i in CRR_norm:
-            data_AMR = AMR.objects.filter(reportinfo_id=id, norm=i)  # AMR每个待测物质的数据表
-            if data_AMR.exists():
-                Dilutionlist = []  # 每个化合物AMR理论浓度列表
-                for item in data_AMR:
-                    Dilutionlist.append(float(item.therory_conc))
-                AMR_theoryconc.append(Dilutionlist)
-            else:
-                pass
-
-        Dilution = []
-
-        # 需进行判断，如果CRR_range或AMR_theoryconc为空列表，其后所有代码均不执行
-        if len(CRR_range)!=0 and len(AMR_theoryconc)!=0:
-            for i in CRR_range[0]:
-                Dilution.append(str(int(i)))
-            
-            CRR_conclusion1 = "、".join(Dilution)
-
-            CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，"
-
-            # 多指标项目，临床可报告范围结论需用表格展示
-            if len(CRR_norm)>1:
+            # 需进行判断，如果CRR_range或AMR_theoryconc为空列表，其后所有代码均不执行
+            if len(CRR_range)!=0 and len(AMR_theoryconc)!=0:
+                for i in CRR_range[0]:
+                    Dilution.append(str(int(i)))
                 
-                CRR_conclusion_dict={}
+                CRR_conclusion1 = "、".join(Dilution)
 
-                for i in range(len(CRR_norm)):
-                    middle_list=[]
-                    middle_list.append(str(min(AMR_theoryconc[i])))
-                    middle_list.append(str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])))
-                    CRR_conclusion_dict[CRR_norm[i]]=middle_list
+                CRR_conclusion2 = "按最大稀释倍数" + str(int(max(CRR_range[0])))+"倍计算，"
+
+                # 多指标项目，临床可报告范围结论需用表格展示
+                if len(CRR_norm)>1:
+                    
+                    CRR_conclusion_dict={}
+
+                    for i in range(len(CRR_norm)):
+                        middle_list=[]
+                        middle_list.append(str(min(AMR_theoryconc[i])))
+                        middle_list.append(str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])))
+                        CRR_conclusion_dict[CRR_norm[i]]=middle_list
 
 
-                    # 文字展示结果
+                        # 文字展示结果
 
-                    # # 最后一个化合物后无需加逗号
-                    # if i!=len(CRR_norm)-1:
-                    #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
-                    # else:
-                    #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
+                        # # 最后一个化合物后无需加逗号
+                        # if i!=len(CRR_norm)-1:
+                        #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit+"，"
+                        # else:
+                        #     CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
 
-                print(CRR_conclusion_dict)
+                    print(CRR_conclusion_dict)
 
-                # return最终需要的结果
-                if len(textlist_special) != 0:
-                    return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
-                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
+                    # return最终需要的结果
+                    if len(textlist_special) != 0:
+                        return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+                                "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
 
+                    else:
+                        return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+                                "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
+
+                # 单一指标项目，临床可报告范围结论用文字展示
                 else:
-                    return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
-                            "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2, "CRR_conclusion_dict": CRR_conclusion_dict}
+                    for i in range(len(CRR_norm)):
+                        CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
 
-            # 单一指标项目，临床可报告范围结论用文字展示
+                    # return最终需要的结果
+                    if len(textlist_special) != 0:
+                        return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+                                "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
+
+                    else:
+                        return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+                                "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
+            
             else:
-                for i in range(len(CRR_norm)):
-                    CRR_conclusion2 = CRR_conclusion2 + str(min(AMR_theoryconc[i]))+'~'+str(int(max(CRR_range[0]))*max(AMR_theoryconc[i])) + unit
-
-                # return最终需要的结果
+                CRR_conclusion1 = ""
+                CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论"
                 if len(textlist_special) != 0:
-                    return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
+                    return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
                             "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
 
                 else:
-                    return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
+                    return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
                             "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
-        
-        else:
-            CRR_conclusion1 = ""
-            CRR_conclusion2 = "请先完成AMR验证后再来看稀释倍数的最终结论"
+
+        # 不进行稀释倍数验证
+        else:  
+            CRR2_True = 1
+            CRR_data = CRR2.objects.filter(reportinfo_id=id)
+
+            CRR_norm = []  # 待测物质列表
+            CRR_crr=[] # 临床可报告范围列表
+            for i in CRR_data:
+                CRR_norm.append(i.norm)
+                CRR_crr.append(i.crr)
+
+            for i in range(len(CRR_norm)):
+                CRR_dict[CRR_norm[i]]=CRR_crr[i]
+            
+            # return最终需要的结果
             if len(textlist_special) != 0:
-                return {"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1,
-                        "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
+                return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_special, "serial": len(textlist_special)+1}
 
             else:
-                return {"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1,
-                        "CRR_conclusion1": CRR_conclusion1, "CRR_conclusion2": CRR_conclusion2}
-
-        
+                return {"CRR2_True": CRR2_True,"CRR_dict": CRR_dict, "textlist": textlist_general, "serial": len(textlist_general)+1}
 
     except: 
         pass

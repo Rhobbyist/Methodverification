@@ -1173,7 +1173,7 @@
                             <div class="CRR_title">{{CRRindex}}. 临床可报告范围(Clinical Reportable Range)</div>
                             <div class="CRR_data">
                                 <!-- 4.1 进行稀释倍数验证 -->
-                                {% if CRR2_True %}
+                                {% if not Dilution_data.CRR2_True %}
                                     <div class="Dilution_title">{{CRRindex}}.{{Dilutionindex}} 稀释倍数验证(Dilution)</div>
                                     {% for r in Dilution_data.textlist %}
                                         <div class="maintext"> {{forloop.counter}}) {{r}}</div>
@@ -1246,19 +1246,20 @@
                                 <div class="maintext"> 由于该方法分析测量范围能全面覆盖临床标本的浓度分布，充分满足临床检测的需求，
                                     因此无需进行稀释倍数验证。为了与现有日常检测的临床报告保持一致，临床可报告范围定为如表{{tableCRRindex}}所示。
                                 </div>
-                                <table class="Not_Dilution_Table" cellpadding="4">
-                                    <caption>表{{tableCRRindex}}.{{key}}稀释倍数验证结果</caption>
-                                    <tr>
+                                <table class="Dilution_Table" cellpadding="4">
+                                    <caption>表{{tableDilutionindex}}.{{key}}稀释倍数验证结果</caption>
+                                    <tr class="Dilution_Tabletr">
                                         <th width="30%">化合物</th>
                                         <th width="70%">临床可报告范围(CRR)</th>
                                     </tr>
                                     {% for key,value in Dilution_data.CRR_dict.items %}
-                                    <tr>
+                                    <tr class="Dilution_Tabletr">
                                         <td>{{key}}</td>
                                         <td>{{value}}</td>
                                     </tr>
                                     {% endfor %}
                                 </table>
+                                <br>
                                 {% endif %}
                                 
                             </div>                 

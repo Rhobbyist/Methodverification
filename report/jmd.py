@@ -443,11 +443,6 @@ def IntraP_fileread(files, reportinfo, namejmd, project, platform, manufacturers
                     normlist.append(high)
                     jmdone.append(normlist)
 
-                print(norm)
-                print(norm_row)
-                print(nameindex)
-                print(concindex)
-
         elif platform == "ICP-MS":
             # ICP-MS平台Agilent厂家需先在后台管理系统中设置本项目的化合物名称，以便查找上传文件中相应化合物的表格
             if manufacturers == "Agilent":

@@ -752,24 +752,38 @@ def get_reportpreview_page(request, id):
             
         # --------------------------------------- 稀释倍数（每个化合物一个表格）---------------------------------------
         CRRindex = titleindex # CRR主标题索引
-    
-        # 1 进行稀释倍数验证      
-        CRR2_True = 1
-        Dilutionindex = 0
-
-        tableDilutionindex_start = tableindex
-        tableDilutionindex_end = tableindex+Number_of_compounds-1
 
         Dilution_data = crr.related_CRR(id, unit)
-        if Dilution_data["CRR_dict"]:
-            Dilutionindex += 1
-            titleindex += 1
+        # 1 进行稀释倍数验证  
+        if not Dilution_data["CRR2_True"]:    
+            Dilutionindex = 0
 
-            # 多指标项目，稀释倍数结论需要单独占一个表格
-            tableindex += Number_of_compounds+1
+            tableDilutionindex_start = tableindex
+            tableDilutionindex_end = tableindex+Number_of_compounds-1
+       
+            if Dilution_data["CRR_dict"]:
+                Dilutionindex += 1
+                titleindex += 1
 
-        print("CRR tableindex:%s" % (tableindex))
-        print("CRR titleindex:%s" % (titleindex))
+                # 多指标项目，稀释倍数结论需要单独占一个表格
+                tableindex += Number_of_compounds+1
+
+            print("CRR tableindex:%s" % (tableindex))
+            print("CRR titleindex:%s" % (titleindex))
+        
+        else:
+            Dilutionindex = 0
+            tableDilutionindex = tableindex
+            if Dilution_data["CRR_dict"]:
+                Dilutionindex += 1
+                titleindex += 1
+
+                # 多指标项目，稀释倍数结论需要单独占一个表格
+                tableindex += 1
+
+            print("CRR tableindex:%s" % (tableindex))
+            print("CRR titleindex:%s" % (titleindex))
+
 
         # ---------------------------------------------- 基质特异性 --------------------------------------------------
         MSindex = titleindex
@@ -1406,6 +1420,9 @@ def get_reportdeleteselect_page(request):
 
             if '加标回收率' in quotalist:
                 RECYCLE.objects.filter(reportinfo_id=id).delete()
+
+            if '仪器比对' in quotalist:
+                InstrumentCompare.objects.filter(reportinfo_id=id).delete()
 
             if '方法定量限与线性范围' in quotalist:
                 AMR.objects.filter(reportinfo_id=id).delete()
